@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
+from engine.adapters import movielens as _movielens_adapter  # noqa: F401
 from engine.adapters import toy as _toy_adapter  # noqa: F401
 from engine.artifacts import save_artifacts
 from engine.config import load_config

@@ -36,7 +36,7 @@
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
-| 3 | Movies pipeline (MovieLens + SAR) | 1 | 0 | 0 | 13 | 7% |
+| 3 | Movies pipeline (MovieLens + SAR) | 2 | 0 | 0 | 13 | 15% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **34** | | | **129** | **26%** |
+| | **Overall** | **35** | | | **129** | **27%** |
 
-`[#####---------------] 26%  (34/129 tasks)`
+`[#####---------------] 27%  (35/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -167,7 +167,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 **Gates:** R1, R2, R3, R4, R5, R6.
 
 - [x] **P3.1** Fill the MovieLens section of `docs/DATASETS.md` (variants, license, citation text) and implement the download step in `fetch_data.py`; confirm 100K and 1M both load. *Acceptance:* `make data TYPE=movies` works or a `[!]` note explains the manual step.
-- [ ] **P3.2** Implement `MovieLensAdapter`: columns to schema, string ids, clean display titles (strip trailing year and alternate-title parentheses, move trailing articles "Matrix, The" to "The Matrix"), parse year, genres to `categories`, minimum-interaction filtering from config. *Acceptance:* title-cleaning unit tests including edge cases (no year, multiple parentheses, "A", "An", non-ASCII).
+- [x] **P3.2** Implement `MovieLensAdapter`: columns to schema, string ids, clean display titles (strip trailing year and alternate-title parentheses, move trailing articles "Matrix, The" to "The Matrix"), parse year, genres to `categories`, minimum-interaction filtering from config. *Acceptance:* title-cleaning unit tests including edge cases (no year, multiple parentheses, "A", "An", non-ASCII).
 - [ ] **P3.3** Implement `validate()` data report (R1) and write it to `artifacts/movies/data_report.json`. *Acceptance:* report includes counts, sparsity, filtered counts, timestamp range.
 - [ ] **P3.4** Chronological per-user split (train/valid/test) via the harness; run the leakage test (R2) on the real data. *Acceptance:* test passes on the real split.
 - [ ] **P3.5** Implement `SarModel` wrapper over the vendored SAR class: fit from config params; `recommend_user` (exclude seen unless `allow_repeat`); `popular`; `similar_items` from the item similarity matrix (top-K neighbours stored sparsely, never the query item itself). *Acceptance:* R3 invariants hold; unit and property tests.
