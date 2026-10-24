@@ -39,6 +39,13 @@ def _get_top_k_per_user(
     return sorted_df.groupby(col_user, as_index=False).head(k).reset_index(drop=True)
 
 
+def _clean_ranking_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop any pre-existing 'rank' column to prevent merge collisions in vendored metrics."""
+    if "rank" in df.columns:
+        return df.drop(columns=["rank"])
+    return df
+
+
 def precision(
     true_df: pd.DataFrame,
     pred_df: pd.DataFrame,
@@ -52,8 +59,8 @@ def precision(
         return 0.0
     return float(
         precision_at_k(
-            rating_true=true_df,
-            rating_pred=pred_df,
+            rating_true=_clean_ranking_df(true_df),
+            rating_pred=_clean_ranking_df(pred_df),
             col_user=col_user,
             col_item=col_item,
             col_prediction=col_prediction,
@@ -76,8 +83,8 @@ def recall(
         return 0.0
     return float(
         recall_at_k(
-            rating_true=true_df,
-            rating_pred=pred_df,
+            rating_true=_clean_ranking_df(true_df),
+            rating_pred=_clean_ranking_df(pred_df),
             col_user=col_user,
             col_item=col_item,
             col_prediction=col_prediction,
@@ -94,16 +101,27 @@ def ndcg(
     col_user: str = "user_id",
     col_item: str = "item_id",
     col_prediction: str = "score",
+    col_rating: str = "signal",
 ) -> float:
     """Compute NDCG@K."""
     if true_df.empty or pred_df.empty:
         return 0.0
+
+    t_df = _clean_ranking_df(true_df)
+    p_df = _clean_ranking_df(pred_df)
+    actual_col_rating = (
+        col_rating
+        if col_rating in t_df.columns
+        else ("rating" if "rating" in t_df.columns else t_df.columns[2])
+    )
+
     return float(
         ndcg_at_k(
-            rating_true=true_df,
-            rating_pred=pred_df,
+            rating_true=t_df,
+            rating_pred=p_df,
             col_user=col_user,
             col_item=col_item,
+            col_rating=actual_col_rating,
             col_prediction=col_prediction,
             relevancy_method="top_k",
             k=k,
@@ -124,8 +142,8 @@ def mean_average_precision(
         return 0.0
     return float(
         map_at_k(
-            rating_true=true_df,
-            rating_pred=pred_df,
+            rating_true=_clean_ranking_df(true_df),
+            rating_pred=_clean_ranking_df(pred_df),
             col_user=col_user,
             col_item=col_item,
             col_prediction=col_prediction,
