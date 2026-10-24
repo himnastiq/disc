@@ -33,7 +33,7 @@
 <!-- PROGRESS:START -->
 | Phase | Name | Done | In progress | Blocked | Total | % |
 |---|---|---|---|---|---|---|
-| 0 | Scaffolding and tooling | 0 | 0 | 0 | 11 | 0% |
+| 0 | Scaffolding and tooling | 10 | 0 | 0 | 11 | 90% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 0 | 0 | 0 | 9 | 0% |
 | 2 | Core engine abstractions | 0 | 0 | 0 | 13 | 0% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **0** | | | **129** | **0%** |
+| | **Overall** | **10** | | | **129** | **7%** |
 
-`[--------------------] 0%  (0/129 tasks)`
+`[#-------------------] 7%  (10/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -111,15 +111,14 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 
 - [x] **P0.1** Initialise git, add `.gitignore` (Python, Node, `data/`, `artifacts/` big files, `.env*`, IDE files), add the project `LICENSE` (MIT unless the owner says otherwise). *Acceptance:* clean first commit.
 - [x] **P0.2** Create the directory layout from section 5 (empty packages with `__init__.py`, placeholder READMEs where useful). *Acceptance:* tree matches section 5.
-- [~] **P0.3** Backend environment: Python 3.11, `pyproject.toml` with extras `core` (numpy, pandas, scipy, scikit-learn, pyarrow, pydantic, pyyaml, tqdm, requests, fastapi, uvicorn, joblib), `dev` (pytest, pytest-cov, hypothesis, httpx, ruff, mypy, pip-audit), `deep` (placeholder for Phase 12). Lock versions (uv lock or pinned requirements). *Acceptance:* a fresh virtualenv installs `core,dev` with one command.
-  > pyproject.toml created, pip install running
+- [x] **P0.3** Backend environment: Python 3.11, `pyproject.toml` with extras `core` (numpy, pandas, scipy, scikit-learn, pyarrow, pydantic, pyyaml, tqdm, requests, fastapi, uvicorn, joblib), `dev` (pytest, pytest-cov, hypothesis, httpx, ruff, mypy, pip-audit), `deep` (placeholder for Phase 12). Lock versions (uv lock or pinned requirements). *Acceptance:* a fresh virtualenv installs `core,dev` with one command.
 - [x] **P0.4** `Makefile` targets: `setup`, `data`, `train` (all types), `train-fast`, `eval`, `api`, `web`, `test`, `lint`, `check`, `gates`, `progress`, `clean`. *Acceptance:* each target exists and fails gracefully with a clear message if its prerequisite is missing.
 - [x] **P0.5** Linting and typing config: ruff, mypy (strict for `engine/` and `api/`, lenient for `discovery/`), pre-commit hooks. *Acceptance:* `make lint` passes on the skeleton.
 - [x] **P0.6** Write `tools/progress.py`: parses this file, counts `[x]` / total tasks per `## PHASE n` section, rewrites the dashboard between the `PROGRESS:START/END` markers (table with phase name, done/total, percentage, and an overall bar). Must be idempotent. *Acceptance:* running it twice changes nothing the second time; unit test included in `backend/tests/unit/test_progress.py`.
 - [x] **P0.7** Create `docs/` skeleton files: `ATTRIBUTION.md`, `DATASETS.md`, `DECISIONS.md` (ADR-style log, each entry has date, context, decision, consequences), `ARCHITECTURE.md`, `RESULTS.md` (generated later), `DEMO_SCRIPT.md`. *Acceptance:* files exist with headings and TODO markers.
 - [x] **P0.8** `backend/scripts/fetch_data.py`: downloads datasets to `data/raw/<name>/` with checksums where possible, resumable, with clear messages; if a download fails because of network or terms, prints exact manual steps and the expected path. *Acceptance:* `--help` works; dry-run mode lists what it would fetch. (Real fetching is completed per type in Phases 3 to 5.)
 - [x] **P0.9** CI workflow `.github/workflows/ci.yml` running `make check` on push (backend and frontend jobs; frontend job skipped until Phase 8). *Acceptance:* workflow file validates.
-- [ ] **P0.10** Verify the skeleton: `make setup && make check` is green from a fresh clone. Record Python version, OS, and tool versions in `docs/DECISIONS.md`. *Acceptance:* green run recorded in Session Log.
+- [x] **P0.10** Verify the skeleton: `make setup && make check` is green from a fresh clone. Record Python version, OS, and tool versions in `docs/DECISIONS.md`. *Acceptance:* green run recorded in Session Log.
 - [ ] **P0.11** Phase 0 Gate and "break your own work" ritual. *Acceptance:* Session Log entry written.
 
 ---

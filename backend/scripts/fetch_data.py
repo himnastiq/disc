@@ -11,7 +11,6 @@ and the expected file paths.
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 # Project root (two levels up from backend/scripts/)
@@ -65,8 +64,8 @@ def print_dataset_info(name: str, info: dict[str, str], dry_run: bool = False) -
     if dry_run:
         print(f"  Would download to: {info['target_dir']}")
     else:
-        print(f"  Status: Download will be implemented per type in Phases 3-5.")
-        print(f"  Manual steps if needed:")
+        print("  Status: Download will be implemented per type in Phases 3-5.")
+        print("  Manual steps if needed:")
         for line in info["manual_steps"].split("\n"):
             print(f"    {line}")
 
@@ -91,10 +90,7 @@ def main() -> None:
     # Ensure data directory exists
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    if args.type:
-        types_to_fetch = [args.type]
-    else:
-        types_to_fetch = list(DATASETS.keys())
+    types_to_fetch = [args.type] if args.type else list(DATASETS.keys())
 
     print("Discovery Engine - Dataset Downloader")
     print("=" * 40)
@@ -107,8 +103,8 @@ def main() -> None:
             target = Path(info["target_dir"])
             target.mkdir(parents=True, exist_ok=True)
             print(f"\n  Target directory created: {target}")
-            print(f"  NOTE: Actual download logic will be added in Phases 3-5.")
-            print(f"  For now, follow the manual steps above if needed.")
+            print("  NOTE: Actual download logic will be added in Phases 3-5.")
+            print("  For now, follow the manual steps above if needed.")
 
     print("\n" + "=" * 40)
     print("Done.")
