@@ -34,7 +34,7 @@
 | Phase | Name | Done | In progress | Blocked | Total | % |
 |---|---|---|---|---|---|---|
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
-| 1 | Vendor, trim, and rename Recommenders into `discovery` | 2 | 0 | 0 | 9 | 22% |
+| 1 | Vendor, trim, and rename Recommenders into `discovery` | 3 | 0 | 0 | 9 | 33% |
 | 2 | Core engine abstractions | 0 | 0 | 0 | 13 | 0% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **13** | | | **129** | **10%** |
+| | **Overall** | **14** | | | **129** | **10%** |
 
-`[##------------------] 10%  (13/129 tasks)`
+`[##------------------] 10%  (14/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -130,7 +130,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 
 - [x] **P1.1** In a throwaway virtualenv **outside the repo**, install a pinned release of `recommenders` from PyPI (choose the latest stable that supports Python 3.11; record version and the corresponding git tag or commit). Copy its `LICENSE` into the repo as `backend/discovery/LICENSE`. *Acceptance:* version recorded in `docs/DECISIONS.md`.
 - [x] **P1.2** Compute the needed module set by tracing imports starting from the entry points the engine will use: dataset loaders (movielens, amazon_reviews, mind, download utilities), splitters (`python_chronological_split`, `python_stratified_split`, `python_random_split` and helper modules), `evaluation.python_evaluation`, `models.sar`, `models.tfidf`, plus transitive `utils` modules. Write the traced list to `docs/vendored_modules.txt`. Exclude Spark, TensorFlow, PyTorch, Cornac, Azure, notebooks, tests, contrib, tuning. *Acceptance:* list reviewed and committed.
-- [ ] **P1.3** Copy only those modules into `backend/discovery/`, keeping the internal sub-structure (`datasets/`, `evaluation/`, `models/`, `utils/`). Preserve original copyright headers. *Acceptance:* no file outside the traced list is present.
+- [x] **P1.3** Copy only those modules into `backend/discovery/`, keeping the internal sub-structure (`datasets/`, `evaluation/`, `models/`, `utils/`). Preserve original copyright headers. *Acceptance:* no file outside the traced list is present.
 - [ ] **P1.4** Rewrite imports and string references from `recommenders` to `discovery` (code, logger names, docstring paths, any `__name__`-based lookups). *Acceptance:* `grep -rniE "import recommenders|from recommenders" backend/` returns nothing; mentions of the old name remain only in `LICENSE`, `NOTICE.md`, `docs/`, and header comments.
 - [ ] **P1.5** Make top-level imports light: remove or lazy-import optional heavy dependencies in `__init__.py` and utility modules so that `import discovery.models.sar`, `discovery.models.tfidf`, `discovery.evaluation.python_evaluation`, and the dataset and splitter modules succeed with only `core` extras installed. Each patch must be minimal and listed in `NOTICE.md`. *Acceptance:* a test imports each used module in a subprocess and asserts that `tensorflow`, `pyspark`, `torch`, and `cornac` are **not** in `sys.modules`.
 - [ ] **P1.6** Write `backend/discovery/NOTICE.md` and `docs/ATTRIBUTION.md` (source URL, version, commit, trimming and modification summary, license statement). Write `tools/vendored_manifest.py` to generate `docs/VENDORED_FILES.md` (path, size, sha256, origin path). *Acceptance:* both documents complete; manifest regenerates deterministically.
