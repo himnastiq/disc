@@ -223,3 +223,61 @@ class TestContentTypeSpec:
         }
         with pytest.raises(ValidationError):
             ContentTypeSpec.model_validate(data)
+
+    def test_serving_config_defaults(self):
+        data = {
+            "type": "movies",
+            "display_name": "Movies",
+            "card_type": "movie",
+            "dataset": {"adapter": "movielens", "variant": "100k"},
+            "signal": {"positive_threshold": 4.0},
+            "split": {"strategy": "chronological", "ratio": 0.8},
+            "model": {"name": "sar"},
+        }
+        spec = ContentTypeSpec.model_validate(data)
+        assert spec.serving.min_positive_items_for_personalization == 3
+        assert spec.serving.explanation_min_threshold == 0.2
+
+    def test_serving_config_custom_values(self):
+        data = {
+            "type": "movies",
+            "display_name": "Movies",
+            "card_type": "movie",
+            "dataset": {"adapter": "movielens", "variant": "100k"},
+            "signal": {"positive_threshold": 4.0},
+            "split": {"strategy": "chronological", "ratio": 0.8},
+            "model": {"name": "sar"},
+            "serving": {
+                "min_positive_items_for_personalization": 5,
+                "explanation_min_threshold": 0.35,
+            },
+        }
+        spec = ContentTypeSpec.model_validate(data)
+        assert spec.serving.min_positive_items_for_personalization == 5
+        assert spec.serving.explanation_min_threshold == 0.35
+
+    def test_serving_config_invalid_values(self):
+        base_data = {
+            "type": "movies",
+            "display_name": "Movies",
+            "card_type": "movie",
+            "dataset": {"adapter": "movielens", "variant": "100k"},
+            "signal": {"positive_threshold": 4.0},
+            "split": {"strategy": "chronological", "ratio": 0.8},
+            "model": {"name": "sar"},
+        }
+
+        # min_positive_items_for_personalization < 1
+        data1 = dict(base_data, serving={"min_positive_items_for_personalization": 0})
+        with pytest.raises(ValidationError):
+            ContentTypeSpec.model_validate(data1)
+
+        # explanation_min_threshold < 0.0
+        data2 = dict(base_data, serving={"explanation_min_threshold": -0.1})
+        with pytest.raises(ValidationError):
+            ContentTypeSpec.model_validate(data2)
+
+        # explanation_min_threshold > 1.0
+        data3 = dict(base_data, serving={"explanation_min_threshold": 1.1})
+        with pytest.raises(ValidationError):
+            ContentTypeSpec.model_validate(data3)

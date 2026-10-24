@@ -205,6 +205,17 @@ class ServingConfig(SchemaBase):
 
     top_neighbors_per_item: int = Field(default=50, ge=1)
     max_items_in_similarity: int = Field(default=8000, ge=1)
+    min_positive_items_for_personalization: int = Field(
+        default=3,
+        ge=1,
+        description="Minimum positive interactions required before serving personalized recommendations",
+    )
+    explanation_min_threshold: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=1.0,
+        description="Minimum contribution share required to display an explanation reason",
+    )
 
 
 class ContentTypeSpec(SchemaBase):
