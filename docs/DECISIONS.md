@@ -117,10 +117,10 @@ Use `spec.model_copy(deep=True)` when applying overrides in `engine.config.apply
 1. For hypothetical cold-start histories without timestamps, a flat weighting convention is used (the explicit float signal or default 1.0) to construct the affinity row vector.
 2. In `SarModel.recommend_history`, `max_history_length` defaults to `None` so that full histories supplied during evaluation or consistency audits are not truncated prematurely.
 3. For consistency verification (R3):
-   - Under flat weighting (`timedecay_formula: false`), `recommend_user` and `recommend_history` on raw training signals produce 100% bit-for-bit identical recommendations for 50 sampled known users.
-   - Under time-decayed models (`timedecay_formula: true`), `recommend_history` supplied with the user's decayed training affinities produces 100% bit-for-bit identical recommendations for 50 sampled known users.
+   - Under flat weighting (`timedecay_formula: false`), `recommend_user` and `recommend_history` on raw training signals produce identical recommendation item lists and numerical scores (within floating-point tolerance `rel=1e-5`).
+   - Under shipped time-decayed models (`timedecay_formula: true`), scores between user-based and history-based scoring with flat hypothetical signals diverge predictably because user-based interactions are decayed by `2^(-dt / half_life)` whereas cold-start histories lack timestamps; when `recommend_history` is supplied with the user's exact decayed training affinities, recommendation item lists and numerical scores match within floating-point tolerance (`rel=1e-5`).
 
-**Consequences:** Clear, mathematically grounded consistency guarantee between user-based and history-based recommendation pipelines.
+**Consequences:** Clear, mathematically grounded consistency guarantee between user-based and history-based recommendation pipelines without misleading "bit-for-bit" claims regarding time-decayed versus un-decayed representations.
 
 **Related tasks:** P3.5, P3.6, R3
 
