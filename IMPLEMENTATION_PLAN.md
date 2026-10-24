@@ -34,7 +34,7 @@
 | Phase | Name | Done | In progress | Blocked | Total | % |
 |---|---|---|---|---|---|---|
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
-| 1 | Vendor, trim, and rename Recommenders into `discovery` | 8 | 0 | 0 | 9 | 88% |
+| 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 0 | 0 | 0 | 13 | 0% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **19** | | | **129** | **14%** |
+| | **Overall** | **20** | | | **129** | **15%** |
 
-`[##------------------] 14%  (19/129 tasks)`
+`[###-----------------] 15%  (20/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -136,7 +136,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P1.6** Write `backend/discovery/NOTICE.md` and `docs/ATTRIBUTION.md` (source URL, version, commit, trimming and modification summary, license statement). Write `tools/vendored_manifest.py` to generate `docs/VENDORED_FILES.md` (path, size, sha256, origin path). *Acceptance:* both documents complete; manifest regenerates deterministically.
 - [x] **P1.7** Smoke tests for the vendored code on tiny synthetic data: SAR fit and recommend; chronological split correctness; metrics (precision, recall, ndcg, map at k) against hand-computed values; TF-IDF recommender on 10 short documents; loaders' parsing functions on small fixture files (no network). *Acceptance:* all pass offline.
 - [x] **P1.8** Environment hygiene test: assert `pip show recommenders` fails in the project environment and `importlib.util.find_spec("recommenders")` is `None`. *Acceptance:* test passes in CI.
-- [ ] **P1.9** Phase 1 Gate (R10 full) and "break your own work" ritual. *Acceptance:* Session Log entry.
+- [x] **P1.9** Phase 1 Gate (R10 full) and "break your own work" ritual. *Acceptance:* Session Log entry.
 
 ---
 
@@ -367,8 +367,8 @@ Each item must keep the API free of deep-learning imports (training offline, art
 - **Environment:** macOS ARM64, Python 3.14.2, pytest 9.1.1, ruff 0.17.2, mypy 2.4.0
 - **Next steps:** Phase 1 (P1.1 — vendor Recommenders)
 
-### Session 3: 2026-10-24, agent session (Windows verification & continuation)
-- Started at: reconciliation of Phase 0   Ended at: P0.11 verified
+### Session 3: 2026-10-24, agent session (Windows verification, Phase 0 reconciliation, Phase 1 complete)
+- Started at: reconciliation of Phase 0   Ended at: P1.9 (Phase 1 complete)
 - **Reconciliation findings:**
   - Working tree was clean on startup.
   - Verified Phase 0 tasks on Windows 11 (Python 3.11.7):
@@ -376,8 +376,30 @@ Each item must keep the API free of deep-learning imports (training offline, art
     - All 7 tests in `backend/tests/unit/test_progress.py` passed.
     - `ruff check`, `ruff format --check`, and `mypy` passed with 0 errors across 33 source files.
     - `fetch_data.py --help` and `--dry-run` verified working.
-    - Ran `tools/progress.py` to refresh the dashboard to 11/11 (100% Phase 0).
-- **Decisions made:** D-005 (Windows environment verification)
+    - Refreshed dashboard to 11/11 (100% Phase 0).
+- **Completed this session:**
+  - Phase 0 verification: P0.3, P0.10, P0.11
+  - Phase 1 (all tasks P1.1 to P1.9):
+    - P1.1: Downloaded `recommenders==1.2.1` in throwaway venv outside repo, copied MIT LICENSE to `backend/discovery/LICENSE`, recorded version (D-006).
+    - P1.2: Traced transitive imports from engine entry points into 20 essential modules; documented in `docs/vendored_modules.txt`.
+    - P1.3: Copied exactly the 20 traced modules into `backend/discovery/` preserving sub-structure and copyright headers.
+    - P1.4: Rewrote all imports and references from `recommenders` to `discovery`. Verified 0 occurrences of `import recommenders` / `from recommenders`.
+    - P1.5: Made imports lightweight with minimal patches (lazy imports in `notebook_utils`, `tfidf_utils`, standard fallbacks in `download_utils`, `mind`, `movielens`). Added subprocess import purity test `test_vendored_imports.py` asserting 0 heavy frameworks (`tensorflow`, `pyspark`, `torch`, `cornac`).
+    - P1.6: Created `backend/discovery/NOTICE.md`, updated `docs/ATTRIBUTION.md`, created deterministic generator and checker `tools/vendored_manifest.py` generating `docs/VENDORED_FILES.md`, added `test_vendored_manifest.py`.
+    - P1.7: Added comprehensive smoke tests `test_vendored_smoke.py` covering: SAR fit and recommend with seen item exclusion; chronological split correctness without temporal leakage; metrics (precision, recall, MAP, NDCG) against exact hand-computed values; TF-IDF recommender on 10 documents; offline MovieLens parsing. Fixed NumPy 2.x `np.NaN` -> `np.nan` compatibility (D-007).
+    - P1.8: Added environment hygiene tests `test_environment_hygiene.py` verifying `pip show recommenders` fails and `find_spec("recommenders")` is None.
+    - P1.9: Completed Phase 1 Gate and break-your-own-work ritual.
+- **Phase 1 Gate results:**
+  - R10 (Licensing & Attribution, full): LICENSE and copyright headers preserved; `NOTICE.md` and `ATTRIBUTION.md` complete and current; `docs/VENDORED_FILES.md` manifest lists all 22 files with SHA-256 hashes; `grep -rniE "import recommenders|from recommenders" backend/` returns 0; `pip show recommenders` fails; `find_spec("recommenders")` is None ✓
+  - R6 (Reproducibility): `tools/vendored_manifest.py --check` passes; all 16 tests run offline without network ✓
+  - Break-your-own-work ritual:
+    1. Transitive heavy imports check: Subprocess test verified `tensorflow`, `pyspark`, `torch`, `cornac` are absent from `sys.modules`.
+    2. Hidden legacy package imports check: Regex scanner verified zero `import recommenders` or `from recommenders` in `backend/`.
+    3. Manifest drift check: Deterministic manifest checker verified exact file set and checksums on disk.
+    4. NumPy 2.x breaking changes check: Discovered and eliminated `np.NaN` removal in SAR lookups, replacing with `np.nan`.
+    5. Network isolation check: MovieLens and TF-IDF parsing verified in offline fixtures using local temporary directories.
+- **Decisions made:** D-005 (Windows environment verification), D-006 (Recommenders 1.2.1 source and license), D-007 (API naming `python_chrono_split` and NumPy 2.x `np.nan` patch).
 - **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1, ruff 0.17.2, mypy 2.4.0
-- **Next steps:** Phase 1 (P1.1 — vendor Recommenders)
+- **Next steps:** Phase 2: Core engine abstractions (P2.1 — `engine/schema.py`)
+
 
