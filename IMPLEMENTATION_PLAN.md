@@ -343,7 +343,7 @@ Each item must keep the API free of deep-learning imports (training offline, art
 ### Session 0: plan created
 - Plan written; no code yet. Next: Phase 0, task P0.1.
 
-### Session 1: 2024-10-24, agent session
+### Session 1: 2026-10-24, agent session
 - Started at: P0.1   Ended at: P0.10 (in progress)
 - Completed: P0.1, P0.2, P0.4, P0.5, P0.6, P0.7, P0.8, P0.9
 - In progress ([~]): P0.3 (pyproject.toml created, pip install running)
@@ -432,6 +432,24 @@ Each item must keep the API free of deep-learning imports (training offline, art
 - **Decisions made:** D-008 (Fast overrides dataclass deepcopy and schema immutability).
 - **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (109 tests passing), ruff 0.17.2 clean, mypy strict clean (26 source files).
 - **Next steps:** Phase 3: Movies pipeline (P3.1 — MovieLens section in `docs/DATASETS.md` & download step in `fetch_data.py`).
+
+### Session 5: 2026-10-24, agent session (Phase 3 progress & reconciliation pass)
+- Started at: P3.1   Ended at: FIX pass (FIX-2 through FIX-6 complete, continuing reconciliation)
+- **Completed this session:**
+  - P3.1: Documented MovieLens dataset variants and citations in `docs/DATASETS.md`; implemented download with SSL fallback in `backend/scripts/fetch_data.py`; added `test_fetch_data.py`.
+  - P3.2: Implemented `MovieLensAdapter` in `backend/engine/adapters/movielens.py` with comprehensive regex title cleaning (trailing years, alternate titles, article repositioning), genre parsing, and interaction filtering; added `test_movielens_adapter.py`.
+  - P3.3: Implemented `validate()` data report (R1) in `MovieLensAdapter` and generated `artifacts/movies/data_report.json` on real MovieLens 1M data (999,611 interactions, 6,040 users, 3,416 items, 0.951552 sparsity).
+  - P3.4: Performed chronological per-user split via `EvaluationHarness`; verified R2 temporal leakage checks pass on real 100K and 1M data. Fixed column collision and rating column mapping in `metrics.py`; added `test_movies_split_leakage.py`.
+  - P3.5: Implemented `SarModel` wrapper in `backend/engine/models/sar.py` over vendored `SARSingleNode`; resolved circular import via lazy baseline registration in `engine/registry.py`; implemented numpy-safe JSON serialization in `save()`/`load()`; added unit tests in `test_sar.py`.
+  - P3.6: Implemented SAR cold-start scoring via sparse similarity matrix multiplication; resolved history length truncation and documented flat weighting convention for timestamp-less hypothetical histories (D-009); added 50-user consistency integration tests in `test_sar_consistency.py`.
+  - FIX-2: Added `.gitattributes` (`* text=auto eol=lf`), renormalized repository with `git add --renormalize .`, made `tools/vendored_manifest.py` line-ending invariant (`b"\r\n"` -> `b"\n"`), and regenerated `docs/VENDORED_FILES.md`.
+  - FIX-3: Removed `|| true` from mypy step in `.github/workflows/ci.yml`; added CI verification steps for `vendored_manifest.py --check` and `progress.py` dashboard sync (`git diff --exit-code IMPLEMENTATION_PLAN.md`).
+  - FIX-4: Removed all hardcoded content-type names from `engine/config.py`; added optional `fast:` section to `ContentTypeSpec`; moved per-type fast overrides into YAML configs (`movies.yaml`, `products.yaml`, `articles.yaml`); converted `apply_fast_overrides` into generic deep merge; added unit tests in `test_config.py`.
+  - FIX-5: Deleted `Project_details.md` and verified zero stale references across repository.
+  - FIX-6: Appended Session Log entries for P3.1–P3.6 and FIX pass; corrected 2024 dates in D-001 and Session 1.
+- **Decisions made:** D-009 (SAR cold-start weighting convention and consistency verification).
+- **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (145 tests passing), ruff clean, mypy strict clean.
+- **Next steps:** FIX-7 through FIX-12, Gate ritual, then continue with P3.7 in order.
 
 
 

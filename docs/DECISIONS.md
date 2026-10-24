@@ -4,7 +4,7 @@
 
 ---
 
-## D-001: Project license (2024-10-24)
+## D-001: Project license (2026-10-24)
 
 **Context:** Need to choose a license for the project's original code.
 
