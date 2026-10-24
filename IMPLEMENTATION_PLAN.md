@@ -35,7 +35,7 @@
 |---|---|---|---|---|---|---|
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
-| 2 | Core engine abstractions | 0 | 0 | 0 | 13 | 0% |
+| 2 | Core engine abstractions | 1 | 0 | 0 | 13 | 7% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **20** | | | **129** | **15%** |
+| | **Overall** | **21** | | | **129** | **16%** |
 
-`[###-----------------] 15%  (20/129 tasks)`
+`[###-----------------] 16%  (21/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -145,7 +145,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 **Goal:** the adaptive layer, independent of any dataset: schema, config, adapter and model interfaces, registry, baselines, evaluation harness, artifacts, training CLI.
 **Gates:** R2, R3 (baselines), R4 (harness correctness), R6.
 
-- [ ] **P2.1** Implement `engine/schema.py` (Interaction, Item, ScoredItem, Reason, ValidationReport, ContentTypeSpec) with strict validation and string ids. *Acceptance:* unit tests incl. rejection of bad data.
+- [x] **P2.1** Implement `engine/schema.py` (Interaction, Item, ScoredItem, Reason, ValidationReport, ContentTypeSpec) with strict validation and string ids. *Acceptance:* unit tests incl. rejection of bad data.
 - [ ] **P2.2** Implement `engine/config.py`: YAML loading, pydantic validation, config hash, `--fast` overrides (dataset variant, search grids). *Acceptance:* invalid configs fail with readable messages; tests cover missing fields and wrong types.
 - [ ] **P2.3** Implement `adapters/base.py` and `models/base.py` exactly as in section 6, plus `errors.py` (`UnknownType`, `UnknownUser`, `UnknownItem`, `ColdStartUnsupported`, `ArtifactError`). *Acceptance:* abstract classes with docstrings and type hints; mypy strict passes.
 - [ ] **P2.4** Implement baselines in `models/baselines.py`: `PopularityModel` (count of positive interactions; ties broken deterministically by item id) and `RandomModel` (seeded; deterministic per user). Both implement the full interface including cold start. *Acceptance:* R3 invariants hold (property tests with hypothesis).
