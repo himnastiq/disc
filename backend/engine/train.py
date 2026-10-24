@@ -187,6 +187,7 @@ def run_pipeline(
         metrics=metrics,
         demo_users=demo_users,
         topn=topn_df,
+        extra_files={"data_report.json": report.model_dump()},
     )
 
     log_event(logger, "artifacts_saved", manifest_path=str(manifest_p))

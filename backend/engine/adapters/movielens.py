@@ -13,9 +13,10 @@ from engine.adapters.base import DatasetAdapter
 from engine.evaluation.checks import check_r1_data_validity
 from engine.evaluation.splits import split_interactions
 from engine.registry import register_adapter
+from engine.schema import ValidationReport
 
 if TYPE_CHECKING:
-    from engine.schema import ContentTypeSpec, ValidationReport
+    from engine.schema import ContentTypeSpec
 
 
 def clean_movie_title(raw_title: str) -> tuple[str, int | None]:
@@ -181,6 +182,10 @@ class MovieLensAdapter(DatasetAdapter):
         raw = self.load_raw(self.raw_dir)
         raw_ratings = raw["ratings"]
 
+        self._raw_interactions_count = len(raw_ratings)
+        self._raw_users_count = int(raw_ratings["userID"].nunique())
+        self._raw_items_count = int(raw_ratings["itemID"].nunique())
+
         # Ensure catalogue items are loaded so we only include valid catalogue items
         catalogue = self.items()
         known_item_ids = set(catalogue["item_id"])
@@ -210,19 +215,57 @@ class MovieLensAdapter(DatasetAdapter):
             active_items = item_counts[item_counts >= min_item].index
             df = df[df["item_id"].isin(active_items)]
 
+        self._filtered_users_count = max(0, self._raw_users_count - int(df["user_id"].nunique()))
+        self._filtered_items_count = max(0, self._raw_items_count - int(df["item_id"].nunique()))
+
         # Add boolean positive flag
         df["positive"] = df["signal"] >= self.spec.signal.positive_threshold
 
         self._interactions_df = df.reset_index(drop=True)
         return self._interactions_df
 
-    def validate(self) -> ValidationReport:
-        """Validate MovieLens dataset against R1 data validity invariants."""
-        return check_r1_data_validity(
+    def validate(self, output_path: Path | None = None) -> ValidationReport:
+        """Validate MovieLens dataset against R1 data validity invariants and optionally write report to JSON."""
+        import json
+
+        base_report = check_r1_data_validity(
             interactions=self.interactions(),
             items=self.items(),
             positive_threshold=self.spec.signal.positive_threshold,
         )
+
+        filtered_users = getattr(self, "_filtered_users_count", 0)
+        filtered_items = getattr(self, "_filtered_items_count", 0)
+
+        report_data = base_report.model_dump()
+        report_data["filtered_users"] = filtered_users
+        report_data["filtered_items"] = filtered_items
+        report_data["details"] = {
+            "variant": self.spec.dataset.variant,
+            "min_user_interactions": self.spec.dataset.min_user_interactions,
+            "min_item_interactions": self.spec.dataset.min_item_interactions,
+            "raw_total_interactions": getattr(
+                self, "_raw_interactions_count", base_report.total_interactions
+            ),
+            "raw_unique_users": getattr(self, "_raw_users_count", base_report.unique_users),
+            "raw_unique_items": getattr(self, "_raw_items_count", base_report.unique_items),
+            "retained_interactions": base_report.total_interactions,
+            "retained_users": base_report.unique_users,
+            "retained_items": base_report.unique_items,
+            "timestamp_range_seconds": (
+                (base_report.max_timestamp - base_report.min_timestamp)
+                if base_report.max_timestamp is not None and base_report.min_timestamp is not None
+                else 0
+            ),
+        }
+
+        report = ValidationReport.model_validate(report_data)
+
+        if output_path is not None:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(json.dumps(report.model_dump(), indent=2), encoding="utf-8")
+
+        return report
 
     def split(self, interactions: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Split interactions using configured strategy and verify R2 leakage invariants."""

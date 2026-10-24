@@ -151,3 +151,27 @@ def test_movielens_adapter_real_100k_data() -> None:
     assert len(train_df) > len(valid_df)
     assert len(train_df) > len(test_df)
     assert not train_df.empty
+
+
+def test_movielens_adapter_validate_writes_report(tmp_path: Path) -> None:
+    """Verify validate(output_path) writes full R1 data report JSON file."""
+    import json
+
+    spec = load_config("movies", fast=True)
+    adapter = MovieLensAdapter(spec)
+
+    out_file = tmp_path / "data_report.json"
+    report = adapter.validate(output_path=out_file)
+
+    assert out_file.exists()
+    data = json.loads(out_file.read_text(encoding="utf-8"))
+
+    assert data["total_interactions"] == report.total_interactions
+    assert data["unique_users"] == report.unique_users
+    assert data["unique_items"] == report.unique_items
+    assert data["sparsity"] == report.sparsity
+    assert "filtered_users" in data
+    assert "filtered_items" in data
+    assert "min_timestamp" in data
+    assert "max_timestamp" in data
+    assert "details" in data
