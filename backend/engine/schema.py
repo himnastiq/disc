@@ -223,3 +223,6 @@ class ContentTypeSpec(SchemaBase):
     model: ModelConfig
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     serving: ServingConfig = Field(default_factory=ServingConfig)
+    fast: dict[str, Any] | None = Field(
+        default=None, description="Optional overrides applied in --fast mode"
+    )

@@ -29,3 +29,11 @@ evaluation:
 serving:
   top_neighbors_per_item: 50
   max_items_in_similarity: 8000
+fast:
+  dataset:
+    variant: "small"
+  model:
+    params:
+      max_features: 2000
+  evaluation:
+    cold_start_history_sizes: [0, 1, 3, 5]

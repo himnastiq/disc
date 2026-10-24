@@ -47,34 +47,34 @@ def get_config_path(path_or_type: str | Path, configs_dir: Path | None = None) -
     )
 
 
+def deep_merge(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+    """Recursively merge overrides dict into base dict."""
+    result = copy.deepcopy(base)
+    for key, val in overrides.items():
+        if key in result and isinstance(result[key], dict) and isinstance(val, dict):
+            result[key] = deep_merge(result[key], val)
+        else:
+            result[key] = copy.deepcopy(val)
+    return result
+
+
 def apply_fast_overrides(raw_dict: dict[str, Any]) -> dict[str, Any]:
-    """Apply --fast overrides to dataset variant and search parameters for quick developer runs."""
+    """Apply generic --fast overrides from the config's 'fast' section if present."""
     config = copy.deepcopy(raw_dict)
-    content_type = config.get("type", "")
+    if "fast" not in config or config["fast"] is None:
+        return config
 
-    dataset = config.setdefault("dataset", {})
-    if content_type == "movies":
-        dataset["variant"] = "100k"
-        dataset["min_user_interactions"] = min(dataset.get("min_user_interactions", 5), 3)
-        dataset["min_item_interactions"] = min(dataset.get("min_item_interactions", 5), 3)
-    elif content_type == "articles":
-        dataset["variant"] = "small"
-        if "model" in config and "params" in config["model"]:
-            params = config["model"]["params"]
-            if "max_features" in params:
-                params["max_features"] = min(params["max_features"], 2000)
-    elif content_type == "products":
-        dataset["variant"] = dataset.get("variant", "default")
-        if "serving" in config:
-            config["serving"]["max_items_in_similarity"] = min(
-                config["serving"].get("max_items_in_similarity", 8000), 2000
-            )
+    fast_section = config["fast"]
+    if not isinstance(fast_section, dict):
+        raise ConfigError(
+            f"The 'fast' configuration section must be a mapping/dict, got {type(fast_section).__name__}"
+        )
 
-    # Limit cold-start history sizes for fast test evaluation
-    if "evaluation" in config:
-        eval_cfg = config["evaluation"]
-        if "cold_start_history_sizes" in eval_cfg:
-            eval_cfg["cold_start_history_sizes"] = [0, 1, 3, 5]
+    for k, v in fast_section.items():
+        if k in config and isinstance(config[k], dict) and isinstance(v, dict):
+            config[k] = deep_merge(config[k], v)
+        else:
+            config[k] = copy.deepcopy(v)
 
     return config
 

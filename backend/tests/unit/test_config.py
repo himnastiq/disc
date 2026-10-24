@@ -97,3 +97,88 @@ model:
         msg = str(exc_info.value)
         assert "Configuration validation failed" in msg
         assert "positive_threshold" in msg
+
+    def test_fast_off_is_unchanged(self):
+        spec = load_config("movies", fast=False)
+        assert spec.dataset.variant == "1m"
+        assert spec.dataset.min_user_interactions == 5
+        assert spec.evaluation.cold_start_history_sizes == [0, 1, 2, 3, 5, 10, 20]
+
+    def test_fast_on_applies_yaml_overrides(self):
+        spec = load_config("movies", fast=True)
+        assert spec.dataset.variant == "100k"
+        assert spec.dataset.min_user_interactions == 3
+        assert spec.dataset.min_item_interactions == 3
+        assert spec.evaluation.cold_start_history_sizes == [0, 1, 3, 5]
+
+    def test_type_with_no_fast_section(self, tmp_path):
+        no_fast_yaml = tmp_path / "nofast.yaml"
+        content = """
+type: nofast
+display_name: No Fast
+card_type: movie
+dataset:
+  adapter: movielens
+  variant: "custom"
+  min_user_interactions: 5
+signal:
+  positive_threshold: 4.0
+split:
+  strategy: chronological
+  ratio: 0.8
+model:
+  name: sar
+"""
+        no_fast_yaml.write_text(content, encoding="utf-8")
+        spec_off = load_config(no_fast_yaml, fast=False)
+        spec_on = load_config(no_fast_yaml, fast=True)
+        assert spec_off.dataset.variant == "custom"
+        assert spec_on.dataset.variant == "custom"
+        assert spec_off.dataset.min_user_interactions == spec_on.dataset.min_user_interactions
+
+    def test_fast_section_bad_value_gives_config_error(self, tmp_path):
+        # Case A: fast section is not a dict
+        bad_fast_yaml = tmp_path / "bad_fast.yaml"
+        content = """
+type: badfast
+display_name: Bad Fast
+card_type: movie
+dataset:
+  adapter: movielens
+signal:
+  positive_threshold: 4.0
+split:
+  strategy: chronological
+  ratio: 0.8
+model:
+  name: sar
+fast: "not_a_mapping"
+"""
+        bad_fast_yaml.write_text(content, encoding="utf-8")
+        with pytest.raises(ConfigError) as exc_info:
+            load_config(bad_fast_yaml, fast=True)
+        assert "must be a mapping/dict" in str(exc_info.value)
+
+        # Case B: fast overrides break schema validation
+        broken_override_yaml = tmp_path / "broken_override.yaml"
+        content_b = """
+type: brokenoverride
+display_name: Broken Override
+card_type: movie
+dataset:
+  adapter: movielens
+signal:
+  positive_threshold: 4.0
+split:
+  strategy: chronological
+  ratio: 0.8
+model:
+  name: sar
+fast:
+  signal:
+    positive_threshold: "invalid_float"
+"""
+        broken_override_yaml.write_text(content_b, encoding="utf-8")
+        with pytest.raises(ConfigError) as exc_info_b:
+            load_config(broken_override_yaml, fast=True)
+        assert "Configuration validation failed" in str(exc_info_b.value)
