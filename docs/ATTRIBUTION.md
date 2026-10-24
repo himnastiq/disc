@@ -5,8 +5,8 @@
 This project contains code **derived from** [Recommenders](https://github.com/recommenders-team/recommenders) (formerly Microsoft Recommenders), licensed under the MIT License.
 
 - **Source repository:** https://github.com/recommenders-team/recommenders
-- **Source version:** <!-- TODO: fill in after P1.1 -->
-- **Source commit:** <!-- TODO: fill in after P1.1 -->
+- **Source version:** `1.2.1` (PyPI release `recommenders==1.2.1`)
+- **Source commit / tag:** Git tag `1.2.1` (`51b1451f28ffea99df38e833441ee45ca09ba3a9`)
 - **What was done:**
   - Trimmed to only the modules needed by this project (dataset loaders, splitters, evaluation metrics, SAR model, TF-IDF model, and their transitive utility dependencies)
   - Renamed the package from `recommenders` to `discovery`
@@ -14,6 +14,7 @@ This project contains code **derived from** [Recommenders](https://github.com/re
   - Minimal compatibility patches applied (documented in `backend/discovery/NOTICE.md`)
 - **Location in this repo:** `backend/discovery/`
 - **License:** MIT (original `LICENSE` preserved at `backend/discovery/LICENSE`)
+
 
 See also:
 - [`backend/discovery/NOTICE.md`](../backend/discovery/NOTICE.md) — modification log

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 # Regex patterns
@@ -137,7 +137,9 @@ def update_plan(plan_path: Path) -> bool:
         return False
 
     plan_path.write_text(new_text, encoding="utf-8")
-    print(f"Dashboard updated: {sum(p.done for p in phases)}/{sum(p.total for p in phases)} tasks done.")
+    print(
+        f"Dashboard updated: {sum(p.done for p in phases)}/{sum(p.total for p in phases)} tasks done."
+    )
     return True
 
 
@@ -148,7 +150,7 @@ def main() -> None:
         # Try current directory
         plan_path = Path("IMPLEMENTATION_PLAN.md")
     if not plan_path.exists():
-        print(f"ERROR: Cannot find IMPLEMENTATION_PLAN.md")
+        print("ERROR: Cannot find IMPLEMENTATION_PLAN.md")
         sys.exit(1)
 
     update_plan(plan_path)

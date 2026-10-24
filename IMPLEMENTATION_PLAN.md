@@ -34,7 +34,7 @@
 | Phase | Name | Done | In progress | Blocked | Total | % |
 |---|---|---|---|---|---|---|
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
-| 1 | Vendor, trim, and rename Recommenders into `discovery` | 5 | 0 | 0 | 9 | 55% |
+| 1 | Vendor, trim, and rename Recommenders into `discovery` | 6 | 0 | 0 | 9 | 66% |
 | 2 | Core engine abstractions | 0 | 0 | 0 | 13 | 0% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **16** | | | **129** | **12%** |
+| | **Overall** | **17** | | | **129** | **13%** |
 
-`[##------------------] 12%  (16/129 tasks)`
+`[##------------------] 13%  (17/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -133,7 +133,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P1.3** Copy only those modules into `backend/discovery/`, keeping the internal sub-structure (`datasets/`, `evaluation/`, `models/`, `utils/`). Preserve original copyright headers. *Acceptance:* no file outside the traced list is present.
 - [x] **P1.4** Rewrite imports and string references from `recommenders` to `discovery` (code, logger names, docstring paths, any `__name__`-based lookups). *Acceptance:* `grep -rniE "import recommenders|from recommenders" backend/` returns nothing; mentions of the old name remain only in `LICENSE`, `NOTICE.md`, `docs/`, and header comments.
 - [x] **P1.5** Make top-level imports light: remove or lazy-import optional heavy dependencies in `__init__.py` and utility modules so that `import discovery.models.sar`, `discovery.models.tfidf`, `discovery.evaluation.python_evaluation`, and the dataset and splitter modules succeed with only `core` extras installed. Each patch must be minimal and listed in `NOTICE.md`. *Acceptance:* a test imports each used module in a subprocess and asserts that `tensorflow`, `pyspark`, `torch`, and `cornac` are **not** in `sys.modules`.
-- [ ] **P1.6** Write `backend/discovery/NOTICE.md` and `docs/ATTRIBUTION.md` (source URL, version, commit, trimming and modification summary, license statement). Write `tools/vendored_manifest.py` to generate `docs/VENDORED_FILES.md` (path, size, sha256, origin path). *Acceptance:* both documents complete; manifest regenerates deterministically.
+- [x] **P1.6** Write `backend/discovery/NOTICE.md` and `docs/ATTRIBUTION.md` (source URL, version, commit, trimming and modification summary, license statement). Write `tools/vendored_manifest.py` to generate `docs/VENDORED_FILES.md` (path, size, sha256, origin path). *Acceptance:* both documents complete; manifest regenerates deterministically.
 - [ ] **P1.7** Smoke tests for the vendored code on tiny synthetic data: SAR fit and recommend; chronological split correctness; metrics (precision, recall, ndcg, map at k) against hand-computed values; TF-IDF recommender on 10 short documents; loaders' parsing functions on small fixture files (no network). *Acceptance:* all pass offline.
 - [ ] **P1.8** Environment hygiene test: assert `pip show recommenders` fails in the project environment and `importlib.util.find_spec("recommenders")` is `None`. *Acceptance:* test passes in CI.
 - [ ] **P1.9** Phase 1 Gate (R10 full) and "break your own work" ritual. *Acceptance:* Session Log entry.
