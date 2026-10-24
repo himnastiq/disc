@@ -82,9 +82,24 @@
 
 **Related tasks:** P1.1, P1.6
 
+## D-007: Recommenders API adjustments and NumPy 2 compatibility (2026-10-24)
+
+**Context:** During P1.7 smoke testing of the vendored `discovery` package against actual source:
+1. The plan named the chronological splitter `python_chronological_split`. The actual function name in `discovery.datasets.python_splitters` is `python_chrono_split`.
+2. NumPy 2.x removed the expired attribute `np.NaN` in favor of `np.nan`. `SARSingleNode` in Recommenders 1.2.1 used `np.NaN` in item/user mapping lookups.
+
+**Decision:**
+1. Use `python_chrono_split` as the real splitter API name (per operating rule 6).
+2. Patch `models/sar/sar_singlenode.py` to use `np.nan` instead of `np.NaN`.
+
+**Consequences:** `discovery` works seamlessly across both NumPy 1.x and NumPy 2.x environments.
+
+**Related tasks:** P1.5, P1.7, P2.6
+
 ---
 
 <!-- Add new entries above this line -->
+
 
 
 

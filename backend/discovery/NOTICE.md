@@ -39,6 +39,8 @@ To ensure `backend/discovery/` can be imported in a lightweight environment with
 - **`models/tfidf/tfidf_utils.py`:** Removed top-level imports of `BertTokenizer`, `nltk`, and `PorterStemmer`; lazy-imported them within `__tokenize` only when `bert`, `scibert`, or `nltk` tokenization methods are explicitly requested.
 - **`datasets/movielens.py`:** Made `pandera` optional for the test-only `MockMovielensSchema` class so core dataset loading does not require pandera.
 - **`models/tfidf/__init__.py`:** Exported `TfidfRecommender` from `discovery.models.tfidf`.
+- **`models/sar/sar_singlenode.py`:** Replaced removed NumPy 2.0 alias `np.NaN` with `np.nan` for forward and backward NumPy compatibility.
+
 
 ## Manifest of Vendored Files
 
