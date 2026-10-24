@@ -1,0 +1,27 @@
+type: toy
+display_name: Toy Synthetic
+card_type: product
+dataset:
+  adapter: toy
+  variant: "default"
+  min_user_interactions: 3
+  min_item_interactions: 3
+signal:
+  positive_threshold: 4.0
+  use_rating_as_weight: true
+split:
+  strategy: chronological
+  ratio: 0.8
+  seed: 42
+model:
+  name: popularity
+  params: {}
+  allow_repeat: false
+  supports_cold_start: true
+evaluation:
+  k: [5, 10]
+  cold_start_history_sizes: [0, 1, 3, 5]
+  baselines: [popularity, random]
+serving:
+  top_neighbors_per_item: 10
+  max_items_in_similarity: 100

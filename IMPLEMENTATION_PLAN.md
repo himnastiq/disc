@@ -35,7 +35,7 @@
 |---|---|---|---|---|---|---|
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
-| 2 | Core engine abstractions | 11 | 0 | 0 | 13 | 84% |
+| 2 | Core engine abstractions | 12 | 0 | 0 | 13 | 92% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **31** | | | **129** | **24%** |
+| | **Overall** | **32** | | | **129** | **24%** |
 
-`[####----------------] 24%  (31/129 tasks)`
+`[####----------------] 24%  (32/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -156,7 +156,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P2.9** Implement `evaluation/checks.py`: reusable invariant checkers for R1 to R5 that can be called from tests, from the harness, and from the API tests. *Acceptance:* used by at least the harness and the baseline tests.
 - [x] **P2.10** Implement `artifacts.py`: save and load per section 6.5, manifest, checksums, schema version, clear failure modes (missing file, bad checksum, version mismatch). *Acceptance:* corruption tests (flip a byte, delete a file) raise `ArtifactError` with an actionable message.
 - [x] **P2.11** Implement `explain.py` and `coldstart.py` helper utilities that are model-agnostic (history normalisation: dedupe, drop unknown ids and report them, cap length, validate signals). *Acceptance:* unit tests including empty, duplicate, and unknown ids.
-- [ ] **P2.12** Implement `train.py` CLI: `python -m engine.train --type X [--fast] [--seed N]` (load config, adapter, validate, split, fit, evaluate, write artifacts, print a summary). Structured logging via `logging_utils.py`. *Acceptance:* works on a synthetic "toy" adapter used only in tests.
+- [x] **P2.12** Implement `train.py` CLI: `python -m engine.train --type X [--fast] [--seed N]` (load config, adapter, validate, split, fit, evaluate, write artifacts, print a summary). Structured logging via `logging_utils.py`. *Acceptance:* works on a synthetic "toy" adapter used only in tests.
 - [ ] **P2.13** Phase 2 Gate and "break your own work" ritual. *Acceptance:* Session Log entry.
 
 ---
