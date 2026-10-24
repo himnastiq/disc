@@ -68,8 +68,23 @@
 
 **Related tasks:** P0.3, P0.10
 
+## D-006: Recommenders source version and license (2026-10-24)
+
+**Context:** P1.1 requires selecting a pinned release of `recommenders` from PyPI that supports Python 3.11, installing it in a throwaway virtualenv outside the repo, copying its LICENSE into `backend/discovery/LICENSE`, and recording the version.
+
+**Decision:**
+- **Package:** `recommenders`
+- **PyPI version:** `1.2.1`
+- **Release tag / commit:** Git tag `1.2.1` (`51b1451f28ffea99df38e833441ee45ca09ba3a9` at https://github.com/recommenders-team/recommenders)
+- **License:** MIT (Copyright (c) 2018-present Microsoft Corporation, 2023-present Recommenders contributors) copied to `backend/discovery/LICENSE`.
+
+**Consequences:** `1.2.1` is the base from which `backend/discovery/` will be trimmed and renamed in subsequent Phase 1 tasks.
+
+**Related tasks:** P1.1, P1.6
+
 ---
 
 <!-- Add new entries above this line -->
+
 
 
