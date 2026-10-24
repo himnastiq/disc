@@ -35,7 +35,7 @@
 |---|---|---|---|---|---|---|
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
-| 2 | Core engine abstractions | 1 | 0 | 0 | 13 | 7% |
+| 2 | Core engine abstractions | 2 | 0 | 0 | 13 | 15% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **21** | | | **129** | **16%** |
+| | **Overall** | **22** | | | **129** | **17%** |
 
-`[###-----------------] 16%  (21/129 tasks)`
+`[###-----------------] 17%  (22/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
