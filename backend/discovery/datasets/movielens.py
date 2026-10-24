@@ -33,10 +33,14 @@ try:
 except ImportError:
     pass  # so the environment without spark doesn't break
 
-import pandera as pa
-import pandera.extensions as extensions
-from pandera import Field
-from pandera.typing import Series
+try:
+    import pandera as pa
+    import pandera.extensions as extensions
+    from pandera import Field
+    from pandera.typing import Series
+except ImportError:
+    pa = None
+
 
 
 class _DataFormat:
@@ -576,134 +580,109 @@ def extract_movielens(size, rating_path, item_path, zip_path):
             shutil.copyfileobj(zf, f)
 
 
-# For more information on data synthesis, see https://pandera.readthedocs.io/en/latest/data_synthesis_strategies.html
-@extensions.register_check_method(statistics=["columns"], supported_types=pd.DataFrame)
-def unique_columns(df, *, columns):
-    return not df[columns].duplicated().any()
+if pa is not None:
+    @extensions.register_check_method(statistics=["columns"], supported_types=pd.DataFrame)
+    def unique_columns(df, *, columns):
+        return not df[columns].duplicated().any()
 
-
-class MockMovielensSchema(pa.DataFrameModel):
-    """
-    Mock dataset schema to generate fake data for testing purpose.
-    This schema is configured to mimic the Movielens dataset
-
-    https://files.grouplens.org/datasets/movielens/ml-100k/
-
-    Dataset schema and generation is configured using pandera.
-    Please see https://pandera.readthedocs.io/en/latest/schema_models.html
-    for more information.
-    """
-
-    # Some notebooks will do a cross join with userID and itemID,
-    # a sparse range for these IDs can slow down the notebook tests
-    userID: Series[int] = Field(
-        in_range={"min_value": 1, "max_value": 50}, alias=DEFAULT_USER_COL
-    )
-    itemID: Series[int] = Field(
-        in_range={"min_value": 1, "max_value": 50}, alias=DEFAULT_ITEM_COL
-    )
-    rating: Series[float] = Field(
-        in_range={"min_value": 1, "max_value": 5}, alias=DEFAULT_RATING_COL
-    )
-    timestamp: Series[int] = Field(
-        in_range={"min_value": 0, "max_value": 1e9}, alias=DEFAULT_TIMESTAMP_COL
-    )
-    title: Series[str] = Field(eq="foo", alias=DEFAULT_TITLE_COL)
-    genre: Series[str] = Field(eq="genreA|0", alias=DEFAULT_GENRE_COL)
-
-    @classmethod
-    def get_df(
-        cls,
-        size: int = 3,
-        seed: int = 100,
-        keep_first_n_cols: Optional[int] = None,
-        keep_title_col: bool = False,
-        keep_genre_col: bool = False,
-    ) -> pd.DataFrame:
-        """Return fake movielens dataset as a Pandas Dataframe with specified rows.
-
-        Args:
-            size (int): number of rows to generate
-            seed (int, optional): seeding the pseudo-number generation. Defaults to 100.
-            keep_first_n_cols (int, optional): keep the first n default movielens columns.
-            keep_title_col (bool): remove the title column if False. Defaults to True.
-            keep_genre_col (bool): remove the genre column if False. Defaults to True.
-
-        Returns:
-            pandas.DataFrame: a mock dataset
+    class MockMovielensSchema(pa.DataFrameModel):
         """
-        schema = cls.to_schema()
-        if keep_first_n_cols is not None:
-            if keep_first_n_cols < 1 or keep_first_n_cols > len(DEFAULT_HEADER):
-                raise ValueError(
-                    f"Invalid value for 'keep_first_n_cols': {keep_first_n_cols}. Valid range: [1-{len(DEFAULT_HEADER)}]"
-                )
-            schema = schema.remove_columns(DEFAULT_HEADER[keep_first_n_cols:])
-        if not keep_title_col:
-            schema = schema.remove_columns([DEFAULT_TITLE_COL])
-        if not keep_genre_col:
-            schema = schema.remove_columns([DEFAULT_GENRE_COL])
+        Mock dataset schema to generate fake data for testing purpose.
+        This schema is configured to mimic the Movielens dataset
 
-        random.seed(seed)
-        schema.checks = [pa.Check.unique_columns([DEFAULT_USER_COL, DEFAULT_ITEM_COL])]
-        return schema.example(size=size)
+        https://files.grouplens.org/datasets/movielens/ml-100k/
 
-    @classmethod
-    def get_spark_df(
-        cls,
-        spark,
-        size: int = 3,
-        seed: int = 100,
-        keep_title_col: bool = False,
-        keep_genre_col: bool = False,
-        tmp_path: Optional[str] = None,
-    ):
-        """Return fake movielens dataset as a Spark Dataframe with specified rows
-
-        Args:
-            spark (SparkSession): spark session to load the dataframe into
-            size (int): number of rows to generate
-            seed (int): seeding the pseudo-number generation. Defaults to 100.
-            keep_title_col (bool): remove the title column if False. Defaults to False.
-            keep_genre_col (bool): remove the genre column if False. Defaults to False.
-            tmp_path (str, optional): path to store files for serialization purpose
-                when transferring data from python to java.
-                If None, a temporal path is used instead
-
-        Returns:
-            pyspark.sql.DataFrame: a mock dataset
+        Dataset schema and generation is configured using pandera.
+        Please see https://pandera.readthedocs.io/en/latest/schema_models.html
+        for more information.
         """
-        pandas_df = cls.get_df(
-            size=size, seed=seed, keep_title_col=True, keep_genre_col=True
+
+        # Some notebooks will do a cross join with userID and itemID,
+        # a sparse range for these IDs can slow down the notebook tests
+        userID: Series[int] = Field(
+            in_range={"min_value": 1, "max_value": 50}, alias=DEFAULT_USER_COL
         )
+        itemID: Series[int] = Field(
+            in_range={"min_value": 1, "max_value": 50}, alias=DEFAULT_ITEM_COL
+        )
+        rating: Series[float] = Field(
+            in_range={"min_value": 1, "max_value": 5}, alias=DEFAULT_RATING_COL
+        )
+        timestamp: Series[int] = Field(
+            in_range={"min_value": 0, "max_value": 1e9}, alias=DEFAULT_TIMESTAMP_COL
+        )
+        title: Series[str] = Field(eq="foo", alias=DEFAULT_TITLE_COL)
+        genre: Series[str] = Field(eq="genreA|0", alias=DEFAULT_GENRE_COL)
 
-        # generate temp folder
-        with download_path(tmp_path) as tmp_folder:
-            filepath = os.path.join(tmp_folder, f"mock_movielens_{size}.csv")
-            # serialize the pandas.df as a csv to avoid the expensive java <-> python communication
-            pandas_df.to_csv(filepath, header=False, index=False)
-            spark_df = spark.read.csv(
-                filepath, schema=cls._get_spark_deserialization_schema()
+        @classmethod
+        def get_df(
+            cls,
+            size: int = 3,
+            seed: int = 100,
+            keep_first_n_cols: Optional[int] = None,
+            keep_title_col: bool = False,
+            keep_genre_col: bool = False,
+        ) -> pd.DataFrame:
+            schema = cls.to_schema()
+            if keep_first_n_cols is not None:
+                if keep_first_n_cols < 1 or keep_first_n_cols > len(DEFAULT_HEADER):
+                    raise ValueError(
+                        f"Invalid value for 'keep_first_n_cols': {keep_first_n_cols}. Valid range: [1-{len(DEFAULT_HEADER)}]"
+                    )
+                schema = schema.remove_columns(DEFAULT_HEADER[keep_first_n_cols:])
+            if not keep_title_col:
+                schema = schema.remove_columns([DEFAULT_TITLE_COL])
+            if not keep_genre_col:
+                schema = schema.remove_columns([DEFAULT_GENRE_COL])
+
+            random.seed(seed)
+            schema.checks = [pa.Check.unique_columns([DEFAULT_USER_COL, DEFAULT_ITEM_COL])]
+            return schema.example(size=size)
+
+        @classmethod
+        def get_spark_df(
+            cls,
+            spark,
+            size: int = 3,
+            seed: int = 100,
+            keep_title_col: bool = False,
+            keep_genre_col: bool = False,
+            tmp_path: Optional[str] = None,
+        ):
+            pandas_df = cls.get_df(
+                size=size, seed=seed, keep_title_col=True, keep_genre_col=True
             )
-            # Cache and force trigger action since data-file might be removed.
-            spark_df.cache()
-            spark_df.count()
 
-        if not keep_title_col:
-            spark_df = spark_df.drop(DEFAULT_TITLE_COL)
-        if not keep_genre_col:
-            spark_df = spark_df.drop(DEFAULT_GENRE_COL)
-        return spark_df
+            with download_path(tmp_path) as tmp_folder:
+                filepath = os.path.join(tmp_folder, f"mock_movielens_{size}.csv")
+                pandas_df.to_csv(filepath, header=False, index=False)
+                spark_df = spark.read.csv(
+                    filepath, schema=cls._get_spark_deserialization_schema()
+                )
+                spark_df.cache()
+                spark_df.count()
 
-    @classmethod
-    def _get_spark_deserialization_schema(cls):
-        return StructType(
-            [
-                StructField(DEFAULT_USER_COL, IntegerType()),
-                StructField(DEFAULT_ITEM_COL, IntegerType()),
-                StructField(DEFAULT_RATING_COL, FloatType()),
-                StructField(DEFAULT_TIMESTAMP_COL, StringType()),
-                StructField(DEFAULT_TITLE_COL, StringType()),
-                StructField(DEFAULT_GENRE_COL, StringType()),
-            ]
-        )
+            if not keep_title_col:
+                spark_df = spark_df.drop(DEFAULT_TITLE_COL)
+            if not keep_genre_col:
+                spark_df = spark_df.drop(DEFAULT_GENRE_COL)
+            return spark_df
+
+        @classmethod
+        def _get_spark_deserialization_schema(cls):
+            return StructType(
+                [
+                    StructField(DEFAULT_USER_COL, IntegerType()),
+                    StructField(DEFAULT_ITEM_COL, IntegerType()),
+                    StructField(DEFAULT_RATING_COL, FloatType()),
+                    StructField(DEFAULT_TIMESTAMP_COL, StringType()),
+                    StructField(DEFAULT_TITLE_COL, StringType()),
+                    StructField(DEFAULT_GENRE_COL, StringType()),
+                ]
+            )
+else:
+    class MockMovielensSchema:  # type: ignore[no-redef]
+        @classmethod
+        def get_df(cls, *args, **kwargs):
+            raise ImportError("pandera is required to generate mock movielens data.")
+

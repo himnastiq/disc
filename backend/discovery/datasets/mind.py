@@ -8,7 +8,18 @@ import json
 import numpy as np
 import re
 from tqdm import tqdm
-from nltk.tokenize import RegexpTokenizer
+
+try:
+    from nltk.tokenize import RegexpTokenizer
+except ImportError:
+    class RegexpTokenizer:  # type: ignore[no-redef]
+        """Fallback RegexpTokenizer using re.findall when nltk is not installed."""
+        def __init__(self, pattern=r"\w+"):
+            self._pattern = re.compile(pattern)
+
+        def tokenize(self, text):
+            return self._pattern.findall(text)
+
 
 from discovery.datasets.download_utils import (
     maybe_download,

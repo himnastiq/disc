@@ -69,6 +69,8 @@ filterwarnings = [
 target-version = "py311"
 line-length = 100
 src = ["engine", "api", "tests", "scripts"]
+extend-exclude = ["discovery"]
+
 
 [tool.ruff.lint]
 select = [

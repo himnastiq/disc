@@ -3,9 +3,7 @@
 
 import os
 import re
-import nbformat
-from nbconvert.preprocessors import ExecutePreprocessor
-from IPython.display import display
+
 
 
 NOTEBOOK_OUTPUT_CONTENT_TYPE = "application/notebook_utils.json+json"
@@ -82,6 +80,9 @@ def execute_notebook(
     """
 
     # Load the Jupyter Notebook
+    import nbformat
+    from nbconvert.preprocessors import ExecutePreprocessor
+
     with open(input_notebook, "r") as notebook_file:
         notebook_content = nbformat.read(notebook_file, as_version=4)
 
@@ -115,6 +116,7 @@ def store_metadata(name, value):
         name (str): Name of the data.
         value (int,float,str): Value of the data.
     """
+    from IPython.display import display
 
     metadata = {"notebook_utils": {"name": name, "data": True, "display": False}}
     data_json = {
@@ -136,6 +138,8 @@ def read_notebook(path):
     Returns:
         dict: Dictionary of data stored in the notebook.
     """
+    import nbformat
+
     # Load the Jupyter Notebook
     with open(path, "r") as notebook_file:
         notebook_content = nbformat.read(notebook_file, as_version=4)

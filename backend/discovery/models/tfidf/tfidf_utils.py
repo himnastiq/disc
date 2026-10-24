@@ -4,14 +4,11 @@
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
-from transformers import BertTokenizer
 import re
 import unicodedata
 import pandas as pd
 import numpy as np
 
-import nltk
-from nltk.stem.porter import PorterStemmer
 
 
 class TfidfRecommender:
@@ -150,6 +147,8 @@ class TfidfRecommender:
                 bert_method = "allenai/scibert_scivocab_cased"
 
             # Load pre-trained model tokenizer (vocabulary)
+            from transformers import BertTokenizer
+
             tokenizer = BertTokenizer.from_pretrained(bert_method)
 
             # Loop through each item
@@ -159,6 +158,9 @@ class TfidfRecommender:
 
         elif self.tokenization_method == "nltk":
             # NLTK Stemming
+            import nltk
+            from nltk.stem.porter import PorterStemmer
+
             token_dict = {}  # noqa: F841
             stemmer = PorterStemmer()
 

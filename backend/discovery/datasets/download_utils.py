@@ -9,7 +9,32 @@ import zipfile
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 from tqdm import tqdm
-from retrying import retry
+
+try:
+    from retrying import retry
+except ImportError:
+    # Minimal fallback decorator when retrying package is not installed
+    def retry(wait_random_min=1000, wait_random_max=5000, stop_max_attempt_number=5):
+        def decorator(func):
+            import random
+            import time
+            from functools import wraps
+
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                for attempt in range(1, stop_max_attempt_number + 1):
+                    try:
+                        return func(*args, **kwargs)
+                    except Exception:
+                        if attempt == stop_max_attempt_number:
+                            raise
+                        sleep_s = random.uniform(wait_random_min, wait_random_max) / 1000.0
+                        time.sleep(sleep_s)
+
+            return wrapper
+
+        return decorator
+
 
 
 log = logging.getLogger(__name__)
