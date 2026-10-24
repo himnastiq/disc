@@ -1,0 +1,144 @@
+"""Unit tests for evaluation metrics with hand-computed verification (P2.7 / R4)."""
+
+from typing import Any
+
+import pandas as pd
+import pytest
+
+from engine.evaluation.metrics import (
+    coverage,
+    hit_rate,
+    intra_list_diversity,
+    mean_average_precision,
+    ndcg,
+    novelty,
+    personalisation_score,
+    precision,
+    recall,
+)
+
+
+@pytest.fixture
+def tiny_fixture() -> dict[str, Any]:
+    catalog_items = ["i1", "i2", "i3", "i4", "i5"]
+    item_categories = {
+        "i1": ["Action"],
+        "i2": ["Action", "Comedy"],
+        "i3": ["Comedy"],
+        "i4": ["Drama"],
+        "i5": ["Horror"],
+    }
+
+    # 4 train interactions: i1:1, i2:2, i4:1 (total N=4)
+    train_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i1", "rating": 1.0},
+            {"user_id": "u1", "item_id": "i2", "rating": 1.0},
+            {"user_id": "u2", "item_id": "i2", "rating": 1.0},
+            {"user_id": "u2", "item_id": "i4", "rating": 1.0},
+        ]
+    )
+
+    # Test ground truth: u1 has {i3}, u2 has {i1, i5}
+    true_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i3", "rating": 1.0},
+            {"user_id": "u2", "item_id": "i1", "rating": 1.0},
+            {"user_id": "u2", "item_id": "i5", "rating": 1.0},
+        ]
+    )
+
+    # Predictions:
+    # u1: i3 (0.9), i2 (0.8) -> hit on i3
+    # u2: i2 (0.95), i4 (0.7) -> 0 hits
+    pred_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i3", "score": 0.9},
+            {"user_id": "u1", "item_id": "i2", "score": 0.8},
+            {"user_id": "u2", "item_id": "i2", "score": 0.95},
+            {"user_id": "u2", "item_id": "i4", "score": 0.7},
+        ]
+    )
+
+    return {
+        "catalog_items": catalog_items,
+        "item_categories": item_categories,
+        "train_df": train_df,
+        "true_df": true_df,
+        "pred_df": pred_df,
+    }
+
+
+def test_hit_rate_against_hand_computed_value(tiny_fixture: dict[str, Any]) -> None:
+    hr = hit_rate(tiny_fixture["true_df"], tiny_fixture["pred_df"], k=2)
+    # Hand-computed: u1 hit (1), u2 miss (0) -> 1/2 = 0.5
+    assert hr == pytest.approx(0.5, abs=1e-5)
+
+
+def test_coverage_against_hand_computed_value(tiny_fixture: dict[str, Any]) -> None:
+    cov = coverage(tiny_fixture["pred_df"], tiny_fixture["catalog_items"], k=2)
+    # Hand-computed: rec items {i2, i3, i4} (3 items) out of 5 catalog items -> 3/5 = 0.6
+    assert cov == pytest.approx(0.6, abs=1e-5)
+
+
+def test_novelty_against_hand_computed_value(tiny_fixture: dict[str, Any]) -> None:
+    nov = novelty(tiny_fixture["pred_df"], tiny_fixture["train_df"], k=2)
+    # Hand-computed:
+    # i3: -log2(1/4) = 2.0
+    # i2: -log2(2/4) = 1.0
+    # i2: -log2(2/4) = 1.0
+    # i4: -log2(1/4) = 2.0
+    # Mean: (2 + 1 + 1 + 2) / 4 = 1.5
+    assert nov == pytest.approx(1.5, abs=1e-5)
+
+
+def test_intra_list_diversity_against_hand_computed_value(
+    tiny_fixture: dict[str, Any],
+) -> None:
+    div = intra_list_diversity(tiny_fixture["pred_df"], tiny_fixture["item_categories"], k=2)
+    # Hand-computed:
+    # u1: i3 ("Comedy") & i2 ("Action", "Comedy") -> Jaccard=1/2=0.5 -> dist=0.5
+    # u2: i2 ("Action", "Comedy") & i4 ("Drama") -> Jaccard=0/3=0.0 -> dist=1.0
+    # Mean: (0.5 + 1.0) / 2 = 0.75
+    assert div == pytest.approx(0.75, abs=1e-5)
+
+
+def test_personalisation_against_hand_computed_value(
+    tiny_fixture: dict[str, Any],
+) -> None:
+    pers = personalisation_score(tiny_fixture["pred_df"], k=2)
+    # Hand-computed:
+    # u1 top-2: {i2, i3}
+    # u2 top-2: {i2, i4}
+    # Intersection = {i2} (1), Union = {i2, i3, i4} (3)
+    # Jaccard = 1/3, Distance = 1.0 - 1/3 = 2/3
+    assert pers == pytest.approx(2.0 / 3.0, abs=1e-5)
+
+
+def test_ranking_metrics_against_hand_computed_values(
+    tiny_fixture: dict[str, Any],
+) -> None:
+    p = precision(tiny_fixture["true_df"], tiny_fixture["pred_df"], k=2)
+    # u1: 1 hit / 2 = 0.5. u2: 0 hits / 2 = 0.0 -> Mean = 0.25
+    assert p == pytest.approx(0.25, abs=1e-5)
+
+    r = recall(tiny_fixture["true_df"], tiny_fixture["pred_df"], k=2)
+    # u1: 1 hit / 1 actual = 1.0. u2: 0 hits / 2 actual = 0.0 -> Mean = 0.5
+    assert r == pytest.approx(0.5, abs=1e-5)
+
+    n = ndcg(tiny_fixture["true_df"], tiny_fixture["pred_df"], k=2)
+    assert n > 0.0
+
+    m = mean_average_precision(tiny_fixture["true_df"], tiny_fixture["pred_df"], k=2)
+    assert m > 0.0
+
+
+def test_empty_dataframe_metrics_graceful() -> None:
+    empty_df = pd.DataFrame(columns=["user_id", "item_id", "score"])
+    assert precision(empty_df, empty_df, k=5) == 0.0
+    assert recall(empty_df, empty_df, k=5) == 0.0
+    assert hit_rate(empty_df, empty_df, k=5) == 0.0
+    assert coverage(empty_df, ["i1", "i2"], k=5) == 0.0
+    assert novelty(empty_df, empty_df, k=5) == 0.0
+    assert intra_list_diversity(empty_df, {}, k=5) == 0.0
+    assert personalisation_score(empty_df, k=5) == 0.0
