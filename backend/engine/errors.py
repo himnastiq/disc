@@ -22,6 +22,15 @@ class DataValidationError(DiscoveryEngineError):
         self.details = details or {}
 
 
+class LeakageError(DiscoveryEngineError):
+    """Raised when data leakage is detected between train/valid/test partitions (R2)."""
+
+    def __init__(self, message: str, leaked_users: list[str] | None = None) -> None:
+        super().__init__(message)
+        self.message = message
+        self.leaked_users = leaked_users or []
+
+
 class ModelNotFoundError(DiscoveryEngineError):
     """Raised when a model architecture is not recognized in registry."""
 
