@@ -33,7 +33,7 @@
 <!-- PROGRESS:START -->
 | Phase | Name | Done | In progress | Blocked | Total | % |
 |---|---|---|---|---|---|---|
-| 0 | Scaffolding and tooling | 10 | 0 | 0 | 11 | 90% |
+| 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 0 | 0 | 0 | 9 | 0% |
 | 2 | Core engine abstractions | 0 | 0 | 0 | 13 | 0% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **10** | | | **129** | **7%** |
+| | **Overall** | **11** | | | **129** | **8%** |
 
-`[#-------------------] 7%  (10/129 tasks)`
+`[#-------------------] 8%  (11/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -366,3 +366,18 @@ Each item must keep the API free of deep-learning imports (training offline, art
 - **Decisions made:** D-002 (version bounds), D-003 (portable Makefile), D-004 (environment record)
 - **Environment:** macOS ARM64, Python 3.14.2, pytest 9.1.1, ruff 0.17.2, mypy 2.4.0
 - **Next steps:** Phase 1 (P1.1 — vendor Recommenders)
+
+### Session 3: 2026-10-24, agent session (Windows verification & continuation)
+- Started at: reconciliation of Phase 0   Ended at: P0.11 verified
+- **Reconciliation findings:**
+  - Working tree was clean on startup.
+  - Verified Phase 0 tasks on Windows 11 (Python 3.11.7):
+    - Installed `backend/.[core,dev]` into `.venv`.
+    - All 7 tests in `backend/tests/unit/test_progress.py` passed.
+    - `ruff check`, `ruff format --check`, and `mypy` passed with 0 errors across 33 source files.
+    - `fetch_data.py --help` and `--dry-run` verified working.
+    - Ran `tools/progress.py` to refresh the dashboard to 11/11 (100% Phase 0).
+- **Decisions made:** D-005 (Windows environment verification)
+- **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1, ruff 0.17.2, mypy 2.4.0
+- **Next steps:** Phase 1 (P1.1 — vendor Recommenders)
+

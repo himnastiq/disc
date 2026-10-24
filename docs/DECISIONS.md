@@ -56,7 +56,20 @@
 
 **Related tasks:** P0.10
 
+## D-005: Windows environment verification (2026-10-24)
+
+**Context:** The workspace is running on Windows 11 with Python 3.11.7. Verified fresh virtualenv setup and execution of tests and linters.
+
+**Record:**
+- **OS:** Windows 11 (x64)
+- **Python:** 3.11.7
+- **Key tool versions:** pytest 9.1.1, ruff 0.17.2, mypy 2.4.0, numpy 2.4.6, pandas 3.1.0, scipy 1.17.1, scikit-learn 1.9.1, fastapi 0.162.0, pydantic 2.14.1, hypothesis 6.170.9
+- **Checks result:** GREEN (lint + type check + 7 tests pass)
+
+**Related tasks:** P0.3, P0.10
+
 ---
 
 <!-- Add new entries above this line -->
+
 
