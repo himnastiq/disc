@@ -434,7 +434,7 @@ Each item must keep the API free of deep-learning imports (training offline, art
 - **Next steps:** Phase 3: Movies pipeline (P3.1 — MovieLens section in `docs/DATASETS.md` & download step in `fetch_data.py`).
 
 ### Session 5: 2026-10-24, agent session (Phase 3 progress & reconciliation pass)
-- Started at: P3.1   Ended at: FIX pass (FIX-2 through FIX-6 complete, continuing reconciliation)
+- Started at: P3.1   Ended at: Reconciliation Gate (FIX-2 through FIX-12 complete, Gate verified)
 - **Completed this session:**
   - P3.1: Documented MovieLens dataset variants and citations in `docs/DATASETS.md`; implemented download with SSL fallback in `backend/scripts/fetch_data.py`; added `test_fetch_data.py`.
   - P3.2: Implemented `MovieLensAdapter` in `backend/engine/adapters/movielens.py` with comprehensive regex title cleaning (trailing years, alternate titles, article repositioning), genre parsing, and interaction filtering; added `test_movielens_adapter.py`.
@@ -451,9 +451,17 @@ Each item must keep the API free of deep-learning imports (training offline, art
   - FIX-8: Raised `UnknownUser(uid, ...)` and `UnknownItem(item_id, ...)` with structured identifier attributes and asserted in tests.
   - FIX-9: Enforced non-increasing scores during popularity padding (`_pad_with_popular`) in SAR and verified with R3 invariant checks.
   - FIX-10: Implemented `top_neighbors_per_item` (sparse CSR top-K neighbors per item) and `max_items_in_similarity` (popularity-based item cap) in SAR serving path; verified memory scaling and R3 invariants.
+  - FIX-11: Strengthened `test_sar_consistency.py` with self-contained synthetic fixture version running in CI without downloaded data; documented expected time-decay mathematical divergence; verified score and item equality within floating-point tolerance; corrected "bit-for-bit" wording in D-009.
+  - FIX-12: Excluded test-only `toy.yaml` from `list_available_content_types()`; verified production content types list is exactly `['articles', 'movies', 'products']`.
+- **Break-your-own-work ritual (Reconciliation Pass):**
+  1. Line-ending & vendored hash invariance: Injected synthetic CRLF/LF variations into vendored files; confirmed `vendored_manifest.py --check` passes across line endings while immediately flagging real content byte mutations.
+  2. Fast overrides immutability & deep merge: Tested in-place mutation against loaded configurations; verified deep model copying prevents leakage into base configs and malformed override types raise actionable `ConfigError`.
+  3. Structured exception attributes: Intercepted `UnknownUser` and `UnknownItem` during recommendation and similarity serving; verified raw IDs remain accessible via `.user_id` / `.item_id` and error strings format properly.
+  4. Popularity padding score monotonicity: Injected sparse and zero-score candidate edge cases; verified `_pad_with_popular` strictly enforces non-increasing scores (`score[i] >= score[i+1]`) and passes `check_r3_model_invariants`.
+  5. Serving budget & sparsification boundaries: Configured tight neighbor cap (`top_neighbors_per_item=3`) and item budget (`max_items_in_similarity=5`); verified `item_similarity` is CSR with `nnz <= 3` per row, diagonal is 0.0, catalogue is not truncated, items outside budget fall back gracefully, and `list_available_content_types()` excludes `toy` returning exactly `['articles', 'movies', 'products']`.
 - **Decisions made:** D-009 (SAR cold-start weighting convention and consistency verification).
-- **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (151 tests passing), ruff clean, mypy strict clean.
-- **Next steps:** FIX-11 and FIX-12, Gate ritual, then continue with P3.7 in order.
+- **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (153 tests passing), ruff clean (66 source files), mypy strict clean (34 source files).
+- **Next steps:** Continue with P3.7 (Faithful SAR explanations and property test) in order.
 
 
 
