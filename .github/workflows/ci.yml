@@ -35,7 +35,16 @@ jobs:
       - name: Type check (mypy)
         run: |
           cd backend
-          mypy engine/ api/ || true  # Allow failures during early development
+          mypy engine/ api/
+
+      - name: Verify vendored manifest
+        run: |
+          python tools/vendored_manifest.py --check
+
+      - name: Verify progress dashboard
+        run: |
+          python tools/progress.py
+          git diff --exit-code IMPLEMENTATION_PLAN.md
 
       - name: Test (pytest)
         run: |
