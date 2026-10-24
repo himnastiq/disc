@@ -43,6 +43,39 @@ def _pad_with_popular(
     return result
 
 
+def sparsify_similarity(
+    sim: np.ndarray | sparse.spmatrix,
+    top_k: int,
+) -> sparse.csr_matrix:
+    """Retain only the top_k highest similarity neighbors per item row (excluding self).
+
+    Zeroes out diagonal (self-similarity), drops non-positive scores, and retains at most
+    top_k highest similarity entries per row, returning a compact scipy CSR matrix.
+    """
+    dense_sim = sim.toarray() if isinstance(sim, sparse.spmatrix) else np.array(sim, copy=True)
+
+    n = dense_sim.shape[0]
+    if n == 0:
+        return sparse.csr_matrix((0, 0), dtype=float)
+
+    # Zero out diagonal (self similarity is not a neighbor)
+    np.fill_diagonal(dense_sim, 0.0)
+
+    # If number of candidate neighbors (n - 1) is <= top_k, drop non-positive values
+    if n - 1 <= top_k:
+        dense_sim[dense_sim <= 0.0] = 0.0
+        return sparse.csr_matrix(dense_sim)
+
+    # For each row, find indices that are NOT in the top_k
+    kth = n - top_k
+    partitioned_indices = np.argpartition(dense_sim, kth, axis=1)
+    rows = np.arange(n)[:, None]
+    cols_to_zero = partitioned_indices[:, :kth]
+    dense_sim[rows, cols_to_zero] = 0.0
+    dense_sim[dense_sim <= 0.0] = 0.0
+    return sparse.csr_matrix(dense_sim)
+
+
 @register_model("sar")
 class SarModel(RecommenderModel):
     """Wrapper over vendored SAR (Simple Algorithm for Recommendations).
@@ -129,8 +162,15 @@ class SarModel(RecommenderModel):
             normalize=normalize,
         )
 
-        # Set index explicitly including all catalogue items to ensure complete coverage
-        cat_items_series = pd.Series(sorted(set(self.catalogue).union(set(sar_df["item_id"]))))
+        # Cap similarity matrix items by popularity if budget exceeded
+        max_items = self.spec.serving.max_items_in_similarity
+        if len(self.sorted_popular) > max_items:
+            sim_items_set = set(self.sorted_popular[:max_items])
+            sar_df = sar_df[sar_df["item_id"].isin(sim_items_set)].reset_index(drop=True)
+            cat_items_series = pd.Series(sorted(sim_items_set))
+        else:
+            cat_items_series = pd.Series(sorted(set(self.catalogue).union(set(sar_df["item_id"]))))
+
         users_series = pd.Series(sorted(sar_df["user_id"].unique()))
 
         self.sar.index2item = dict(enumerate(cat_items_series))
@@ -141,6 +181,13 @@ class SarModel(RecommenderModel):
         self.sar.n_items = len(self.sar.index2item)
 
         self.sar.fit(sar_df)
+
+        # Sparsify similarity matrix to top_neighbors_per_item
+        top_k_neighbors = self.spec.serving.top_neighbors_per_item
+        self.sar.item_similarity = sparsify_similarity(
+            self.sar.item_similarity, top_k=top_k_neighbors
+        )
+
         self._is_fitted = True
 
     def recommend_user(
@@ -275,26 +322,40 @@ class SarModel(RecommenderModel):
             raise RuntimeError("Model has not been fitted.")
 
         target_id = str(item_id)
-        if target_id not in self.sar.item2index:
+        if target_id not in self.catalogue:
             raise UnknownItem(item_id=target_id, content_type=self.spec.type)
+
+        if target_id not in self.sar.item2index:
+            # Item was capped out of similarity matrix by budget or has no interactions;
+            # Fall back to popular items
+            return self.popular(k=k, exclude_ids={target_id})
 
         i_idx = self.sar.item2index[target_id]
         sim_row = self.sar.item_similarity[i_idx, :]
 
-        if isinstance(sim_row, sparse.spmatrix):
-            sim_scores = sim_row.toarray().flatten()
-        else:
-            sim_scores = np.asarray(sim_row).flatten()
-
         candidates: list[tuple[float, str]] = []
-        for other_idx, s_val in enumerate(sim_scores):
-            # Query item itself must NEVER be returned
-            if other_idx == i_idx:
-                continue
-            other_id = self.sar.index2item[other_idx]
-            s = float(s_val)
-            if np.isfinite(s) and s > 0.0:
-                candidates.append((s, other_id))
+        if isinstance(sim_row, sparse.csr_matrix):
+            cols = sim_row.indices
+            vals = sim_row.data
+            for other_idx, s_val in zip(cols, vals, strict=False):
+                if other_idx == i_idx:
+                    continue
+                other_id = self.sar.index2item[other_idx]
+                s = float(s_val)
+                if np.isfinite(s) and s > 0.0:
+                    candidates.append((s, other_id))
+        else:
+            sim_scores = np.asarray(
+                sim_row.toarray() if isinstance(sim_row, sparse.spmatrix) else sim_row
+            ).flatten()
+            for other_idx, s_val in enumerate(sim_scores):
+                # Query item itself must NEVER be returned
+                if other_idx == i_idx:
+                    continue
+                other_id = self.sar.index2item[other_idx]
+                s = float(s_val)
+                if np.isfinite(s) and s > 0.0:
+                    candidates.append((s, other_id))
 
         candidates.sort(key=lambda x: (-x[0], x[1]))
 
@@ -303,8 +364,7 @@ class SarModel(RecommenderModel):
             selected_ids = {c[1] for c in candidates}
             combined_exclude = selected_ids.union({target_id})
             pop_recs = self.popular(k=k - len(candidates), exclude_ids=combined_exclude)
-            for p in pop_recs:
-                candidates.append((p.score, p.item_id))
+            candidates = _pad_with_popular(candidates, pop_recs)
 
         top_k = candidates[:k]
         return [

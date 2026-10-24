@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pandas as pd
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+from scipy import sparse
 
 from engine.config import load_config
 from engine.errors import UnknownItem, UnknownUser
@@ -235,3 +237,71 @@ def test_sar_popularity_padding_preserves_non_increasing_scores(
         assert hist_scores[i] >= hist_scores[i + 1], (
             f"Scores not non-increasing at index {i}: {hist_scores[i]} < {hist_scores[i + 1]}"
         )
+
+
+def test_sar_top_neighbors_per_item_sparsification(
+    small_movies_fixture: tuple[pd.DataFrame, pd.DataFrame],
+) -> None:
+    """Verify item_similarity retains at most top_neighbors_per_item sparse entries per row."""
+    interactions, items = small_movies_fixture
+    spec = load_config("movies", fast=True)
+    # Set tight neighbor cap of 3
+    spec.serving.top_neighbors_per_item = 3
+
+    model = SarModel(spec)
+    model.fit(interactions, items)
+    assert model.sar is not None
+    sim = model.sar.item_similarity
+    assert isinstance(sim, sparse.csr_matrix)
+
+    # Check each row has at most 3 non-zeros
+    nnz_per_row = np.diff(sim.indptr)
+    assert (nnz_per_row <= 3).all(), f"Row has > 3 neighbors: {nnz_per_row.max()}"
+
+    # Diagonal must be 0 (no self-similarity)
+    diag = sim.diagonal()
+    assert (diag == 0.0).all(), "Diagonal contains non-zero entries"
+
+    # similar_items must satisfy R3 invariants
+    for item_id in items["item_id"]:
+        recs = model.similar_items(item_id, k=5)
+        check_r3_model_invariants(recs, k=5, catalogue=set(items["item_id"]), query_item_id=item_id)
+
+
+def test_sar_max_items_in_similarity_budget_cap(
+    small_movies_fixture: tuple[pd.DataFrame, pd.DataFrame],
+) -> None:
+    """Verify max_items_in_similarity restricts similarity matrix to top-popular items."""
+    interactions, items = small_movies_fixture
+    spec = load_config("movies", fast=True)
+    # 15 items in small_movies_fixture; cap to top 5
+    spec.serving.max_items_in_similarity = 5
+
+    model = SarModel(spec)
+    model.fit(interactions, items)
+    assert model.sar is not None
+
+    # Similarity matrix must have exactly 5 items
+    assert model.sar.n_items == 5
+    assert len(model.sar.item2index) == 5
+    assert model.sar.item_similarity.shape == (5, 5)
+
+    # Full catalogue still retains all 15 items
+    assert len(model.catalogue) == 15
+
+    # Top 5 items are indeed the top 5 most popular
+    expected_top5 = set(model.sorted_popular[:5])
+    assert set(model.sar.item2index.keys()) == expected_top5
+
+    # Capped-out item falls back to popular and satisfies R3
+    capped_out_item = model.sorted_popular[-1]
+    assert capped_out_item not in model.sar.item2index
+    sims = model.similar_items(capped_out_item, k=5)
+    check_r3_model_invariants(
+        sims, k=5, catalogue=set(items["item_id"]), query_item_id=capped_out_item
+    )
+
+    # Unknown item not in catalogue still raises UnknownItem
+    with pytest.raises(UnknownItem) as exc_info:
+        model.similar_items("totally_unknown_movie", k=5)
+    assert exc_info.value.item_id == "totally_unknown_movie"
