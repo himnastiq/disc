@@ -129,12 +129,14 @@ class RecommenderModel(ABC):
         self,
         history_item_ids: list[str],
         recommended_item_id: str,
+        min_threshold: float | None = None,
     ) -> Reason | None:
         """Produce a faithful explanation identifying which history item contributed most to the score.
 
         Args:
             history_item_ids: List of item IDs from the user's history.
             recommended_item_id: Recommended item ID to explain.
+            min_threshold: Optional minimum contribution share threshold (defaults to serving config).
 
         Returns:
             Reason | None: Faithful attribution reason, or None if no sufficient attribution exists.

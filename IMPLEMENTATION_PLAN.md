@@ -36,7 +36,7 @@
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
-| 3 | Movies pipeline (MovieLens + SAR) | 6 | 0 | 0 | 13 | 46% |
+| 3 | Movies pipeline (MovieLens + SAR) | 7 | 0 | 0 | 13 | 53% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **39** | | | **129** | **30%** |
+| | **Overall** | **40** | | | **129** | **31%** |
 
-`[######--------------] 30%  (39/129 tasks)`
+`[######--------------] 31%  (40/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -172,7 +172,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P3.4** Chronological per-user split (train/valid/test) via the harness; run the leakage test (R2) on the real data. *Acceptance:* test passes on the real split.
 - [x] **P3.5** Implement `SarModel` wrapper over the vendored SAR class: fit from config params; `recommend_user` (exclude seen unless `allow_repeat`); `popular`; `similar_items` from the item similarity matrix (top-K neighbours stored sparsely via `top_neighbors_per_item`, never the query item itself); `max_items_in_similarity` item cap by popularity. *Acceptance:* R3 invariants hold; unit and property tests.
 - [x] **P3.6** Cold-start scoring for SAR (see section 6.4): build the affinity vector from a history list (apply the same time-decay or weighting convention as training, or document why a flat weight is used for hypothetical histories without timestamps), multiply with the similarity structure, remove history items, return top-k. *Acceptance:* **consistency test**: for 50 sampled known users, top-10 from `recommend_user` equals top-10 from `recommend_history` on their training history (allowing documented tie-breaking differences); test lives in `tests/integration`.
-- [ ] **P3.7** Faithful explanations: for recommended item `r` and history `H`, the reason item is `argmax_{h in H} affinity(h) * sim(h, r)`; show only when the contribution share exceeds a configurable threshold (default: top contributor accounts for at least a set fraction of the score; otherwise no reason). *Acceptance:* property test: the reason item is always a member of the history and is the true maximum contributor.
+- [x] **P3.7** Faithful explanations: for recommended item `r` and history `H`, the reason item is `argmax_{h in H} affinity(h) * sim(h, r)`; show only when the contribution share exceeds a configurable threshold (default: top contributor accounts for at least a set fraction of the score; otherwise no reason). *Acceptance:* property test: the reason item is always a member of the history and is the true maximum contributor.
 - [ ] **P3.8** Hyperparameter search on the **validation** split (small grid: similarity type, time decay on/off and coefficient, positive threshold). Log all trials to `artifacts/movies/tuning.json`; choose by ndcg@10 on validation; refit on train (+valid if configured); evaluate once on test. *Acceptance:* test split is not touched during selection (assert via the leakage checks and a log of which split each metric used).
 - [ ] **P3.9** Train the final model (`make train TYPE=movies`), evaluate against Random and Popularity, write `metrics.json`. Apply R4: report sanity ordering and extra metrics (coverage, novelty, diversity, personalisation). If the model does not beat popularity, investigate and document honestly. *Acceptance:* metrics file valid; findings recorded in `docs/DECISIONS.md`.
 - [ ] **P3.10** Cold-start curve for sizes in config (0 to 20 likes) using the harness. Report the curve and any non-monotonic points. *Acceptance:* curve stored in `metrics.json`.
@@ -453,6 +453,7 @@ Each item must keep the API free of deep-learning imports (training offline, art
   - FIX-10: Implemented `top_neighbors_per_item` (sparse CSR top-K neighbors per item) and `max_items_in_similarity` (popularity-based item cap) in SAR serving path; verified memory scaling and R3 invariants.
   - FIX-11: Strengthened `test_sar_consistency.py` with self-contained synthetic fixture version running in CI without downloaded data; documented expected time-decay mathematical divergence; verified score and item equality within floating-point tolerance; corrected "bit-for-bit" wording in D-009.
   - FIX-12: Excluded test-only `toy.yaml` from `list_available_content_types()`; verified production content types list is exactly `['articles', 'movies', 'products']`.
+  - P3.7: Implemented faithful SAR explanations in `SarModel.explain` with configurable `explanation_min_threshold`; added comprehensive Hypothesis property test in `backend/tests/property/test_sar_explanations.py` proving reason item is always a member of history and the true maximum contributor.
 - **Break-your-own-work ritual (Reconciliation Pass):**
   1. Line-ending & vendored hash invariance: Injected synthetic CRLF/LF variations into vendored files; confirmed `vendored_manifest.py --check` passes across line endings while immediately flagging real content byte mutations.
   2. Fast overrides immutability & deep merge: Tested in-place mutation against loaded configurations; verified deep model copying prevents leakage into base configs and malformed override types raise actionable `ConfigError`.
@@ -460,8 +461,8 @@ Each item must keep the API free of deep-learning imports (training offline, art
   4. Popularity padding score monotonicity: Injected sparse and zero-score candidate edge cases; verified `_pad_with_popular` strictly enforces non-increasing scores (`score[i] >= score[i+1]`) and passes `check_r3_model_invariants`.
   5. Serving budget & sparsification boundaries: Configured tight neighbor cap (`top_neighbors_per_item=3`) and item budget (`max_items_in_similarity=5`); verified `item_similarity` is CSR with `nnz <= 3` per row, diagonal is 0.0, catalogue is not truncated, items outside budget fall back gracefully, and `list_available_content_types()` excludes `toy` returning exactly `['articles', 'movies', 'products']`.
 - **Decisions made:** D-009 (SAR cold-start weighting convention and consistency verification).
-- **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (153 tests passing), ruff clean (66 source files), mypy strict clean (34 source files).
-- **Next steps:** Continue with P3.7 (Faithful SAR explanations and property test) in order.
+- **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (154 tests passing), ruff clean (67 source files), mypy strict clean (34 source files).
+- **Next steps:** Continue with P3.8 (Hyperparameter search on validation split) in order.
 
 
 

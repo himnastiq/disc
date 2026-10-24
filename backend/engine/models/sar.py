@@ -397,10 +397,22 @@ class SarModel(RecommenderModel):
         self,
         history_item_ids: list[str],
         recommended_item_id: str,
+        min_threshold: float | None = None,
     ) -> Reason | None:
-        """Produce faithful attribution identifying which history item contributed most."""
+        """Produce faithful attribution identifying which history item contributed most.
+
+        For recommended item `r` and history `H`, the reason item is:
+            argmax_{h in H} affinity(h) * sim(h, r)
+        Show only when contribution share exceeds configurable threshold.
+        """
         if not self._is_fitted or self.sar is None or not history_item_ids:
             return None
+
+        threshold = (
+            min_threshold
+            if min_threshold is not None
+            else self.spec.serving.explanation_min_threshold
+        )
 
         rec_id = str(recommended_item_id)
         if rec_id not in self.sar.item2index:
@@ -421,7 +433,12 @@ class SarModel(RecommenderModel):
         top = find_top_contributor(history_item_ids, contributions)
         if top is not None:
             best_item, _, share = top
-            return format_reason(best_item, kind="similar_item", contribution_share=share)
+            return format_reason(
+                best_item,
+                kind="similar_item",
+                contribution_share=share,
+                min_threshold=threshold,
+            )
 
         return None
 

@@ -137,6 +137,7 @@ class PopularityModel(RecommenderModel):
         self,
         history_item_ids: list[str],
         recommended_item_id: str,
+        min_threshold: float | None = None,
     ) -> Reason | None:
         # Popularity recommendations are independent of user history items.
         return None
@@ -268,6 +269,7 @@ class RandomModel(RecommenderModel):
         self,
         history_item_ids: list[str],
         recommended_item_id: str,
+        min_threshold: float | None = None,
     ) -> Reason | None:
         # Random model recommendations are independent of user history items.
         return None
