@@ -9,6 +9,7 @@ from hypothesis import strategies as st
 
 from engine.config import load_config
 from engine.errors import UnknownItem, UnknownUser
+from engine.evaluation.checks import check_r3_model_invariants
 from engine.models.baselines import PopularityModel, RandomModel
 from engine.schema import ContentTypeSpec
 
@@ -200,24 +201,12 @@ def test_r3_invariants_popularity(
 
     # 1. Popular endpoint
     recs = pop.popular(k=k, exclude_ids=exclude_sample)
-    assert len(recs) <= k
-    seen_ids = set()
-    for rec in recs:
-        assert rec.item_id in catalogue
-        assert rec.item_id not in exclude_sample
-        assert rec.item_id not in seen_ids
-        seen_ids.add(rec.item_id)
-        assert rec.score >= 0.0
-
-    # Scores must be sorted descending
-    scores = [r.score for r in recs]
-    assert scores == sorted(scores, reverse=True)
+    check_r3_model_invariants(recs, k=k, catalogue=catalogue, exclude_ids=exclude_sample)
 
     # 2. Similar items must never contain the query item itself
     query_item = "item_1"
     sims = pop.similar_items(query_item, k=k)
-    assert all(r.item_id != query_item for r in sims)
-    assert len(sims) <= k
+    check_r3_model_invariants(sims, k=k, catalogue=catalogue, query_item_id=query_item)
 
 
 @settings(
@@ -242,8 +231,6 @@ def test_r3_invariants_random(
     recs2 = rnd.recommend_user(user_id, k=k)
     assert [r.item_id for r in recs1] == [r.item_id for r in recs2]
 
-    # Seen items must be excluded
+    # Invariants check (seen items must be excluded)
     seen_items = set(interactions_df[interactions_df["user_id"] == user_id]["item_id"])
-    for rec in recs1:
-        assert rec.item_id in catalogue
-        assert rec.item_id not in seen_items
+    check_r3_model_invariants(recs1, k=k, catalogue=catalogue, exclude_ids=seen_items)

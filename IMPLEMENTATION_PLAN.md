@@ -35,7 +35,7 @@
 |---|---|---|---|---|---|---|
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
-| 2 | Core engine abstractions | 8 | 0 | 0 | 13 | 61% |
+| 2 | Core engine abstractions | 9 | 0 | 0 | 13 | 69% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **28** | | | **129** | **21%** |
+| | **Overall** | **29** | | | **129** | **22%** |
 
-`[####----------------] 21%  (28/129 tasks)`
+`[####----------------] 22%  (29/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -153,7 +153,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P2.6** Implement `evaluation/splits.py` wrapping the vendored splitters: `chronological` (per user), `leave_last_n`, `impression_time`; each returns train/valid/test and runs the leakage check from R2. *Acceptance:* leakage tests pass and fail correctly on a deliberately broken split fixture.
 - [x] **P2.7** Implement `evaluation/metrics.py`: wrapper over vendored ranking metrics (precision, recall, ndcg, map at k) plus original metrics: hit rate, coverage, novelty (mean negative log2 popularity), intra-list diversity (category-based), personalisation score (R4). *Acceptance:* each metric verified against hand-computed values on a tiny fixture.
 - [x] **P2.8** Implement `evaluation/harness.py`: runs split, fits each model (baselines plus configured model), evaluates on the same protocol, simulates cold start by truncating user histories to each configured size, writes a `metrics.json` containing: protocol description, seeds, config hash, git SHA, timestamps, per-model per-k metrics, cold-start curves, sanity-check results. *Acceptance:* runs end to end on a synthetic dataset; schema of `metrics.json` documented in `docs/ARCHITECTURE.md`.
-- [ ] **P2.9** Implement `evaluation/checks.py`: reusable invariant checkers for R1 to R5 that can be called from tests, from the harness, and from the API tests. *Acceptance:* used by at least the harness and the baseline tests.
+- [x] **P2.9** Implement `evaluation/checks.py`: reusable invariant checkers for R1 to R5 that can be called from tests, from the harness, and from the API tests. *Acceptance:* used by at least the harness and the baseline tests.
 - [ ] **P2.10** Implement `artifacts.py`: save and load per section 6.5, manifest, checksums, schema version, clear failure modes (missing file, bad checksum, version mismatch). *Acceptance:* corruption tests (flip a byte, delete a file) raise `ArtifactError` with an actionable message.
 - [ ] **P2.11** Implement `explain.py` and `coldstart.py` helper utilities that are model-agnostic (history normalisation: dedupe, drop unknown ids and report them, cap length, validate signals). *Acceptance:* unit tests including empty, duplicate, and unknown ids.
 - [ ] **P2.12** Implement `train.py` CLI: `python -m engine.train --type X [--fast] [--seed N]` (load config, adapter, validate, split, fit, evaluate, write artifacts, print a summary). Structured logging via `logging_utils.py`. *Acceptance:* works on a synthetic "toy" adapter used only in tests.

@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 import pandas as pd
 
 from engine.config import compute_config_hash
+from engine.evaluation.checks import check_r1_data_validity, check_r4_evaluation_validity
 from engine.evaluation.metrics import (
     coverage,
     hit_rate,
@@ -109,6 +110,13 @@ class EvaluationHarness:
         Returns:
             dict[str, Any]: Canonical metrics payload conforming to architecture spec.
         """
+        # 0. Validate R1 data integrity
+        check_r1_data_validity(
+            interactions=interactions,
+            items=items,
+            positive_threshold=self.spec.signal.positive_threshold,
+        )
+
         # 1. Run configured split
         split_ratio = self.spec.split.ratio
         test_ratio = (1.0 - split_ratio) / 2.0
@@ -257,12 +265,14 @@ class EvaluationHarness:
             cold_start_curves[name] = curve_for_model
 
         # 6. Sanity ordering checks (R4)
-        sanity_checks = {}
-        ref_k = str(k_values[min(1, len(k_values) - 1)]) if k_values else "10"
-        if "popularity" in models_results and "random" in models_results:
-            pop_ndcg = models_results["popularity"].get(ref_k, {}).get("ndcg", 0.0)
-            rnd_ndcg = models_results["random"].get(ref_k, {}).get("ndcg", 0.0)
-            sanity_checks["popularity_beats_random"] = pop_ndcg >= rnd_ndcg
+        ref_k_val = k_values[min(1, len(k_values) - 1)] if k_values else 10
+        ref_k = str(ref_k_val)
+        r4_results = check_r4_evaluation_validity(models_results, ref_k=ref_k_val)
+
+        sanity_checks = {
+            "all_bounds_valid": r4_results["all_bounds_valid"],
+            "popularity_beats_random": r4_results["popularity_beats_random"],
+        }
 
         primary_name = self.spec.model.name
         if primary_name in models_results and "popularity" in models_results:
