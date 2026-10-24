@@ -9,8 +9,8 @@ import random
 import logging
 import _pickle as cPickle
 
-from recommenders.utils.constants import SEED
-from recommenders.datasets.download_utils import maybe_download
+from discovery.utils.constants import SEED
+from discovery.datasets.download_utils import maybe_download
 
 
 random.seed(SEED)

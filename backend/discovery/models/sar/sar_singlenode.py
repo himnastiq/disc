@@ -6,7 +6,7 @@ import pandas as pd
 import logging
 from scipy import sparse
 
-from recommenders.utils.python_utils import (
+from discovery.utils.python_utils import (
     cosine_similarity,
     inclusion_index,
     jaccard,
@@ -17,7 +17,7 @@ from recommenders.utils.python_utils import (
     get_top_k_scored_items,
     rescale,
 )
-from recommenders.utils import constants
+from discovery.utils import constants
 
 
 SIM_COOCCUR = "cooccurrence"

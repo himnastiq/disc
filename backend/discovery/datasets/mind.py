@@ -10,7 +10,7 @@ import re
 from tqdm import tqdm
 from nltk.tokenize import RegexpTokenizer
 
-from recommenders.datasets.download_utils import (
+from discovery.datasets.download_utils import (
     maybe_download,
     download_path,
     unzip_file,

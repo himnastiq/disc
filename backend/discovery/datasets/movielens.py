@@ -9,9 +9,9 @@ import warnings
 import pandas as pd
 from typing import Optional
 from zipfile import ZipFile
-from recommenders.datasets.download_utils import maybe_download, download_path
-from recommenders.utils.notebook_utils import is_databricks
-from recommenders.utils.constants import (
+from discovery.datasets.download_utils import maybe_download, download_path
+from discovery.utils.notebook_utils import is_databricks
+from discovery.utils.constants import (
     DEFAULT_HEADER,
     DEFAULT_ITEM_COL,
     DEFAULT_USER_COL,

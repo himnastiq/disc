@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from functools import lru_cache, wraps
 
-from recommenders.utils.constants import (
+from discovery.utils.constants import (
     DEFAULT_USER_COL,
     DEFAULT_ITEM_COL,
     DEFAULT_RATING_COL,

@@ -13,7 +13,7 @@ from sklearn.metrics import (
     log_loss,
 )
 
-from recommenders.utils.constants import (
+from discovery.utils.constants import (
     DEFAULT_USER_COL,
     DEFAULT_ITEM_COL,
     DEFAULT_RATING_COL,
@@ -25,7 +25,7 @@ from recommenders.utils.constants import (
     DEFAULT_K,
     DEFAULT_THRESHOLD,
 )
-from recommenders.datasets.pandas_df_utils import (
+from discovery.datasets.pandas_df_utils import (
     has_columns,
     has_same_base_dtype,
     lru_cache_df,
