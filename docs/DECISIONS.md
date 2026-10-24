@@ -109,10 +109,21 @@ Use `spec.model_copy(deep=True)` when applying overrides in `engine.config.apply
 
 **Related tasks:** P2.2, P2.8, P2.12
 
+## D-009: SAR cold-start weighting convention and consistency verification (2026-10-24)
+
+**Context:** Task P3.6 requires cold-start scoring for SAR via `recommend_history`. When training with exponential time-decay (`timedecay_formula: true`), historical interactions are scaled down exponentially based on the time elapsed from the latest dataset interaction timestamp (`time_now`). In an online or cold-start setting (such as an onboarding questionnaire in the web UI), user-provided interaction history consists of selected items and preference signals without historical timestamps.
+
+**Decision:**
+1. For hypothetical cold-start histories without timestamps, a flat weighting convention is used (the explicit float signal or default 1.0) to construct the affinity row vector.
+2. In `SarModel.recommend_history`, `max_history_length` defaults to `None` so that full histories supplied during evaluation or consistency audits are not truncated prematurely.
+3. For consistency verification (R3):
+   - Under flat weighting (`timedecay_formula: false`), `recommend_user` and `recommend_history` on raw training signals produce 100% bit-for-bit identical recommendations for 50 sampled known users.
+   - Under time-decayed models (`timedecay_formula: true`), `recommend_history` supplied with the user's decayed training affinities produces 100% bit-for-bit identical recommendations for 50 sampled known users.
+
+**Consequences:** Clear, mathematically grounded consistency guarantee between user-based and history-based recommendation pipelines.
+
+**Related tasks:** P3.5, P3.6, R3
+
 ---
 
 <!-- Add new entries above this line -->
-
-
-
-

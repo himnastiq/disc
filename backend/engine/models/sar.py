@@ -181,6 +181,7 @@ class SarModel(RecommenderModel):
         history: list[tuple[str, float]],
         k: int,
         exclude_ids: Collection[str] = (),
+        max_history_length: int | None = None,
     ) -> list[ScoredItem]:
         """Generate recommendations for arbitrary interaction history (cold start)."""
         if not self._is_fitted or self.sar is None:
@@ -189,7 +190,9 @@ class SarModel(RecommenderModel):
         if not history:
             return self.popular(k=k, exclude_ids=exclude_ids)
 
-        norm_res = normalize_history(history, catalogue=self.catalogue)
+        norm_res = normalize_history(
+            history, catalogue=self.catalogue, max_history_length=max_history_length
+        )
         if not norm_res.normalized_history:
             return self.popular(k=k, exclude_ids=exclude_ids)
 

@@ -28,7 +28,7 @@ class HistoryNormalizationResult:
 def normalize_history(
     raw_history: list[tuple[Any, ...]] | list[dict[str, Any]] | list[Any],
     catalogue: Collection[str] | None = None,
-    max_history_length: int = 50,
+    max_history_length: int | None = 50,
     default_signal: float = 1.0,
     min_signal: float = 0.0,
     max_signal: float = 10.0,
@@ -113,7 +113,7 @@ def normalize_history(
 
     # Step 2: Cap history length
     items_list = list(seen_map.items())
-    if len(items_list) > max_history_length:
+    if max_history_length is not None and len(items_list) > max_history_length:
         dropped_count = len(items_list) - max_history_length
         items_list = items_list[-max_history_length:]
     else:
