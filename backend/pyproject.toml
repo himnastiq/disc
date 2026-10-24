@@ -105,6 +105,10 @@ warn_unused_configs = true
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
+module = ["scipy", "scipy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "discovery.*"
 ignore_errors = true
 follow_imports = "skip"

@@ -19,6 +19,7 @@ from engine.artifacts import save_artifacts
 from engine.config import load_config
 from engine.evaluation.harness import EvaluationHarness
 from engine.logging_utils import configure_logging, get_logger, log_event
+from engine.models import sar as _sar_model  # noqa: F401
 from engine.registry import build_model, get_adapter
 
 if TYPE_CHECKING:

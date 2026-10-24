@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from engine.config import DEFAULT_CONFIGS_DIR, load_config
 from engine.errors import ConfigError, ModelNotFoundError, UnknownType
-from engine.models.baselines import PopularityModel, RandomModel
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -54,8 +53,18 @@ def list_registered_adapters() -> list[str]:
     return sorted(_ADAPTER_REGISTRY.keys())
 
 
+def _ensure_default_models() -> None:
+    """Ensure baseline models are registered without eager module-load circular imports."""
+    if "popularity" not in _MODEL_REGISTRY or "random" not in _MODEL_REGISTRY:
+        from engine.models.baselines import PopularityModel, RandomModel
+
+        _MODEL_REGISTRY["popularity"] = PopularityModel
+        _MODEL_REGISTRY["random"] = RandomModel
+
+
 def list_registered_models() -> list[str]:
     """Return sorted list of registered model names."""
+    _ensure_default_models()
     return sorted(_MODEL_REGISTRY.keys())
 
 
@@ -114,6 +123,7 @@ def get_adapter(
 
 def get_model_class(name: str) -> type[RecommenderModel]:
     """Retrieve a model class by its registered name."""
+    _ensure_default_models()
     key = name.strip().lower()
     if key not in _MODEL_REGISTRY:
         raise ModelNotFoundError(model_name=name, available=list_registered_models())
@@ -151,8 +161,3 @@ def build_model(
     chosen_model_name = model_name or spec.model.name
     model_cls = get_model_class(chosen_model_name)
     return model_cls(spec, **kwargs)
-
-
-# Register baseline models out of the box
-register_model("popularity")(PopularityModel)
-register_model("random")(RandomModel)

@@ -1,0 +1,190 @@
+"""Unit and property tests for SarModel wrapper (P3.5)."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import pandas as pd
+import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+
+from engine.config import load_config
+from engine.errors import UnknownItem, UnknownUser
+from engine.evaluation.checks import check_r3_model_invariants
+from engine.models.sar import SarModel
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+
+@pytest.fixture(scope="module")
+def small_movies_fixture() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Create a small self-contained interactions and catalogue fixture for SAR tests."""
+    items = pd.DataFrame(
+        [
+            {"item_id": f"movie_{i}", "title": f"Movie {i}", "categories": ["Action"]}
+            for i in range(1, 16)
+        ]
+    )
+
+    # 5 users, each with 5-8 interactions
+    interactions_list = []
+    for u in range(1, 6):
+        uid = f"user_{u}"
+        for step in range(1, 7):
+            item_idx = ((u * 3 + step) % 15) + 1
+            interactions_list.append(
+                {
+                    "user_id": uid,
+                    "item_id": f"movie_{item_idx}",
+                    "signal": 5.0 if step % 2 == 0 else 3.0,
+                    "timestamp": 1000 * u + step * 10,
+                    "positive": True,
+                }
+            )
+
+    interactions = pd.DataFrame(interactions_list)
+    return interactions, items
+
+
+@pytest.fixture(scope="module")
+def fitted_sar_model(small_movies_fixture: tuple[pd.DataFrame, pd.DataFrame]) -> SarModel:
+    """Provide a fitted SarModel instance."""
+    interactions, items = small_movies_fixture
+    spec = load_config("movies", fast=True)
+    model = SarModel(spec)
+    model.fit(interactions, items)
+    return model
+
+
+def test_sar_fit_and_r3_invariants(
+    fitted_sar_model: SarModel,
+    small_movies_fixture: tuple[pd.DataFrame, pd.DataFrame],
+) -> None:
+    """Verify SAR satisfies R3 model invariants for all training users."""
+    interactions, items = small_movies_fixture
+    users = list(interactions["user_id"].unique())
+    catalogue = set(items["item_id"])
+
+    for user in users:
+        seen = set(interactions[interactions["user_id"] == user]["item_id"])
+        for k in [3, 5, 10]:
+            recs = fitted_sar_model.recommend_user(user, k=k)
+            check_r3_model_invariants(recs, k=k, catalogue=catalogue, exclude_ids=seen)
+
+
+def test_sar_seen_items_excluded(
+    fitted_sar_model: SarModel,
+    small_movies_fixture: tuple[pd.DataFrame, pd.DataFrame],
+) -> None:
+    """Verify SAR never recommends already seen items when allow_repeat is False."""
+    interactions, _ = small_movies_fixture
+    for uid in ["user_1", "user_2"]:
+        seen_items = set(interactions[interactions["user_id"] == uid]["item_id"])
+        recs = fitted_sar_model.recommend_user(uid, k=10)
+        rec_ids = {r.item_id for r in recs}
+        assert rec_ids.isdisjoint(seen_items), (
+            f"Seen items leaked in recommendations: {rec_ids & seen_items}"
+        )
+
+
+def test_sar_unknown_user_raises(fitted_sar_model: SarModel) -> None:
+    """Verify recommend_user raises UnknownUser for unseen user ID."""
+    with pytest.raises(UnknownUser, match="Unknown user ID"):
+        fitted_sar_model.recommend_user("non_existent_user_999", k=5)
+
+
+def test_sar_similar_items_never_returns_query_item(
+    fitted_sar_model: SarModel,
+    small_movies_fixture: tuple[pd.DataFrame, pd.DataFrame],
+) -> None:
+    """Verify similar_items never returns the query item itself."""
+    _, items = small_movies_fixture
+    for item_id in items["item_id"]:
+        sims = fitted_sar_model.similar_items(item_id, k=5)
+        sim_ids = [s.item_id for s in sims]
+        assert item_id not in sim_ids, (
+            f"Query item {item_id} was returned in its own similarity list"
+        )
+        assert len(sim_ids) == len(set(sim_ids)), "Duplicate items returned in similarity"
+
+
+def test_sar_unknown_item_raises(fitted_sar_model: SarModel) -> None:
+    """Verify similar_items raises UnknownItem for nonexistent item ID."""
+    with pytest.raises(UnknownItem, match="Unknown item ID"):
+        fitted_sar_model.similar_items("movie_unknown_999", k=5)
+
+
+def test_sar_popular_deterministic(fitted_sar_model: SarModel) -> None:
+    """Verify popular items ordering is deterministic and excludes specified IDs."""
+    pop1 = fitted_sar_model.popular(k=5)
+    pop2 = fitted_sar_model.popular(k=5)
+    assert [p.item_id for p in pop1] == [p.item_id for p in pop2]
+    assert [p.score for p in pop1] == [p.score for p in pop2]
+
+    excluded_item = pop1[0].item_id
+    pop_excluded = fitted_sar_model.popular(k=5, exclude_ids={excluded_item})
+    assert excluded_item not in [p.item_id for p in pop_excluded]
+
+
+def test_sar_save_and_load_roundtrip(
+    fitted_sar_model: SarModel,
+    tmp_path: Path,
+) -> None:
+    """Verify saving to disk and loading into fresh instance produces bitwise identical recommendations."""
+    save_dir = tmp_path / "sar_model_artifacts"
+    fitted_sar_model.save(save_dir)
+
+    assert (save_dir / "model_meta.json").exists()
+    assert (save_dir / "index2item.json").exists()
+    assert (save_dir / "index2user.json").exists()
+    assert (save_dir / "item_similarity.npz").exists()
+    assert (save_dir / "user_affinity.npz").exists()
+    assert (save_dir / "item_frequencies.npy").exists()
+
+    spec = load_config("movies", fast=True)
+    loaded_model = SarModel(spec)
+    loaded_model.load(save_dir)
+
+    # Compare recommendations on test user
+    orig_recs = fitted_sar_model.recommend_user("user_1", k=5)
+    loaded_recs = loaded_model.recommend_user("user_1", k=5)
+
+    assert [(r.item_id, r.score, r.rank) for r in orig_recs] == [
+        (r.item_id, r.score, r.rank) for r in loaded_recs
+    ]
+
+    # Compare similar items
+    orig_sims = fitted_sar_model.similar_items("movie_1", k=5)
+    loaded_sims = loaded_model.similar_items("movie_1", k=5)
+    assert [(r.item_id, r.score, r.rank) for r in orig_sims] == [
+        (r.item_id, r.score, r.rank) for r in loaded_sims
+    ]
+
+
+@settings(
+    max_examples=25,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+@given(
+    k=st.integers(min_value=1, max_value=10),
+    user_idx=st.integers(min_value=1, max_value=5),
+)
+def test_sar_hypothesis_invariants(
+    fitted_sar_model: SarModel,
+    k: int,
+    user_idx: int,
+) -> None:
+    """Property test verifying length <= k, no duplicates, and catalogue membership."""
+    uid = f"user_{user_idx}"
+    recs = fitted_sar_model.recommend_user(uid, k=k)
+
+    assert len(recs) <= k
+    assert len(recs) == len({r.item_id for r in recs}), "Duplicates found in recommendation list"
+    assert all(r.item_id in fitted_sar_model.catalogue for r in recs)
+    assert all(isinstance(r.score, float) for r in recs)
+
+    scores = [r.score for r in recs]
+    assert scores == sorted(scores, reverse=True), "Scores are not sorted descending"

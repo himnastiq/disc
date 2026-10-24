@@ -36,7 +36,7 @@
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
-| 3 | Movies pipeline (MovieLens + SAR) | 4 | 0 | 0 | 13 | 30% |
+| 3 | Movies pipeline (MovieLens + SAR) | 5 | 0 | 0 | 13 | 38% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **37** | | | **129** | **28%** |
+| | **Overall** | **38** | | | **129** | **29%** |
 
-`[#####---------------] 28%  (37/129 tasks)`
+`[#####---------------] 29%  (38/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -170,7 +170,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P3.2** Implement `MovieLensAdapter`: columns to schema, string ids, clean display titles (strip trailing year and alternate-title parentheses, move trailing articles "Matrix, The" to "The Matrix"), parse year, genres to `categories`, minimum-interaction filtering from config. *Acceptance:* title-cleaning unit tests including edge cases (no year, multiple parentheses, "A", "An", non-ASCII).
 - [x] **P3.3** Implement `validate()` data report (R1) and write it to `artifacts/movies/data_report.json`. *Acceptance:* report includes counts, sparsity, filtered counts, timestamp range.
 - [x] **P3.4** Chronological per-user split (train/valid/test) via the harness; run the leakage test (R2) on the real data. *Acceptance:* test passes on the real split.
-- [ ] **P3.5** Implement `SarModel` wrapper over the vendored SAR class: fit from config params; `recommend_user` (exclude seen unless `allow_repeat`); `popular`; `similar_items` from the item similarity matrix (top-K neighbours stored sparsely, never the query item itself). *Acceptance:* R3 invariants hold; unit and property tests.
+- [x] **P3.5** Implement `SarModel` wrapper over the vendored SAR class: fit from config params; `recommend_user` (exclude seen unless `allow_repeat`); `popular`; `similar_items` from the item similarity matrix (top-K neighbours stored sparsely, never the query item itself). *Acceptance:* R3 invariants hold; unit and property tests.
 - [ ] **P3.6** Cold-start scoring for SAR (see section 6.4): build the affinity vector from a history list (apply the same time-decay or weighting convention as training, or document why a flat weight is used for hypothetical histories without timestamps), multiply with the similarity structure, remove history items, return top-k. *Acceptance:* **consistency test**: for 50 sampled known users, top-10 from `recommend_user` equals top-10 from `recommend_history` on their training history (allowing documented tie-breaking differences); test lives in `tests/integration`.
 - [ ] **P3.7** Faithful explanations: for recommended item `r` and history `H`, the reason item is `argmax_{h in H} affinity(h) * sim(h, r)`; show only when the contribution share exceeds a configurable threshold (default: top contributor accounts for at least a set fraction of the score; otherwise no reason). *Acceptance:* property test: the reason item is always a member of the history and is the true maximum contributor.
 - [ ] **P3.8** Hyperparameter search on the **validation** split (small grid: similarity type, time decay on/off and coefficient, positive threshold). Log all trials to `artifacts/movies/tuning.json`; choose by ndcg@10 on validation; refit on train (+valid if configured); evaluate once on test. *Acceptance:* test split is not touched during selection (assert via the leakage checks and a log of which split each metric used).
