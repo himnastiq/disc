@@ -1,0 +1,1 @@
+"""Discovery Engine - MIND Articles dataset adapter."""

@@ -1,0 +1,30 @@
+type: movies
+display_name: Movies
+card_type: movie
+dataset:
+  adapter: movielens
+  variant: "1m"
+  min_user_interactions: 5
+  min_item_interactions: 5
+signal:
+  positive_threshold: 4.0
+  use_rating_as_weight: true
+split:
+  strategy: chronological
+  ratio: 0.8
+  seed: 42
+model:
+  name: sar
+  params:
+    similarity_type: jaccard
+    time_decay_coefficient: 30
+    timedecay_formula: true
+  allow_repeat: false
+  supports_cold_start: true
+evaluation:
+  k: [5, 10, 20]
+  cold_start_history_sizes: [0, 1, 2, 3, 5, 10, 20]
+  baselines: [popularity, random]
+serving:
+  top_neighbors_per_item: 50
+  max_items_in_similarity: 8000

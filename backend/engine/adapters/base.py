@@ -1,0 +1,1 @@
+"""Discovery Engine - Base dataset adapter interface."""

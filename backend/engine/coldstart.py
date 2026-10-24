@@ -1,0 +1,1 @@
+"""Discovery Engine - Cold-start utilities."""

@@ -1,0 +1,31 @@
+type: articles
+display_name: Articles
+card_type: article
+dataset:
+  adapter: mind_articles
+  variant: "small"
+  min_user_interactions: 3
+signal:
+  positive_threshold: 1.0
+  use_rating_as_weight: false
+split:
+  strategy: impression_time
+  ratio: 0.8
+  seed: 42
+model:
+  name: tfidf_profile
+  params:
+    max_features: 10000
+    min_df: 2
+    max_df: 0.95
+    recency_weight: true
+  allow_repeat: false
+  supports_cold_start: true
+evaluation:
+  k: [5, 10, 20]
+  cold_start_history_sizes: [0, 1, 2, 3, 5, 10, 20]
+  baselines: [popularity, random]
+  recency_window: null
+serving:
+  top_neighbors_per_item: 50
+  max_items_in_similarity: 8000
