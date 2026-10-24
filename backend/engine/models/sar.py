@@ -22,6 +22,27 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+def _pad_with_popular(
+    candidates: list[tuple[float, str]],
+    pop_recs: list[ScoredItem],
+) -> list[tuple[float, str]]:
+    """Append popular items to candidates ensuring scores remain non-increasing."""
+    result = list(candidates)
+    if not pop_recs:
+        return result
+
+    if result:
+        last_score = result[-1][0]
+        for step, p in enumerate(pop_recs, start=1):
+            padded_score = last_score / (1.0 + step) if last_score > 0 else 0.0
+            result.append((padded_score, p.item_id))
+    else:
+        for p in pop_recs:
+            result.append((p.score, p.item_id))
+
+    return result
+
+
 @register_model("sar")
 class SarModel(RecommenderModel):
     """Wrapper over vendored SAR (Simple Algorithm for Recommendations).
@@ -167,8 +188,7 @@ class SarModel(RecommenderModel):
             selected_ids = {c[1] for c in candidates}
             combined_exclude = exclusions.union(selected_ids)
             pop_recs = self.popular(k=k - len(candidates), exclude_ids=combined_exclude)
-            for p in pop_recs:
-                candidates.append((p.score, p.item_id))
+            candidates = _pad_with_popular(candidates, pop_recs)
 
         top_k = candidates[:k]
         return [
@@ -237,8 +257,7 @@ class SarModel(RecommenderModel):
             selected_ids = {c[1] for c in candidates}
             combined_exclude = exclusions.union(selected_ids)
             pop_recs = self.popular(k=k - len(candidates), exclude_ids=combined_exclude)
-            for p in pop_recs:
-                candidates.append((p.score, p.item_id))
+            candidates = _pad_with_popular(candidates, pop_recs)
 
         top_k = candidates[:k]
         return [

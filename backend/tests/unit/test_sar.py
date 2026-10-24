@@ -194,3 +194,44 @@ def test_sar_hypothesis_invariants(
 
     scores = [r.score for r in recs]
     assert scores == sorted(scores, reverse=True), "Scores are not sorted descending"
+
+
+def test_sar_popularity_padding_preserves_non_increasing_scores(
+    fitted_sar_model: SarModel,
+    small_movies_fixture: tuple[pd.DataFrame, pd.DataFrame],
+) -> None:
+    """Verify forced popularity padding assigns scores strictly non-increasing and passes R3."""
+    interactions, items = small_movies_fixture
+    catalogue = set(items["item_id"])
+
+    # For user_1, request k=8 which exceeds the number of novel similar candidates with score > 0
+    uid = "user_1"
+    seen = set(interactions[interactions["user_id"] == uid]["item_id"])
+    expected_k = min(8, len(catalogue - seen))
+
+    # Force k so padding is guaranteed
+    recs = fitted_sar_model.recommend_user(uid, k=8)
+    assert len(recs) == expected_k
+
+    # Must satisfy all R3 invariants including non-increasing scores
+    check_r3_model_invariants(recs, k=8, catalogue=catalogue, exclude_ids=seen)
+
+    # Verify scores are strictly non-increasing across the transition into padded items
+    user_scores = [r.score for r in recs]
+    for i in range(len(user_scores) - 1):
+        assert user_scores[i] >= user_scores[i + 1], (
+            f"User rec scores not non-increasing at index {i}: {user_scores[i]} < {user_scores[i + 1]}"
+        )
+
+    # Test via recommend_history with a single item to force heavy padding
+    hist = [("movie_1", 5.0)]
+    hist_recs = fitted_sar_model.recommend_history(hist, k=10)
+    assert len(hist_recs) == 10
+    check_r3_model_invariants(hist_recs, k=10, catalogue=catalogue, exclude_ids={"movie_1"})
+
+    # Verify scores are strictly non-increasing across the transition into padded items
+    hist_scores = [r.score for r in hist_recs]
+    for i in range(len(hist_scores) - 1):
+        assert hist_scores[i] >= hist_scores[i + 1], (
+            f"Scores not non-increasing at index {i}: {hist_scores[i]} < {hist_scores[i + 1]}"
+        )
