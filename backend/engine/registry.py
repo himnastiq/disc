@@ -69,15 +69,19 @@ def list_registered_models() -> list[str]:
 
 
 def list_available_content_types(configs_dir: Path | None = None) -> list[str]:
-    """Discover available content types from YAML configs in configs_dir."""
+    """Discover available content types from YAML configs in configs_dir.
+
+    Ignores test-only configs such as 'toy'.
+    """
     target_dir = configs_dir or DEFAULT_CONFIGS_DIR
     if not target_dir.exists():
         return []
     types: list[str] = []
     for f in target_dir.glob("*.yaml"):
-        types.append(f.stem)
+        if f.stem != "toy":
+            types.append(f.stem)
     for f in target_dir.glob("*.yml"):
-        if f.stem not in types:
+        if f.stem != "toy" and f.stem not in types:
             types.append(f.stem)
     return sorted(types)
 

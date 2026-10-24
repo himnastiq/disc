@@ -106,9 +106,8 @@ def test_custom_registration_works_without_editing_core() -> None:
 
 def test_list_available_content_types() -> None:
     types = list_available_content_types()
-    assert "movies" in types
-    assert "products" in types
-    assert "articles" in types
+    assert types == ["articles", "movies", "products"]
+    assert "toy" not in types
 
 
 def test_get_adapter_by_spec() -> None:
