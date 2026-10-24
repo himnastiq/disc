@@ -1,11 +1,7 @@
 .PHONY: setup data train train-fast eval api web test lint check gates progress clean demo
 
-PYTHON := e:\discover\.venv\Scripts\python.exe
-PIP := e:\discover\.venv\Scripts\pip.exe
-PYTEST := e:\discover\.venv\Scripts\pytest.exe
-RUFF := e:\discover\.venv\Scripts\ruff.exe
-MYPY := e:\discover\.venv\Scripts\mypy.exe
-UVICORN := e:\discover\.venv\Scripts\uvicorn.exe
+PYTHON ?= python3
+PIP ?= pip
 TYPE ?=
 
 # ---- Setup ----
@@ -13,12 +9,12 @@ setup:
 	$(PIP) install -e "backend/.[core,dev]"
 	@echo "Backend setup complete."
 	@if [ -d frontend/node_modules ]; then echo "Frontend already set up."; \
-	else echo "Run 'cd frontend && npm install' for frontend setup."; fi
+	else echo "Run 'cd frontend && npm install' for frontend setup (Phase 8)."; fi
 
 # ---- Data ----
 data:
 ifdef TYPE
-	$(PYTHON) -m engine.train --type $(TYPE) --download-only
+	$(PYTHON) backend/scripts/fetch_data.py --type $(TYPE)
 else
 	$(PYTHON) backend/scripts/fetch_data.py
 endif
@@ -48,10 +44,11 @@ eval:
 
 # ---- Servers ----
 api:
-	cd backend && $(UVICORN) api.main:app --reload --host 0.0.0.0 --port 8000
+	cd backend && $(PYTHON) -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
 web:
-	cd frontend && npm run dev
+	@if [ -d frontend ]; then cd frontend && npm run dev; \
+	else echo "Frontend not yet created (Phase 8)."; exit 1; fi
 
 demo:
 	@echo "Starting Discovery Engine demo..."
@@ -61,19 +58,19 @@ demo:
 
 # ---- Quality ----
 test:
-	cd backend && $(PYTEST) tests/ -v --tb=short
+	cd backend && $(PYTHON) -m pytest tests/ -v --tb=short
 
 lint:
-	cd backend && $(RUFF) check .
-	cd backend && $(RUFF) format --check .
-	cd backend && $(MYPY) engine/ api/
+	cd backend && $(PYTHON) -m ruff check .
+	cd backend && $(PYTHON) -m ruff format --check .
+	cd backend && $(PYTHON) -m mypy engine/ api/
 
 check: lint test
 	@echo "All checks passed."
 
 gates: check
 	@echo "Running extended gate checks..."
-	cd backend && $(PYTEST) tests/ -v --tb=short -m "slow or integration"
+	cd backend && $(PYTHON) -m pytest tests/ -v --tb=short -m "slow or integration"
 	@echo "Gates complete."
 
 # ---- Utilities ----

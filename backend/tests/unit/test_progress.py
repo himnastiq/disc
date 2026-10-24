@@ -11,7 +11,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "t
 
 from progress import PhaseStats, build_dashboard, parse_phases, update_plan
 
-
 SAMPLE_PLAN = textwrap.dedent("""\
     # Title
 
