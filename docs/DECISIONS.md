@@ -98,6 +98,19 @@
 
 ---
 
+## D-008: Fast config overrides and schema model_copy (2026-10-24)
+
+**Context:** P2.2 requires applying fast developer overrides when `--fast` is specified. Mutating Pydantic v2 schemas in-place can inadvertently mutate cached or shared objects.
+
+**Decision:**
+Use `spec.model_copy(deep=True)` when applying overrides in `engine.config.apply_fast_overrides`, ensuring pristine original models and immutability.
+
+**Consequences:** Clean separation between default and fast development configurations.
+
+**Related tasks:** P2.2, P2.8, P2.12
+
+---
+
 <!-- Add new entries above this line -->
 
 

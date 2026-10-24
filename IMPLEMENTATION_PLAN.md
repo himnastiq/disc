@@ -35,7 +35,7 @@
 |---|---|---|---|---|---|---|
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
-| 2 | Core engine abstractions | 12 | 0 | 0 | 13 | 92% |
+| 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 0 | 0 | 0 | 13 | 0% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **32** | | | **129** | **24%** |
+| | **Overall** | **33** | | | **129** | **25%** |
 
-`[####----------------] 24%  (32/129 tasks)`
+`[#####---------------] 25%  (33/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -157,7 +157,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P2.10** Implement `artifacts.py`: save and load per section 6.5, manifest, checksums, schema version, clear failure modes (missing file, bad checksum, version mismatch). *Acceptance:* corruption tests (flip a byte, delete a file) raise `ArtifactError` with an actionable message.
 - [x] **P2.11** Implement `explain.py` and `coldstart.py` helper utilities that are model-agnostic (history normalisation: dedupe, drop unknown ids and report them, cap length, validate signals). *Acceptance:* unit tests including empty, duplicate, and unknown ids.
 - [x] **P2.12** Implement `train.py` CLI: `python -m engine.train --type X [--fast] [--seed N]` (load config, adapter, validate, split, fit, evaluate, write artifacts, print a summary). Structured logging via `logging_utils.py`. *Acceptance:* works on a synthetic "toy" adapter used only in tests.
-- [ ] **P2.13** Phase 2 Gate and "break your own work" ritual. *Acceptance:* Session Log entry.
+- [x] **P2.13** Phase 2 Gate and "break your own work" ritual. *Acceptance:* Session Log entry.
 
 ---
 
@@ -401,5 +401,37 @@ Each item must keep the API free of deep-learning imports (training offline, art
 - **Decisions made:** D-005 (Windows environment verification), D-006 (Recommenders 1.2.1 source and license), D-007 (API naming `python_chrono_split` and NumPy 2.x `np.nan` patch).
 - **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1, ruff 0.17.2, mypy 2.4.0
 - **Next steps:** Phase 2: Core engine abstractions (P2.1 — `engine/schema.py`)
+
+### Session 4: 2026-10-24, agent session (Phase 2 completion: Core engine abstractions & Phase 2 Gate)
+- Started at: P2.1   Ended at: P2.13 (Phase 2 complete)
+- **Completed this session:**
+  - P2.1: `backend/engine/schema.py` (Pydantic v2 schemas: Interaction, Item, ScoredItem, Reason, ValidationReport, ContentTypeSpec).
+  - P2.2: `backend/engine/config.py` (`load_config`, `compute_config_hash`, `apply_fast_overrides`) and `backend/engine/errors.py`.
+  - P2.3: `backend/engine/adapters/base.py` (`DatasetAdapter`) and `backend/engine/models/base.py` (`RecommenderModel`).
+  - P2.4: `backend/engine/models/baselines.py` (`PopularityModel`, `RandomModel`) with hypothesis property tests in `backend/tests/unit/test_baselines.py`.
+  - P2.5: `backend/engine/registry.py` (`@register_adapter`, `@register_model`, `get_adapter`, `build_model`, `list_available_content_types`).
+  - P2.6: `backend/engine/evaluation/splits.py` (`chronological_split`, `leave_last_n_split`, `impression_time_split`, `check_leakage`, `split_interactions`) and `LeakageError` in `backend/engine/errors.py`.
+  - P2.7: `backend/engine/evaluation/metrics.py` (ranking metrics + original metrics: hit_rate, coverage, novelty, intra_list_diversity, personalisation_score).
+  - P2.8: `backend/engine/evaluation/harness.py` (`EvaluationHarness` running split, fitting models, computing per-k metrics, simulating cold-start curves) and documented `metrics.json` schema in `docs/ARCHITECTURE.md`.
+  - P2.9: `backend/engine/evaluation/checks.py` (reusable invariant checkers R1 to R5: `check_r1_data_validity`, `check_r2_no_leakage`, `check_r3_model_invariants`, `check_r4_evaluation_validity`, `check_r5_cold_start`).
+  - P2.10: `backend/engine/artifacts.py` (`save_artifacts`, `verify_artifacts`, `load_artifacts`, `LoadedArtifacts`) with SHA-256 manifest and corruption tests.
+  - P2.11: `backend/engine/coldstart.py` (`normalize_history`), `backend/engine/explain.py` (`find_top_contributor`, `format_reason`), and unit tests.
+  - P2.12: `backend/engine/logging_utils.py`, `backend/engine/adapters/toy.py`, `backend/engine/configs/toy.yaml`, `backend/engine/train.py` CLI (`python -m engine.train --type toy --fast`), and unit tests in `backend/tests/unit/test_train.py`.
+  - P2.13: Completed Phase 2 Gate and break-your-own-work ritual.
+- **Phase 2 Gate results:**
+  - R2 (No leakage): Splitters enforce `max(train.timestamp) <= min(test.timestamp)`; `check_leakage` validates splits and raises `LeakageError` when violated ✓
+  - R3 (Model invariants on baselines): Property tests verify length <= k, no duplicate items, zero seen items recommended when `allow_repeat=False`, all items belong to catalogue, determinism under fixed seed, and cold-start fallback behavior ✓
+  - R4 (Harness correctness): Evaluation harness applies identical split and candidate protocol across models; ranking and diversity metrics match hand-computed fixtures ✓
+  - R6 (Reproducibility): Deterministic execution across runs with identical seed confirmed; `topn.parquet` bitwise identical, `metrics.json` identical excluding execution timestamp ✓
+- **Break-your-own-work ritual:**
+  1. Temporal leakage check: Deliberately injected future interaction into training split; verified `check_r2_no_leakage` catches it and raises `LeakageError`.
+  2. Baseline model invariant check: Hypothesis property tests generated 100+ random configurations verifying seen item exclusion, deterministic tie breaking, score ordering, and k capping.
+  3. Metric calculation edge cases check: Hand-computed fixtures tested zero-positive users, empty recall denominator, single-item catalogues, and coverage bounds.
+  4. Cold start input distortion check: Injected unknown IDs, duplicate items, signals outside bounds, and oversized histories; verified `normalize_history` clamps, drops, and dedupes cleanly.
+  5. Artifact corruption & tampering check: Bit-flipped parquet file, deleted parquet file, and corrupted manifest schema version; verified `verify_artifacts` raises actionable `ArtifactCorruptError`.
+- **Decisions made:** D-008 (Fast overrides dataclass deepcopy and schema immutability).
+- **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (109 tests passing), ruff 0.17.2 clean, mypy strict clean (26 source files).
+- **Next steps:** Phase 3: Movies pipeline (P3.1 — MovieLens section in `docs/DATASETS.md` & download step in `fetch_data.py`).
+
 
 
