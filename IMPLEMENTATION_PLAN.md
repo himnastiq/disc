@@ -146,7 +146,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 **Gates:** R2, R3 (baselines), R4 (harness correctness), R6.
 
 - [x] **P2.1** Implement `engine/schema.py` (Interaction, Item, ScoredItem, Reason, ValidationReport, ContentTypeSpec) with strict validation and string ids. *Acceptance:* unit tests incl. rejection of bad data.
-- [ ] **P2.2** Implement `engine/config.py`: YAML loading, pydantic validation, config hash, `--fast` overrides (dataset variant, search grids). *Acceptance:* invalid configs fail with readable messages; tests cover missing fields and wrong types.
+- [x] **P2.2** Implement `engine/config.py`: YAML loading, pydantic validation, config hash, `--fast` overrides (dataset variant, search grids). *Acceptance:* invalid configs fail with readable messages; tests cover missing fields and wrong types.
 - [ ] **P2.3** Implement `adapters/base.py` and `models/base.py` exactly as in section 6, plus `errors.py` (`UnknownType`, `UnknownUser`, `UnknownItem`, `ColdStartUnsupported`, `ArtifactError`). *Acceptance:* abstract classes with docstrings and type hints; mypy strict passes.
 - [ ] **P2.4** Implement baselines in `models/baselines.py`: `PopularityModel` (count of positive interactions; ties broken deterministically by item id) and `RandomModel` (seeded; deterministic per user). Both implement the full interface including cold start. *Acceptance:* R3 invariants hold (property tests with hypothesis).
 - [ ] **P2.5** Implement `registry.py`: adapters and models registered by name; `get_adapter(type)`, `build_model(type)`; config-driven wiring; clear error for unknown names. *Acceptance:* registering a new adapter requires no edit to registry core (decorator or entry-point style).
