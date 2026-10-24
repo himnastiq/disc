@@ -1,0 +1,38 @@
+# Attribution
+
+## Derived Code: `backend/discovery/`
+
+This project contains code **derived from** [Recommenders](https://github.com/recommenders-team/recommenders) (formerly Microsoft Recommenders), licensed under the MIT License.
+
+- **Source repository:** https://github.com/recommenders-team/recommenders
+- **Source version:** <!-- TODO: fill in after P1.1 -->
+- **Source commit:** <!-- TODO: fill in after P1.1 -->
+- **What was done:**
+  - Trimmed to only the modules needed by this project (dataset loaders, splitters, evaluation metrics, SAR model, TF-IDF model, and their transitive utility dependencies)
+  - Renamed the package from `recommenders` to `discovery`
+  - Removed dependencies on TensorFlow, Spark, PyTorch, Cornac, and Azure
+  - Minimal compatibility patches applied (documented in `backend/discovery/NOTICE.md`)
+- **Location in this repo:** `backend/discovery/`
+- **License:** MIT (original `LICENSE` preserved at `backend/discovery/LICENSE`)
+
+See also:
+- [`backend/discovery/NOTICE.md`](../backend/discovery/NOTICE.md) — modification log
+- [`docs/VENDORED_FILES.md`](VENDORED_FILES.md) — generated manifest of all vendored files
+
+## Original Code
+
+Everything outside `backend/discovery/` is original work by the Discovery Engine contributors:
+- `backend/engine/` — adapters, models, evaluation harness, training pipeline
+- `backend/api/` — FastAPI backend
+- `frontend/` — Next.js dashboard
+- `tools/` — build and analysis scripts
+- `docs/` — documentation
+- `tests/` — all tests
+
+## Dataset Citations
+
+See [`DATASETS.md`](DATASETS.md).
+
+## Non-Commercial Notice
+
+This project is for **educational and research use only**. It is not intended for commercial deployment. All datasets are used under their respective research/educational licenses.

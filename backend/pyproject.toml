@@ -1,0 +1,113 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "discovery-engine"
+version = "0.1.0"
+description = "An adaptive content recommendation engine"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Discovery Engine Contributors"},
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+core = [
+    "numpy>=1.24,<2.0",
+    "pandas>=2.0,<2.3",
+    "scipy>=1.11,<1.14",
+    "scikit-learn>=1.3,<1.6",
+    "pyarrow>=14.0,<18.0",
+    "pydantic>=2.4,<2.10",
+    "pyyaml>=6.0,<6.1",
+    "tqdm>=4.65,<4.70",
+    "requests>=2.31,<2.33",
+    "fastapi>=0.104,<0.116",
+    "uvicorn[standard]>=0.24,<0.31",
+    "joblib>=1.3,<1.5",
+]
+dev = [
+    "pytest>=7.4,<8.4",
+    "pytest-cov>=4.1,<5.1",
+    "hypothesis>=6.82,<6.120",
+    "httpx>=0.25,<0.28",
+    "ruff>=0.1.6,<0.8",
+    "mypy>=1.7,<1.13",
+    "pip-audit>=2.6,<2.8",
+    "pandas-stubs>=2.0,<2.3",
+    "types-PyYAML>=6.0,<6.1",
+    "types-requests>=2.31,<2.33",
+    "types-tqdm>=4.65,<4.70",
+]
+deep = [
+    # Phase 12: optional deep learning models
+    # torch, tensorflow-cpu, etc.
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["discovery*", "engine*", "api*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks integration tests",
+    "property: marks property-based tests",
+    "contract: marks API contract tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:discovery.*",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["engine", "api", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "TCH",   # type-checking imports
+    "RUF",   # ruff-specific
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults (FastAPI Depends)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"discovery/**" = ["ALL"]  # Vendored code: do not lint
+"tests/**" = ["S101"]     # Allow assert in tests
+
+[tool.ruff.lint.isort]
+known-first-party = ["engine", "api", "discovery"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "discovery.*"
+ignore_errors = true
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_untyped_calls = false
