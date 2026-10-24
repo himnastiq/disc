@@ -142,16 +142,19 @@ def test_unregistered_model_raises_model_not_found_error() -> None:
         get_model_class("non_existent_model")
     assert exc_info.value.model_name == "non_existent_model"
     assert "popularity" in exc_info.value.available
+    assert "Model 'non_existent_model' not found." in str(exc_info.value)
 
 
 def test_unknown_type_in_get_adapter_and_build_model() -> None:
     with pytest.raises(UnknownType) as exc_adapter:
         get_adapter("non_existent_type_xyz")
     assert exc_adapter.value.content_type == "non_existent_type_xyz"
+    assert "Unknown content type: 'non_existent_type_xyz'." in str(exc_adapter.value)
 
     with pytest.raises(UnknownType) as exc_model:
         build_model("non_existent_type_xyz")
     assert exc_model.value.content_type == "non_existent_type_xyz"
+    assert "Unknown content type: 'non_existent_type_xyz'." in str(exc_model.value)
 
 
 def test_empty_registration_name_rejected() -> None:

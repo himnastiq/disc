@@ -134,7 +134,7 @@ class SarModel(RecommenderModel):
 
         uid = str(user_id)
         if uid not in self.sar.user2index:
-            raise UnknownUser(f"Unknown user ID: '{uid}'")
+            raise UnknownUser(user_id=uid, content_type=self.spec.type)
 
         u_idx = self.sar.user2index[uid]
         user_vec = self.sar.user_affinity[u_idx, :]
@@ -257,7 +257,7 @@ class SarModel(RecommenderModel):
 
         target_id = str(item_id)
         if target_id not in self.sar.item2index:
-            raise UnknownItem(f"Unknown item ID: '{target_id}'")
+            raise UnknownItem(item_id=target_id, content_type=self.spec.type)
 
         i_idx = self.sar.item2index[target_id]
         sim_row = self.sar.item_similarity[i_idx, :]

@@ -90,9 +90,12 @@ def test_sar_seen_items_excluded(
 
 
 def test_sar_unknown_user_raises(fitted_sar_model: SarModel) -> None:
-    """Verify recommend_user raises UnknownUser for unseen user ID."""
-    with pytest.raises(UnknownUser, match="Unknown user ID"):
+    """Verify recommend_user raises UnknownUser with user_id attribute and clear message."""
+    with pytest.raises(UnknownUser) as exc_info:
         fitted_sar_model.recommend_user("non_existent_user_999", k=5)
+    assert exc_info.value.user_id == "non_existent_user_999"
+    assert exc_info.value.content_type == "movies"
+    assert "Unknown user ID: 'non_existent_user_999'" in str(exc_info.value)
 
 
 def test_sar_similar_items_never_returns_query_item(
@@ -111,9 +114,12 @@ def test_sar_similar_items_never_returns_query_item(
 
 
 def test_sar_unknown_item_raises(fitted_sar_model: SarModel) -> None:
-    """Verify similar_items raises UnknownItem for nonexistent item ID."""
-    with pytest.raises(UnknownItem, match="Unknown item ID"):
+    """Verify similar_items raises UnknownItem with item_id attribute and clear message."""
+    with pytest.raises(UnknownItem) as exc_info:
         fitted_sar_model.similar_items("movie_unknown_999", k=5)
+    assert exc_info.value.item_id == "movie_unknown_999"
+    assert exc_info.value.content_type == "movies"
+    assert "Unknown item ID: 'movie_unknown_999'" in str(exc_info.value)
 
 
 def test_sar_popular_deterministic(fitted_sar_model: SarModel) -> None:
