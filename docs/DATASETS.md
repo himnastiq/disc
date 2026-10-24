@@ -2,14 +2,23 @@
 
 ## MovieLens
 
-- **Provider:** GroupLens Research, University of Minnesota
+- **Provider:** GroupLens Research, Department of Computer Science and Engineering, University of Minnesota
 - **URL:** https://grouplens.org/datasets/movielens/
-- **Variants used:** MovieLens 100K (fast/test), MovieLens 1M (final results)
-- **License:** Research and education use only; non-commercial
+- **Variants used:**
+  - **MovieLens 100K (`ml-100k`):** 100,000 ratings (scale 1–5) from 943 users across 1,682 movies; each user has rated at least 20 movies; released 1998. Used for `--fast` development mode and unit/integration tests.
+  - **MovieLens 1M (`ml-1m`):** 1,000,209 ratings (scale 1–5) from 6,040 users across 3,706 movies; released 2003. Used for final benchmark results, hyperparameter selection, and production artifacts.
+- **License:** Research and educational use only; non-commercial.
 - **Citation:**
-  > Harper, F.M. and Konstan, J.A. (2015). The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems (TiiS), 5(4), Article 19.
-- **Terms:** <!-- TODO: verify current terms when downloading -->
-- **Data location:** `data/raw/movielens/`
+  > Harper, F.M. and Konstan, J.A. (2015). The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems (TiiS), 5(4), Article 19. https://doi.org/10.1145/2827872
+- **Terms:**
+  - The University of Minnesota and its researchers provide the data without warranty of correctness or fitness for any purpose.
+  - Users may not redistribute or make available any portion of the dataset without express permission.
+  - Commercial use is strictly prohibited.
+  - GroupLens and the ACM reference above must be acknowledged and cited in all publications, reports, or demo presentations.
+- **Data location:** `data/raw/movielens/` (contains `ml-100k/` and `ml-1m/`).
+- **Files per variant:**
+  - `ml-100k/`: `u.data` (tab-separated: user id, item id, rating, timestamp), `u.item` (pipe-separated: movie id, title with year, release date, IMDb URL, 19 genre flags).
+  - `ml-1m/`: `ratings.dat` (`::`-separated: UserID, MovieID, Rating, Timestamp), `movies.dat` (`::`-separated: MovieID, Title with year, Genres separated by `|`).
 
 ## Amazon Reviews
 
