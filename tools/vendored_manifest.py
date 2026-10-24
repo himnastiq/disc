@@ -8,12 +8,10 @@ from pathlib import Path
 
 
 def compute_sha256(filepath: Path) -> str:
-    """Compute sha256 checksum of a file."""
-    h = hashlib.sha256()
-    with open(filepath, "rb") as f:
-        while chunk := f.read(65536):
-            h.update(chunk)
-    return h.hexdigest()
+    """Compute sha256 checksum of a file after replacing b'\\r\\n' with b'\\n'."""
+    raw = filepath.read_bytes()
+    normalized = raw.replace(b"\r\n", b"\n")
+    return hashlib.sha256(normalized).hexdigest()
 
 
 def generate_manifest(repo_root: Path) -> str:
@@ -42,8 +40,9 @@ def generate_manifest(repo_root: Path) -> str:
     for p in files:
         rel_repo = p.relative_to(repo_root).as_posix()
         rel_discovery = p.relative_to(discovery_dir).as_posix()
-        size = p.stat().st_size
-        sha256 = compute_sha256(p)
+        normalized_content = p.read_bytes().replace(b"\r\n", b"\n")
+        size = len(normalized_content)
+        sha256 = hashlib.sha256(normalized_content).hexdigest()
 
         if rel_discovery == "LICENSE":
             origin_path = "LICENSE"
