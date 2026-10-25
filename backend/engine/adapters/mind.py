@@ -407,6 +407,16 @@ class MindArticlesAdapter(DatasetAdapter):
 
         min_ts = int(inter["timestamp"].min()) if not inter.empty else 0
         max_ts = int(inter["timestamp"].max()) if not inter.empty else 0
+        min_date = (
+            datetime.fromtimestamp(min_ts, tz=UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+            if min_ts > 0
+            else ""
+        )
+        max_date = (
+            datetime.fromtimestamp(max_ts, tz=UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+            if max_ts > 0
+            else ""
+        )
 
         report = ValidationReport(
             total_interactions=total_int,
@@ -416,6 +426,8 @@ class MindArticlesAdapter(DatasetAdapter):
             min_timestamp=min_ts,
             max_timestamp=max_ts,
             details={
+                "min_date": min_date,
+                "max_date": max_date,
                 "missing_abstracts_count": self.missing_abstracts_count,
                 "missing_catalogue_items_count": self.missing_catalogue_items_count,
                 "empty_history_users_count": self.empty_history_users_count,
