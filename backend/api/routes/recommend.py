@@ -12,12 +12,14 @@ from api.errors import DuplicateIDsError
 from api.schemas import (
     ColdStartRequest,
     ColdStartResponse,
+    PopularResponse,
     RecommendationReason,
     RecommendResponse,
     ScoredItemResponse,
+    SimilarResponse,
 )
 from engine.config import load_config
-from engine.errors import UnknownUser
+from engine.errors import UnknownItem, UnknownUser
 
 if TYPE_CHECKING:
     from engine.artifacts import LoadedArtifacts
@@ -331,3 +333,120 @@ def recommend_cold_start(
             "positive_items_count": pos_items_count,
         },
     )
+
+
+@router.get("/popular", response_model=PopularResponse)
+def get_popular(
+    request: Request,
+    type: str = Query(..., max_length=50, description="Content type identifier"),
+    k: int = Query(
+        default=10, ge=1, le=100, description="Number of popular items requested [1, 100]"
+    ),
+) -> PopularResponse:
+    """Return top-k overall popular items for content type."""
+    loaded: LoadedArtifacts = resolve_loaded_artifacts(request, type)
+    model: RecommenderModel = resolve_model(request, type)
+
+    pop_items = model.popular(k=k)
+    pop_items = pop_items[:k]
+
+    raw_scores = [float(item.score) for item in pop_items]
+    display_scores = compute_display_scores(raw_scores)
+    item_ids = [str(item.item_id) for item in pop_items]
+    hydrated = hydrate_items(item_ids, loaded.items)
+
+    results: list[ScoredItemResponse] = []
+    for item, d_score in zip(pop_items, display_scores, strict=False):
+        iid = str(item.item_id)
+        meta_info = hydrated.get(iid, {})
+        reason_obj = RecommendationReason(
+            kind="popular",
+            item_id=None,
+            text="Popular across all users in the catalog",
+            similarity_score=None,
+        )
+        results.append(
+            ScoredItemResponse(
+                item_id=iid,
+                title=meta_info.get("title", iid),
+                subtitle=meta_info.get("subtitle"),
+                categories=meta_info.get("categories", []),
+                year=meta_info.get("year"),
+                image_url=meta_info.get("image_url"),
+                score=float(item.score),
+                display_score=d_score,
+                reason=reason_obj,
+                meta=meta_info.get("extra", {}),
+            )
+        )
+
+    return PopularResponse(
+        content_type=type,
+        k=len(results),
+        results=results,
+    )
+
+
+@router.get("/similar", response_model=SimilarResponse)
+def get_similar(
+    request: Request,
+    type: str = Query(..., max_length=50, description="Content type identifier"),
+    item_id: str = Query(
+        ..., max_length=100, description="Catalogue item identifier to find similar items for"
+    ),
+    k: int = Query(
+        default=10, ge=1, le=100, description="Number of similar items requested [1, 100]"
+    ),
+) -> SimilarResponse:
+    """Return top-k items similar to query item."""
+    loaded: LoadedArtifacts = resolve_loaded_artifacts(request, type)
+    model: RecommenderModel = resolve_model(request, type)
+
+    catalogue = set(loaded.items["item_id"].astype(str))
+    clean_item_id = str(item_id).strip()
+    if clean_item_id not in catalogue:
+        raise UnknownItem(clean_item_id, type)
+
+    similar_items = model.similar_items(item_id=clean_item_id, k=k)
+    filtered_items = [it for it in similar_items if str(it.item_id) != clean_item_id][:k]
+
+    query_meta = hydrate_items([clean_item_id], loaded.items).get(clean_item_id, {})
+    query_title = query_meta.get("title", clean_item_id)
+
+    raw_scores = [float(it.score) for it in filtered_items]
+    display_scores = compute_display_scores(raw_scores)
+    item_ids = [str(it.item_id) for it in filtered_items]
+    hydrated = hydrate_items(item_ids, loaded.items)
+
+    results: list[ScoredItemResponse] = []
+    for it, d_score in zip(filtered_items, display_scores, strict=False):
+        iid = str(it.item_id)
+        meta_info = hydrated.get(iid, {})
+        reason_obj = RecommendationReason(
+            kind="similar_item",
+            item_id=clean_item_id,
+            text=f"Similar to {query_title}",
+            similarity_score=float(it.score),
+        )
+        results.append(
+            ScoredItemResponse(
+                item_id=iid,
+                title=meta_info.get("title", iid),
+                subtitle=meta_info.get("subtitle"),
+                categories=meta_info.get("categories", []),
+                year=meta_info.get("year"),
+                image_url=meta_info.get("image_url"),
+                score=float(it.score),
+                display_score=d_score,
+                reason=reason_obj,
+                meta=meta_info.get("extra", {}),
+            )
+        )
+
+    return SimilarResponse(
+        content_type=type,
+        query_item_id=clean_item_id,
+        k=len(results),
+        results=results,
+    )
+
