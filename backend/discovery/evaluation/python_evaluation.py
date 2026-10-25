@@ -649,8 +649,16 @@ def ndcg_at_k(
     if df_hit.shape[0] == 0:
         return 0.0
 
-    df_dcg = df_hit.merge(rating_pred, on=[col_user, col_item]).merge(
-        rating_true, on=[col_user, col_item], how="outer", suffixes=("_left", None)
+    common_users = set(rating_true[col_user]).intersection(set(rating_pred[col_user]))
+    rating_true_common = rating_true[rating_true[col_user].isin(common_users)]
+    rating_pred_clean = (
+        rating_pred.drop(columns=["rank"])
+        if "rank" in rating_pred.columns
+        else rating_pred
+    )
+
+    df_dcg = df_hit.merge(rating_pred_clean, on=[col_user, col_item]).merge(
+        rating_true_common, on=[col_user, col_item], how="outer", suffixes=("_left", None)
     )
 
     if score_type == "binary":

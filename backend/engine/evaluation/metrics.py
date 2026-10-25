@@ -107,8 +107,14 @@ def ndcg(
     if true_df.empty or pred_df.empty:
         return 0.0
 
-    t_df = _clean_ranking_df(true_df)
-    p_df = _clean_ranking_df(pred_df)
+    common_users = set(true_df[col_user].astype(str)).intersection(
+        set(pred_df[col_user].astype(str))
+    )
+    if not common_users:
+        return 0.0
+
+    t_df = _clean_ranking_df(true_df[true_df[col_user].astype(str).isin(common_users)])
+    p_df = _clean_ranking_df(pred_df[pred_df[col_user].astype(str).isin(common_users)])
     actual_col_rating = (
         col_rating
         if col_rating in t_df.columns

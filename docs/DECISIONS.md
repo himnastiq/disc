@@ -175,7 +175,7 @@ Measured using `tools/measure_sparsification.py` on identical chronological trai
 | Metric | Random | Popularity | SAR (Tuned) | SAR vs Popularity |
 |---|---|---|---|---|
 | **HitRate@10** | 0.0260 | 0.2917 | **0.3177** | **+8.9%** |
-| **NDCG@10** | 0.00013 | 0.00240 | **0.00241** | **+0.4%** |
+| **NDCG@10** | 0.0038 | 0.0722 | **0.0725** | **+0.4%** |
 | **Recall@10** | 0.0028 | 0.0505 | **0.0694** | **+37.4%** |
 | **Precision@10** | 0.0026 | 0.0568 | 0.0516 | -9.2% |
 | **Coverage@10** | 0.3984 | 0.0221 | **0.0780** | **+253% (3.5x)** |
@@ -183,14 +183,15 @@ Measured using `tools/measure_sparsification.py` on identical chronological trai
 | **Diversity@10** | 0.8259 | 0.7647 | 0.7044 | -7.9% |
 | **Personalisation@10**| 0.9985 | 0.6931 | **0.9323** | **+34.5%** |
 | **HitRate@20** | 0.0417 | 0.4010 | **0.4583** | **+14.3%** |
-| **NDCG@20** | 0.00014 | 0.00264 | **0.00294** | **+11.4%** |
+| **NDCG@20** | 0.0042 | 0.0796 | **0.0887** | **+11.4%** |
 | **Recall@20** | 0.0041 | 0.0875 | **0.1231** | **+40.7%** |
 
-**Sanity Checks and Audit Findings (R4):**
-1. **Sanity Ordering Holds:** SAR beats Popularity across NDCG, HitRate, and Recall at K=10 and K=20 (`model_beats_popularity: true`); Popularity soundly beats Random across all ranking metrics (`popularity_beats_random: true`).
-2. **Personalisation & Diversity:** Popularity offers static recommendations with low personalization (0.6931) and narrow coverage (2.2% of catalogue). In contrast, SAR achieves 0.9323 personalization and explores 3.5x more catalogue items (7.8% at K=10, 11.1% at K=20) while sustaining substantially higher recall (+37.4% at K=10, +40.7% at K=20).
-3. **Cold-Start Degradation Curve (P3.10):** Measured across history sizes $\{0, 1, 2, 3, 5, 10, 20\}$ likes. Recall@10 increases monotonically from 0.0193 at 0 likes (pure popular fallback) to 0.0490 at 20 likes (+154% gain), and NDCG@10 increases from 0.000148 to 0.000369 (+149% gain), proving that SAR adapts dynamically to incremental user signals.
-4. **Shuffled-Label Sanity Verification:** When trained on permuted user-item interactions, SAR performance collapsed from 0.0953 down to 0.0275 (near Random), verifying that collaborative filtering structure is genuine and uncorrupted by label leakage.
+**Sanity Checks and Audit Findings (R4 & FIX-16 Audit):**
+1. **NDCG Metric Validity Audit (FIX-16):** An independent plain-NumPy audit on 5 real MovieLens test users verified that binary NDCG@10 (0.1568) and graded NDCG@10 (0.1669) matched `engine.evaluation.metrics.ndcg` exactly. The prior ~36x gap between validation NDCG (~0.087) and test NDCG (~0.0024) was caused by an outer-merge bug in `ndcg_at_k`: `df_dcg` outer-merged against the full ground truth dataset (~5,785 users) rather than the evaluated sample of 200 users, computing zero DCG for the 5,585 un-evaluated users and averaging over all 5,785 users in `.mean()`. Following the fix (restricting `rating_true` to `common_users` and safely dropping any `"rank"` column from predictions), test NDCG@10 is 0.0725 for SAR, 0.0722 for Popularity, and 0.0038 for Random, in full harmony with validation split performance (0.0869).
+2. **Sanity Ordering Holds:** SAR beats Popularity across NDCG, HitRate, and Recall at K=10 and K=20 (`model_beats_popularity: true`); Popularity soundly beats Random across all ranking metrics (`popularity_beats_random: true`).
+3. **Personalisation & Diversity:** Popularity offers static recommendations with low personalization (0.6931) and narrow coverage (2.2% of catalogue). In contrast, SAR achieves 0.9323 personalization and explores 3.5x more catalogue items (7.8% at K=10, 11.1% at K=20) while sustaining substantially higher recall (+37.4% at K=10, +40.7% at K=20).
+4. **Cold-Start Degradation Curve (P3.10):** Measured across history sizes $\{0, 1, 2, 3, 5, 10, 20\}$ likes. Recall@10 increases monotonically from 0.0193 at 0 likes (pure popular fallback) to 0.0490 at 20 likes (+154% gain), and NDCG@10 increases from 0.0172 to 0.0381 (+122% gain), proving that SAR adapts dynamically to incremental user signals.
+5. **Shuffled-Label Sanity Verification:** When trained on permuted user-item interactions, SAR performance collapsed from 0.0953 down to 0.0275 (near Random), verifying that collaborative filtering structure is genuine and uncorrupted by label leakage.
 
 **Decision:**
 Accept the trained SAR model and generated artifacts (`metrics.json`, `tuning.json`, `topn.parquet`, `users.parquet`, `items.parquet`, `demo_users.json`) as the validated production artifacts for MovieLens.

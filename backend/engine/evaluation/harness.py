@@ -153,6 +153,7 @@ class EvaluationHarness:
 
         # Filter test ground truth for relevant positive test interactions using current spec threshold
         positive_test = test_df[test_df["signal"] >= self.spec.signal.positive_threshold]
+        positive_test = positive_test[positive_test["user_id"].astype(str).isin(test_users)]
 
         k_values = sorted(self.spec.evaluation.k)
         max_k = max(k_values) if k_values else 20
@@ -230,6 +231,9 @@ class EvaluationHarness:
             ]
 
         eval_k = min(10, max_k)
+        cs_positive_test = test_df[test_df["signal"] >= self.spec.signal.positive_threshold]
+        cs_positive_test = cs_positive_test[cs_positive_test["user_id"].astype(str).isin(cs_users)]
+
         for model in self.models:
             if not getattr(model, "supports_cold_start", False):
                 continue
@@ -259,9 +263,9 @@ class EvaluationHarness:
                 )
 
                 curve_for_model[str(size)] = {
-                    f"hit_rate@{eval_k}": hit_rate(positive_test, cs_preds_df, k=eval_k),
-                    f"ndcg@{eval_k}": ndcg(positive_test, cs_preds_df, k=eval_k),
-                    f"recall@{eval_k}": recall(positive_test, cs_preds_df, k=eval_k),
+                    f"hit_rate@{eval_k}": hit_rate(cs_positive_test, cs_preds_df, k=eval_k),
+                    f"ndcg@{eval_k}": ndcg(cs_positive_test, cs_preds_df, k=eval_k),
+                    f"recall@{eval_k}": recall(cs_positive_test, cs_preds_df, k=eval_k),
                 }
 
             cold_start_curves[name] = curve_for_model
