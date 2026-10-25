@@ -205,6 +205,10 @@ class ServingConfig(SchemaBase):
 
     top_neighbors_per_item: int = Field(default=50, ge=1)
     max_items_in_similarity: int = Field(default=8000, ge=1)
+    recency_window: int | str | None = Field(
+        default=None,
+        description="Optional recency window in seconds or duration string to restrict fresh candidates",
+    )
     min_positive_items_for_personalization: int = Field(
         default=3,
         ge=1,

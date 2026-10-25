@@ -35,6 +35,26 @@ def clean_article_text(text: str) -> str:
     return clean.strip().lower()
 
 
+def parse_recency_window(window: int | float | str | None) -> float | None:
+    """Parse recency window specification to seconds."""
+    if window is None:
+        return None
+    if isinstance(window, (int, float)):
+        return float(window)
+    s = str(window).strip().lower()
+    if not s or s in ("none", "null"):
+        return None
+    if s.endswith("d"):
+        return float(s[:-1]) * 86400.0
+    if s.endswith("h"):
+        return float(s[:-1]) * 3600.0
+    if s.endswith("m"):
+        return float(s[:-1]) * 60.0
+    if s.endswith("s"):
+        return float(s[:-1])
+    return float(s)
+
+
 def _pad_with_popular(
     candidates: list[tuple[float, str]],
     pop_recs: list[ScoredItem],
@@ -98,6 +118,12 @@ class TfidfProfileModel(RecommenderModel):
         self.user_history: dict[str, list[tuple[str, float, int]]] = {}
         self.item_counts: dict[str, int] = {}
         self.sorted_popular: list[str] = []
+        self.recency_window: float | None = parse_recency_window(
+            getattr(spec.serving, "recency_window", None) or spec.evaluation.recency_window
+        )
+        self.fresh_candidates: set[str] | None = None
+        self.window_item_counts: dict[str, int] = {}
+        self.sorted_window_popular: list[str] = []
         self.catalogue: set[str] = set()
         self._is_fitted: bool = False
 
@@ -211,7 +237,67 @@ class TfidfProfileModel(RecommenderModel):
             key=lambda x: (-self.item_counts.get(x, 0), x),
         )
 
+        # Compute fresh recency window candidates and window popularity
+        self._compute_fresh_candidates(train_interactions)
+
         self._is_fitted = True
+
+    def _compute_fresh_candidates(self, train_interactions: pd.DataFrame) -> None:
+        """Identify fresh articles within the recency window and compute window popularity."""
+        if self.recency_window is None or train_interactions.empty:
+            self.fresh_candidates = None
+            self.window_item_counts = {}
+            self.sorted_window_popular = []
+            return
+
+        has_ts = "timestamp" in train_interactions.columns
+        if not has_ts:
+            self.fresh_candidates = None
+            return
+
+        max_ts = float(train_interactions["timestamp"].max())
+        cutoff_ts = max_ts - self.recency_window
+
+        window_df = train_interactions[train_interactions["timestamp"] >= cutoff_ts]
+        fresh_ids = {str(x) for x in window_df["item_id"].unique() if str(x) in self.catalogue}
+
+        if fresh_ids:
+            self.fresh_candidates = fresh_ids
+            pos_thresh = float(self.spec.signal.positive_threshold)
+            pos_window = window_df[window_df["signal"] >= pos_thresh]
+            self.window_item_counts = {
+                str(k): int(v) for k, v in pos_window["item_id"].value_counts().items()
+            }
+            self.sorted_window_popular = sorted(
+                fresh_ids,
+                key=lambda x: (-self.window_item_counts.get(x, 0), x),
+            )
+        else:
+            self.fresh_candidates = None
+
+    def set_fresh_candidates(
+        self,
+        candidate_ids: Collection[str] | None,
+        item_counts: dict[str, int] | None = None,
+    ) -> None:
+        """Explicitly set or clear the pool of fresh candidate items for serving or evaluation."""
+        if candidate_ids is None:
+            self.fresh_candidates = None
+            self.window_item_counts = {}
+            self.sorted_window_popular = []
+            return
+
+        valid_ids = {str(x) for x in candidate_ids if str(x) in self.catalogue}
+        self.fresh_candidates = valid_ids
+        if item_counts is not None:
+            self.window_item_counts = {str(k): int(v) for k, v in item_counts.items()}
+        else:
+            self.window_item_counts = {x: self.item_counts.get(x, 0) for x in valid_ids}
+
+        self.sorted_window_popular = sorted(
+            valid_ids,
+            key=lambda x: (-self.window_item_counts.get(x, 0), x),
+        )
 
     def _build_profile_vector(
         self,
@@ -353,6 +439,8 @@ class TfidfProfileModel(RecommenderModel):
         candidates: list[tuple[float, str]] = []
         for idx, score_val in enumerate(scores_arr):
             item_id = self.index2item[idx]
+            if self.fresh_candidates is not None and item_id not in self.fresh_candidates:
+                continue
             if item_id in exclusions:
                 continue
             s = float(score_val)
@@ -400,6 +488,8 @@ class TfidfProfileModel(RecommenderModel):
                 # Query item itself must NEVER be returned
                 continue
             other_id = self.index2item[idx]
+            if self.fresh_candidates is not None and other_id not in self.fresh_candidates:
+                continue
             s = float(score_val)
             if np.isfinite(s) and s > 0.0:
                 candidates.append((s, other_id))
@@ -423,15 +513,22 @@ class TfidfProfileModel(RecommenderModel):
         k: int,
         exclude_ids: Collection[str] = (),
     ) -> list[ScoredItem]:
-        """Generate top-k global popular articles."""
+        """Generate top-k global popular articles (restricted to window if recency_window active)."""
         exclusions = set(str(x) for x in exclude_ids)
         result: list[ScoredItem] = []
         rank = 1
 
-        for item_id in self.sorted_popular:
+        source_list = (
+            self.sorted_window_popular if self.fresh_candidates is not None else self.sorted_popular
+        )
+        counts_dict = (
+            self.window_item_counts if self.fresh_candidates is not None else self.item_counts
+        )
+
+        for item_id in source_list:
             if item_id in exclusions:
                 continue
-            count = float(self.item_counts.get(item_id, 0))
+            count = float(counts_dict.get(item_id, 0))
             result.append(ScoredItem(item_id=item_id, score=count, rank=rank))
             rank += 1
             if len(result) >= k:
@@ -537,6 +634,11 @@ class TfidfProfileModel(RecommenderModel):
             "user_history": {
                 k: [(e[0], e[1], e[2]) for e in v] for k, v in self.user_history.items()
             },
+            "recency_window": self.recency_window,
+            "fresh_candidates": (
+                list(self.fresh_candidates) if self.fresh_candidates is not None else None
+            ),
+            "window_item_counts": self.window_item_counts,
             "vectorizer_params": {
                 "max_features": self.vectorizer.max_features,
                 "min_df": self.vectorizer.min_df,
@@ -571,6 +673,20 @@ class TfidfProfileModel(RecommenderModel):
             self.item_ids,
             key=lambda x: (-self.item_counts.get(x, 0), x),
         )
+
+        self.recency_window = meta.get("recency_window")
+        fresh_raw = meta.get("fresh_candidates")
+        self.fresh_candidates = set(fresh_raw) if fresh_raw is not None else None
+        self.window_item_counts = {
+            str(k): int(v) for k, v in meta.get("window_item_counts", {}).items()
+        }
+        if self.fresh_candidates is not None:
+            self.sorted_window_popular = sorted(
+                self.fresh_candidates,
+                key=lambda x: (-self.window_item_counts.get(x, 0), x),
+            )
+        else:
+            self.sorted_window_popular = []
 
         self.tfidf_matrix = sparse.load_npz(dir_path / "tfidf_matrix.npz")
 

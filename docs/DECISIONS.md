@@ -285,9 +285,34 @@ We need to register and implement `TfidfProfileModel` behind the existing unifie
 
 **Related tasks:** P5.4, P5.6, P5.7, P5.11
 
+## D-015: News Freshness, Recency Window, and Candidate Space Restriction (P5.5)
+
+**Date:** 2026-10-25
+**Status:** Approved
+
+**Context:**
+News recommendation has distinct temporal dynamics compared to movies and e-commerce products: articles have short lifespans and reader interest focuses on breaking news and contemporary developments. Serving outdated news articles diminishes recommendation relevance. We need to define a principled recency window parameter, restrict candidate retrieval to fresh articles, and adapt the popularity baseline to reflect active trending items.
+
+**Window Choice:**
+- **Standard Setting:** `recency_window: 86400` (86,400 seconds = 24 hours / 1 day).
+- **MIND Dataset Alignment:** MIND impressions span consecutive days (train across 6 days, dev/test on the final day). An 86,400-second window restricts candidate recommendation strictly to articles that appeared in user impressions within the most recent 24-hour observation period.
+- **Configurable Flexibility:** Supports seconds (`86400`), day strings (`"1d"`), or explicit candidate pool injection (`model.set_fresh_candidates(...)`), permitting offline impression-ranking evaluations (protocol a) and window retrieval evaluations (protocol b).
+
+**Effect on Recommendations and Invariants:**
+1. **Candidate Restriction (R3 Extension):** `recommend_user`, `recommend_history`, `similar_items`, and `popular` filter scored candidates such that recommended items are strictly a subset of fresh window articles (`assert all(r.item_id in fresh_candidates for r in recs)`).
+2. **Fresh Popularity Baseline:** Global popularity inside the window counts positive interactions strictly within the active window period, reflecting currently trending news rather than cumulative historical clicks.
+3. **Graceful Fallback:** If fewer than $k$ candidates pass the similarity threshold, padding with popular items is also restricted to window popular articles, preserving the freshness invariant under all fallback scenarios.
+
+**Consequences:**
+- Guarantees fresh news recommendations in the UI and serving API.
+- Verified by unit tests in `backend/tests/unit/test_tfidf_model.py`.
+
+**Related tasks:** P5.5, P5.8, R3
+
 ---
 
 <!-- Add new entries above this line -->
+
 
 
 

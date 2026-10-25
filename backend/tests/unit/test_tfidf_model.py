@@ -299,3 +299,77 @@ def test_save_and_load_roundtrip(
     assert [r.item_id for r in orig_hist_recs] == [r.item_id for r in loaded_hist_recs]
     for r1, r2 in zip(orig_hist_recs, loaded_hist_recs, strict=True):
         assert pytest.approx(r1.score, rel=1e-5) == r2.score
+
+
+def test_recency_window_restricts_candidates(
+    sample_articles_data: tuple[pd.DataFrame, pd.DataFrame],
+) -> None:
+    """Acceptance criterion: recommendations never include articles outside the recency window."""
+    items, _ = sample_articles_data
+    # Interactions with old clicks (timestamp 1000) and recent clicks (timestamp 200,000)
+    timed_interactions = pd.DataFrame(
+        [
+            # Old period clicks (e.g. Day 1, ~2 days ago)
+            {"user_id": "U1", "item_id": "N001", "signal": 1.0, "timestamp": 1000},
+            {"user_id": "U1", "item_id": "N002", "signal": 1.0, "timestamp": 2000},
+            # Recent period clicks (Day 3, within last 86,400s)
+            {"user_id": "U2", "item_id": "N003", "signal": 1.0, "timestamp": 190000},
+            {"user_id": "U2", "item_id": "N004", "signal": 1.0, "timestamp": 195000},
+            {"user_id": "U3", "item_id": "N005", "signal": 1.0, "timestamp": 200000},
+        ]
+    )
+    spec = load_config("articles", fast=True)
+    spec.serving.recency_window = 86400  # 1 day window
+    model = TfidfProfileModel(spec)
+    model.fit(timed_interactions, items)
+
+    assert model.fresh_candidates is not None
+    # Maximum timestamp is 200,000. Cutoff is 200,000 - 86,400 = 113,600.
+    # N001 and N002 (timestamps 1000, 2000) are outside the window.
+    # N003, N004, N005 (timestamps >= 190,000) are inside the window.
+    assert model.fresh_candidates == {"N003", "N004", "N005"}
+    assert "N001" not in model.fresh_candidates
+    assert "N002" not in model.fresh_candidates
+
+    # Invariant: recommendations must never include articles outside the window!
+    # 1. User recommendations for U1 (who only liked old tech articles)
+    user_recs = model.recommend_user("U1", k=5)
+    assert len(user_recs) > 0
+    assert all(r.item_id in model.fresh_candidates for r in user_recs)
+
+    # 2. Cold-start recommendations
+    cold_recs = model.recommend_history([("N001", 1.0)], k=5)
+    assert len(cold_recs) > 0
+    assert all(r.item_id in model.fresh_candidates for r in cold_recs)
+
+    # 3. Popular recommendations
+    pop_recs = model.popular(k=5)
+    assert len(pop_recs) > 0
+    assert all(r.item_id in model.fresh_candidates for r in pop_recs)
+
+    # 4. Similar items for an old article
+    sim_recs = model.similar_items("N001", k=5)
+    assert len(sim_recs) > 0
+    assert all(r.item_id in model.fresh_candidates for r in sim_recs)
+
+
+def test_set_fresh_candidates_explicitly(
+    sample_articles_data: tuple[pd.DataFrame, pd.DataFrame],
+) -> None:
+    """Explicitly setting fresh candidates pool enforces candidate isolation."""
+    items, interactions = sample_articles_data
+    spec = load_config("articles", fast=True)
+    model = TfidfProfileModel(spec)
+    model.fit(interactions, items)
+
+    # Restrict candidate pool to only N004 and N005
+    model.set_fresh_candidates({"N004", "N005"})
+
+    recs_user = model.recommend_user("U1", k=5)
+    assert all(r.item_id in {"N004", "N005"} for r in recs_user)
+
+    recs_pop = model.popular(k=5)
+    assert all(r.item_id in {"N004", "N005"} for r in recs_pop)
+
+    recs_sim = model.similar_items("N003", k=5)
+    assert all(r.item_id in {"N004", "N005"} for r in recs_sim)
