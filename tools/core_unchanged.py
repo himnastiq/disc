@@ -52,6 +52,8 @@ ALLOWED_PATTERNS = [
     "scripts/**/*",
     "backend/discovery/*",
     "backend/discovery/**/*",
+    "backend/api/*",
+    "backend/api/**/*",
     "IMPLEMENTATION_PLAN.md",
     "README.md",
     "Makefile",
