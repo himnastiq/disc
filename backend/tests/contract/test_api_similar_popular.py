@@ -106,7 +106,9 @@ def test_get_similar_success_and_never_returns_query_item(
         prev_score = float("inf")
         for item in res.results:
             # Acceptance requirement: similar NEVER returns the query item
-            assert item.item_id != query_id, f"Query item {query_id} was returned in similar results"
+            assert item.item_id != query_id, (
+                f"Query item {query_id} was returned in similar results"
+            )
             assert item.item_id in catalogue_ids, f"Item {item.item_id} not in catalogue"
             assert item.item_id not in seen_ids, f"Duplicate item {item.item_id}"
             seen_ids.add(item.item_id)
@@ -120,9 +122,7 @@ def test_get_similar_success_and_never_returns_query_item(
 
 
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
-def test_get_similar_unknown_item_returns_404(
-    api_client: TestClient, content_type: str
-) -> None:
+def test_get_similar_unknown_item_returns_404(api_client: TestClient, content_type: str) -> None:
     """Acceptance requirement: unknown item gives 404 unknown_item."""
     unknown_item_id = "completely_unknown_item_xyz_9999"
     resp = api_client.get(f"/v1/similar?type={content_type}&item_id={unknown_item_id}&k=5")

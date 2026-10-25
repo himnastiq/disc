@@ -65,6 +65,9 @@ def test_types_endpoint_contract(api_client: TestClient) -> None:
         assert t.interaction_count > 0
         assert t.supports_cold_start is True
         assert t.card_type in ("movie", "product", "article")
+        assert t.display_name in ("Movies", "Products", "Articles")
+        assert t.id in ("movies", "products", "articles")
+        assert t.id == t.id.lower()
 
 
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)

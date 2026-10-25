@@ -32,10 +32,8 @@ def verify_api_key_bytes(raw_header: bytes | str | None, expected_key: str | Non
     try:
         if isinstance(raw_header, str):
             raw_bytes = raw_header.encode("utf-8", errors="replace")
-        elif isinstance(raw_header, bytes):
-            raw_bytes = raw_header
         else:
-            return False
+            raw_bytes = raw_header
 
         expected_bytes = expected_key.encode("utf-8")
         return hmac.compare_digest(raw_bytes, expected_bytes)

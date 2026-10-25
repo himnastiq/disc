@@ -28,7 +28,9 @@ EXPECTED_PATHS = {
 
 def test_committed_openapi_matches_generated_schema() -> None:
     """Acceptance test: committed openapi.json is identical to generated OpenAPI schema."""
-    assert DEFAULT_OUTPUT_PATH.exists(), f"Missing committed OpenAPI schema at: {DEFAULT_OUTPUT_PATH}"
+    assert DEFAULT_OUTPUT_PATH.exists(), (
+        f"Missing committed OpenAPI schema at: {DEFAULT_OUTPUT_PATH}"
+    )
     result = export_openapi(DEFAULT_OUTPUT_PATH, check_only=True)
     assert result == 0, "Committed openapi.json drifts from generated FastAPI schema."
 

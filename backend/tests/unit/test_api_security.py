@@ -65,14 +65,18 @@ def test_verify_api_key_bytes_non_ascii_and_surrogates() -> None:
 # ===========================================================================
 
 
-def test_open_access_when_no_api_key_configured(api_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_open_access_when_no_api_key_configured(
+    api_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """When RECOMMENDER_API_KEY is not set, endpoints are accessible without headers."""
     monkeypatch.delenv("RECOMMENDER_API_KEY", raising=False)
     resp = api_client.get("/v1/health")
     assert resp.status_code == 200
 
 
-def test_missing_api_key_returns_401(api_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_missing_api_key_returns_401(
+    api_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """When RECOMMENDER_API_KEY is configured, missing X-API-Key returns 401 unauthorized."""
     monkeypatch.setenv("RECOMMENDER_API_KEY", "prod_secret_token_456")
     resp = api_client.get("/v1/types")
@@ -82,7 +86,9 @@ def test_missing_api_key_returns_401(api_client: TestClient, monkeypatch: pytest
     assert "Missing API key" in data["error"]["message"]
 
 
-def test_invalid_api_key_returns_401(api_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_invalid_api_key_returns_401(
+    api_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """When RECOMMENDER_API_KEY is configured, incorrect key returns 401 unauthorized."""
     monkeypatch.setenv("RECOMMENDER_API_KEY", "prod_secret_token_456")
     resp = api_client.get("/v1/types", headers={"X-API-Key": "incorrect_token"})
@@ -99,7 +105,9 @@ def test_valid_api_key_succeeds(api_client: TestClient, monkeypatch: pytest.Monk
     assert resp.status_code == 200
 
 
-def test_non_ascii_api_key_returns_401_not_500(api_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_non_ascii_api_key_returns_401_not_500(
+    api_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Acceptance criteria: tests with a non-ASCII key header return 401, not 500."""
     monkeypatch.setenv("RECOMMENDER_API_KEY", "ascii_configured_secret")
 
@@ -107,12 +115,16 @@ def test_non_ascii_api_key_returns_401_not_500(api_client: TestClient, monkeypat
     non_ascii_bytes = "café_🔑_invalid".encode("latin-1", errors="replace")
     resp = api_client.get("/v1/types", headers={"X-API-Key": non_ascii_bytes})
 
-    assert resp.status_code == 401, f"Expected 401 Unauthorized but got {resp.status_code}: {resp.text}"
+    assert resp.status_code == 401, (
+        f"Expected 401 Unauthorized but got {resp.status_code}: {resp.text}"
+    )
     data = resp.json()
     assert data["error"]["code"] == "unauthorized"
 
 
-def test_exempt_paths_accessible_without_api_key(api_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_exempt_paths_accessible_without_api_key(
+    api_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Verify OpenAPI and documentation routes are exempt from API key requirement."""
     monkeypatch.setenv("RECOMMENDER_API_KEY", "prod_secret_token_456")
     resp_openapi = api_client.get("/openapi.json")
@@ -122,7 +134,9 @@ def test_exempt_paths_accessible_without_api_key(api_client: TestClient, monkeyp
     assert resp_docs.status_code == 200
 
 
-def test_cors_options_preflight_exempt_from_api_key(api_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cors_options_preflight_exempt_from_api_key(
+    api_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Verify CORS preflight OPTIONS requests are exempt from API key check."""
     monkeypatch.setenv("RECOMMENDER_API_KEY", "prod_secret_token_456")
     resp = api_client.options("/v1/recommend")
@@ -164,6 +178,7 @@ def test_no_debug_stack_trace_on_internal_error(api_client: TestClient) -> None:
         TestClient(api_client.app, raise_server_exceptions=False) as no_raise_client,
         pytest.MonkeyPatch.context() as mp,
     ):
+
         def broken_resolver(*args: Any, **kwargs: Any) -> Any:
             raise RuntimeError("Sensitive internal database exception at line 42 in /etc/secret.py")
 

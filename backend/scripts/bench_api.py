@@ -70,6 +70,7 @@ def get_process_rss_mb() -> float:
     try:
         # POSIX via resource
         import resource
+
         return float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) / 1024.0
     except Exception:
         pass
@@ -106,7 +107,9 @@ def benchmark_endpoint(
             resp = client.post(path, json=json_body)
         t1 = time.perf_counter()
 
-        assert resp.status_code == 200, f"Benchmark request failed with {resp.status_code}: {resp.text}"
+        assert resp.status_code == 200, (
+            f"Benchmark request failed with {resp.status_code}: {resp.text}"
+        )
         latencies.append((t1 - t0) * 1000.0)
 
     rss_end = get_process_rss_mb()
@@ -139,7 +142,9 @@ def run_benchmark(
     """Execute complete performance benchmark suite across core endpoints."""
     print("=" * 70)
     print("Discovery Engine - API Latency & Memory Benchmark (Phase 7, P7.11)")
-    print(f"Iterations: {requests} reqs/endpoint (warm-up: {warmup}) | Target p95 < {TARGET_P95_MS}ms")
+    print(
+        f"Iterations: {requests} reqs/endpoint (warm-up: {warmup}) | Target p95 < {TARGET_P95_MS}ms"
+    )
     print("=" * 70)
 
     app = create_app()
@@ -161,10 +166,22 @@ def run_benchmark(
             {"method": "GET", "path": "/v1/health", "params": {}},
             {"method": "GET", "path": "/v1/types", "params": {}},
             {"method": "GET", "path": "/v1/about", "params": {}},
-            {"method": "GET", "path": "/v1/items/search", "params": {"type": "movies", "q": "star", "limit": 10}},
-            {"method": "GET", "path": f"/v1/users/{movie_user}/profile", "params": {"type": "movies"}},
+            {
+                "method": "GET",
+                "path": "/v1/items/search",
+                "params": {"type": "movies", "q": "star", "limit": 10},
+            },
+            {
+                "method": "GET",
+                "path": f"/v1/users/{movie_user}/profile",
+                "params": {"type": "movies"},
+            },
             # Movies endpoints
-            {"method": "GET", "path": "/v1/recommend", "params": {"type": "movies", "user_id": movie_user, "k": 10}},
+            {
+                "method": "GET",
+                "path": "/v1/recommend",
+                "params": {"type": "movies", "user_id": movie_user, "k": 10},
+            },
             {
                 "method": "POST",
                 "path": "/v1/recommend/cold-start",
@@ -175,7 +192,11 @@ def run_benchmark(
                 },
             },
             {"method": "GET", "path": "/v1/popular", "params": {"type": "movies", "k": 10}},
-            {"method": "GET", "path": "/v1/similar", "params": {"type": "movies", "item_id": movie_item, "k": 10}},
+            {
+                "method": "GET",
+                "path": "/v1/similar",
+                "params": {"type": "movies", "item_id": movie_item, "k": 10},
+            },
             # Products endpoints
             {
                 "method": "GET",
@@ -191,9 +212,17 @@ def run_benchmark(
                     "history": [{"item_id": prod_item, "signal": 5.0}],
                 },
             },
-            {"method": "GET", "path": "/v1/similar", "params": {"type": "products", "item_id": prod_item, "k": 10}},
+            {
+                "method": "GET",
+                "path": "/v1/similar",
+                "params": {"type": "products", "item_id": prod_item, "k": 10},
+            },
             # Articles endpoints
-            {"method": "GET", "path": "/v1/recommend", "params": {"type": "articles", "user_id": article_user, "k": 5}},
+            {
+                "method": "GET",
+                "path": "/v1/recommend",
+                "params": {"type": "articles", "user_id": article_user, "k": 5},
+            },
             {
                 "method": "POST",
                 "path": "/v1/recommend/cold-start",
@@ -224,7 +253,9 @@ def run_benchmark(
             res["label"] = label
             results.append(res)
             status_str = "PASS" if res["meets_budget"] else "FAIL"
-            print(f" p50={res['p50_ms']:5.2f}ms | p95={res['p95_ms']:5.2f}ms | RSS={res['rss_mb']:5.1f}MB [{status_str}]")
+            print(
+                f" p50={res['p50_ms']:5.2f}ms | p95={res['p95_ms']:5.2f}ms | RSS={res['rss_mb']:5.1f}MB [{status_str}]"
+            )
 
     # Generate Markdown Table
     md_lines: list[str] = [
@@ -279,12 +310,22 @@ def run_benchmark(
 def main() -> None:
     """CLI entrypoint for bench_api.py."""
     parser = argparse.ArgumentParser(description="Run API latency and memory benchmark suite.")
-    parser.add_argument("--requests", "-n", type=int, default=500, help="Number of benchmark iterations (default: 500)")
-    parser.add_argument("--warmup", "-w", type=int, default=50, help="Number of warm-up iterations (default: 50)")
+    parser.add_argument(
+        "--requests",
+        "-n",
+        type=int,
+        default=500,
+        help="Number of benchmark iterations (default: 500)",
+    )
+    parser.add_argument(
+        "--warmup", "-w", type=int, default=50, help="Number of warm-up iterations (default: 50)"
+    )
     parser.add_argument("--no-append", action="store_true", help="Do not append to docs/RESULTS.md")
 
     args = parser.parse_args()
-    results = run_benchmark(requests=args.requests, warmup=args.warmup, append_to_results=not args.no_append)
+    results = run_benchmark(
+        requests=args.requests, warmup=args.warmup, append_to_results=not args.no_append
+    )
 
     all_passed = all(r["meets_budget"] for r in results)
     sys.exit(0 if all_passed else 1)

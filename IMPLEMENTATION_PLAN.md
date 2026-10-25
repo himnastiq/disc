@@ -988,17 +988,32 @@ E:/discover/.venv/Scripts/python.exe tools/vendored_manifest.py --check
 "All checks passed."
 ```
 
+### Session 20: FIX-28 (API Contract Tests Certification and Spec Schema Alignment)
+- **Completed Fixes (FIX-28):**
+  - **Spec Name & Display Name Bug Fix:** Certified schema alignment in `backend/tests/contract/test_api_metadata.py`. `TypeInfo` returns `id` (e.g. `movies`, `products`, `articles`) derived from `spec.type` and `display_name` (e.g. `Movies`, `Products`, `Articles`) derived from `spec.display_name`.
+  - **P7.3 Endpoints Validation:** All 19 metadata contract tests (including `/v1/health`, `/v1/types`, `/v1/types/{type}/users`, `/v1/items/{type}/{id}`, `/v1/search`, `/v1/about`, and `/v1/metrics`) pass cleanly.
+  - **Isolation & Order Invariance:** Ran both `pytest tests/contract -q` in isolation and full `make check` (`pytest tests/ -v`). Both suites passed 100% green with zero order or state dependence.
+- **`pytest tests/contract -q` Raw Output:**
+```
+.........................................................                [100%]
+============================== warnings summary ===============================
+..\.venv\Lib\site-packages\fastapi\testclient.py:1
+  E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
 
-
-
-
-
-
-
-
-
-
-
-
-
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+57 passed, 1 warning in 12.49s
+```
+- **`make check` Raw Output:**
+```
+cd backend && E:/discover/.venv/Scripts/python.exe -m ruff check .
+All checks passed!
+cd backend && E:/discover/.venv/Scripts/python.exe -m ruff format --check .
+114 files already formatted
+cd backend && E:/discover/.venv/Scripts/python.exe -m mypy engine/ api/
+Success: no issues found in 44 source files
+cd backend && E:/discover/.venv/Scripts/python.exe -m pytest tests/ -v --tb=short
+============ 408 passed, 1 skipped, 1 warning in 558.57s (0:09:18) ============
+"All checks passed."
+```
 

@@ -449,4 +449,3 @@ def get_similar(
         k=len(results),
         results=results,
     )
-
