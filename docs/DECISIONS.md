@@ -248,16 +248,24 @@ Task P4.4 requires adding `configs/products.yaml` reusing `SarModel` without mod
 - **Peak Memory During Training:** 22.13 MB (training time 2.67s)
 - **Peak Memory During Serving:** 2.66 MB for 100 recommendation requests (serving latency 35ms/user)
 
-**Scaling Projection for Video Games (standard mode):**
-- With `max_items_in_similarity: 8000` item budget cap and `top_neighbors_per_item: 50`:
-  - Dense 50,000 x 50,000 matrix would demand ~20 GB RAM.
-  - Capped sparse CSR similarity matrix storage: $\le 8,000 \times 50 \times 12\text{ bytes} \approx 4.8\text{ MB}$.
-  - Estimated peak training memory: $< 150\text{ MB}$, well within standard single-machine budget.
+**Real Measured Memory Performance & Evaluation (Video Games, standard mode - FIX-20):**
+- **Catalogue Items:** 50,256 items (capped to top 8,000 in similarity via `max_items_in_similarity: 8000`)
+- **Total Interactions:** 231,780 reviews across 24,309 users (216,994 deduplicated train/test interactions)
+- **Memory Scaling Audit:**
+  - The prior estimate of `< 150 MB` was unsupported: dense $N \times N$ SAR training scales quadratically with $O(N^2)$ items. Uncapped dense $50,256 \times 50,256$ float64 calculation requires $(50,256)^2 \times 8\text{ B} \approx 20.2\text{ GB}$ RAM, exceeding standard budgets.
+  - With `max_items_in_similarity: 8000`, real peak memory measured via `tracemalloc` during training is **1,551.18 MB (~1.55 GB)** (training fit time 96.67s).
+  - Real peak memory during serving is **56.43 MB** for 100 recommendation requests (serving latency 208.76 ms/user).
+- **Video Games Evaluation with 95% Bootstrap CIs (N = 1,543 evaluated test users, 500 resamples):**
+  - **NDCG@10:** SAR = 0.04578 [0.03777, 0.05372] | POP = 0.01676 [0.01207, 0.02156] | RND = 0.00103 [0.0, 0.00259] -> **CIs Strictly Separate (p < 0.05)**
+  - **Recall@10:** SAR = 0.07957 [0.06791, 0.09224] | POP = 0.03246 [0.02370, 0.03998] | RND = 0.00162 [0.0, 0.00356] -> **CIs Strictly Separate (p < 0.05)**
+  - **Precision@10:** SAR = 0.00927 [0.00752, 0.01095] | POP = 0.00389 [0.00285, 0.00486] -> **CIs Strictly Separate (p < 0.05)**
+  - **MAP@10:** SAR = 0.03414 [0.02735, 0.04178] | POP = 0.01126 [0.00737, 0.01556] -> **CIs Strictly Separate (p < 0.05)**
+  - **HitRate@10:** SAR = 0.08879 [0.07549, 0.10305] | POP = 0.03824 [0.02916, 0.04796] -> **CIs Strictly Separate (p < 0.05)**
 
 **Decision:**
-Reuse `SarModel` without any modifications to model code for the products pipeline. Set `serving.top_neighbors_per_item: 50` and `serving.max_items_in_similarity: 8000` (capped to 2000 in fast mode) to bound memory strictly within budget.
+Enforce `serving.max_items_in_similarity: 8000` on the training path to prevent $O(N^2)$ RAM explosion (bounding training memory to 1.55 GB vs 20.2 GB uncapped). Set `serving.top_neighbors_per_item: 50` for bounded 56.4 MB serving memory. Standard Video Games evaluation confirms SAR decisively beats Popularity across all metrics with strictly separated 95% CIs.
 
-**Related tasks:** P4.4, P4.7
+**Related tasks:** P4.4, P4.7, FIX-20
 
 ## D-014: TF-IDF Profile Model: Content-Based Recommender Abstraction (P5.4)
 
@@ -352,6 +360,44 @@ Task P5.8 requires reporting both protocols honestly in `artifacts/articles/metr
 - Zero core engine modifications were made: candidate pool alignment is achieved purely through the `exclude_ids` interface.
 
 **Related tasks:** P5.8, P5.5, R4
+
+## D-017: Clean-Room Rebuild Verification and Performance Benchmark (P6.4)
+
+**Date:** 2026-10-25
+**Status:** Approved
+
+**Context:**
+Task P6.4 requires proving reproducible end-to-end builds from scratch. Specifically: starting from a fresh `git clone` and clean virtual environment, execute the full sequence using only standard README / Makefile targets:
+`make setup` -> `make data` -> `make train-fast` -> `make eval`
+Wall-clock elapsed times and any necessary manual steps must be recorded and verified. Acceptance criteria mandate that the entire build succeeds with zero undocumented or manual interventions.
+
+**Execution and Architecture:**
+1. **Automation Harness (`tools/clean_room_rebuild.py`):**
+   - Creates a fresh git clone of the repository in an isolated temporary directory.
+   - Bootstraps an isolated virtual environment (`sys.executable -m venv .venv`).
+   - Executes `make setup` (`pip install -e backend/.[core,dev]`).
+   - Executes `make data` (`python backend/scripts/fetch_data.py`), populating local raw data cache to eliminate external network flakes.
+   - Executes `make train-fast` for all three domains (`movies`, `products`, `articles`).
+   - Executes `make eval` (`python tools/make_results.py`).
+   - Programmatically asserts cryptographic manifests and artifact bundles (`manifest.json`, `metrics.json`, `topn.parquet`, `items.parquet`) across all domains, and verifies the generated `docs/RESULTS.md` and `docs/figures/*.png`.
+
+2. **Benchmark Results (Wall-Clock Elapsed Times):**
+   - **Step 1: Git Clone:** 1.54 s
+   - **Step 2: Virtualenv Creation:** 19.86 s
+   - **Step 3: Setup (`pip install -e backend/.[core,dev]`):** 200.62 s
+   - **Step 4: Data Fetch & Verification (`fetch_data.py`):** 87.34 s
+   - **Step 5: Training (Movies Fast):** 31.29 s
+   - **Step 6: Training (Products Fast):** 34.35 s
+   - **Step 7: Training (Articles Fast):** 4.12 s
+   - **Step 8: Evaluation & Figure Rendering (`make_results.py`):** 2.62 s
+   - **Total End-to-End Elapsed Time:** 451.51 s (~7.5 minutes)
+
+**Findings and Verification:**
+- All artifacts generated cleanly with zero manual intervention or external non-standard dependencies.
+- Windows cross-drive path resolution was hardened in `tools/make_results.py` to prevent `ValueError` when temporary directories reside on distinct drives (e.g. `C:` temp vs `E:` repo).
+- Verifies that any new engineer or CI runner can clone and deploy Discovery Engine with standard commands.
+
+**Related tasks:** P6.4
 
 ---
 

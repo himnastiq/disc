@@ -39,16 +39,16 @@
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 11 | 0 | 1 | 12 | 91% |
-| 6 | Cross-type hardening and evidence | 3 | 0 | 0 | 8 | 37% |
+| 6 | Cross-type hardening and evidence | 4 | 0 | 0 | 8 | 50% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **68** | | | **129** | **52%** |
+| | **Overall** | **69** | | | **129** | **53%** |
 
-`[##########----------] 52%  (68/129 tasks)`
+`[##########----------] 53%  (69/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -226,7 +226,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P6.1** `tools/make_results.py` generates `docs/RESULTS.md` and `docs/figures/*.png` from the three `metrics.json` files (tables: model vs baselines per type; cold-start curves; extra metrics; protocol notes; honest limitations). *Acceptance:* regenerates identically; contains no hand-typed numbers.
 - [x] **P6.2** Extensibility proof: add a synthetic fourth type `toy` (test-only adapter and config in `tests/`) and a test that registers it, trains it, and serves recommendations **without editing any file in `engine/` core or `api/`**. *Acceptance:* test passes in CI.
 - [x] **P6.3** Determinism: retrain each type twice in `--fast` mode and compare `topn.parquet` hashes. *Acceptance:* identical, or differences explained and eliminated.
-- [ ] **P6.4** Clean-room rebuild: from a fresh clone and fresh virtualenv run `make setup data train-fast eval`; record wall-clock times and any manual steps. *Acceptance:* works using only README commands (update the README if not).
+- [x] **P6.4** Clean-room rebuild: from a fresh clone and fresh virtualenv run `make setup data train-fast eval`; record wall-clock times and any manual steps. *Acceptance:* works using only README commands (update the README if not).
 - [ ] **P6.5** Cross-type consistency checks: all three artifact sets load through the same loader; all models pass the same R3 invariant suite via one parametrised test over registered types. *Acceptance:* parametrised test over `registry.types()`.
 - [ ] **P6.6** Statistical honesty: for each type and headline metric, compute a bootstrap confidence interval over users (at least 200 resamples) and report whether the model's advantage over popularity is outside the interval. *Acceptance:* intervals in `metrics.json` and shown in RESULTS.md.
 - [ ] **P6.7** Failure-mode review: write `docs/DECISIONS.md` entries for known limitations (popularity bias, cold-start items not in training, domain shift, short histories, news freshness, offline-versus-online gap, dataset licences). *Acceptance:* each limitation has a measured or observed example where possible.
@@ -788,6 +788,34 @@ tests\unit\test_tuning.py ...                                            [100%]
 
 ============================== 3 passed in 4.16s ==============================
 ```
+
+### Session 12: FIX-20 Products Video Games standard variant, peak memory measurement, and D-013 correction
+- **Requirement:** Run standard variant (Video Games), measure real peak training and serving memory and results with CIs, correct D-013 (dense $N \times N$ SAR training scales with $O(N^2)$ items; '<150 MB' estimate is unsupported). Fix training path if memory exceeds budget.
+- **Data Acquisition:**
+  - Downloaded Amazon Video Games 5-core reviews (`reviews_Video_Games_5.json.gz`, 113.1 MB) and metadata (`meta_Video_Games.json.gz`, 23.6 MB) to `data/raw/amazon/video_games/`.
+- **Real Memory Measurement Output (`tracemalloc` profiling):**
+```
+Data loaded: 216994 interactions, 8000 items in 92.15s, peak memory 367.98 MB
+Split complete: train=174097, test=26486 in 94.79s
+SAR fit complete in 96.67s, peak training memory: 1551.18 MB
+Serving complete: 100 users in 20.88s (208.76 ms/user), peak serving memory: 56.43 MB
+```
+- **Findings & Analysis:**
+  - Dense $N \times N$ SAR training scales quadratically with $O(N^2)$ items: unconstrained dense calculation for all 50,256 items would require $(50,256)^2 \times 8\text{ B} \approx 20.2\text{ GB}$ RAM.
+  - The previous estimate in D-013 of `< 150 MB` was unsupported because it only accounted for sparse storage, omitting the dense intermediate broadcast arrays created during co-occurrence similarity calculation.
+  - With `max_items_in_similarity: 8000`, peak training memory is **1,551.18 MB (~1.55 GB)** and peak serving memory is **56.43 MB**.
+- **Video Games Evaluation Output (N=1,543 evaluated test users, 500 resamples):**
+```
+--- Video Games Evaluation (N = 1543 evaluated users) ---
+NDCG@10: SAR=0.04578 [0.03777, 0.05372] | POP=0.01676 [0.01207, 0.02156] | RND=0.00103 [0.0, 0.00259] | CIs Separate: True
+RECALL@10: SAR=0.07957 [0.06791, 0.09224] | POP=0.03246 [0.0237, 0.03998] | RND=0.00162 [0.0, 0.00356] | CIs Separate: True
+PRECISION@10: SAR=0.00927 [0.00752, 0.01095] | POP=0.00389 [0.00285, 0.00486] | RND=0.00019 [0.0, 0.00045] | CIs Separate: True
+MAP@10: SAR=0.03414 [0.02735, 0.04178] | POP=0.01126 [0.00737, 0.01556] | RND=0.00082 [0.0, 0.00219] | CIs Separate: True
+HIT_RATE@10: SAR=0.08879 [0.07549, 0.10305] | POP=0.03824 [0.02916, 0.04796] | RND=0.00194 [0.0, 0.00454] | CIs Separate: True
+```
+- **Updates Applied:**
+  - `docs/DECISIONS.md`: updated D-013 with real measured peak memory (1.55 GB training, 56.4 MB serving), $O(N^2)$ scaling analysis, and Video Games headline evaluation showing all CIs strictly separate.
+
 
 
 

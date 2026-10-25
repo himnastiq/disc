@@ -43,6 +43,7 @@ def test_movies_metrics_cold_start_curve() -> None:
 def test_cold_start_at_zero_likes_equals_popularity_baseline() -> None:
     """Verify that at 0 likes, SAR recommendation exactly equals popularity baseline (FIX-18)."""
     import pandas as pd
+
     from engine.config import load_config
     from engine.evaluation.metrics import hit_rate, ndcg, recall
     from engine.models.baselines import PopularityModel
@@ -91,9 +92,13 @@ def test_cold_start_at_zero_likes_equals_popularity_baseline() -> None:
         # Bit-for-bit identical recommendations
         assert [r.item_id for r in p_recs] == [r.item_id for r in s_recs]
         for r in p_recs:
-            pop_preds.append({"user_id": uid, "item_id": r.item_id, "score": r.score, "rank": r.rank})
+            pop_preds.append(
+                {"user_id": uid, "item_id": r.item_id, "score": r.score, "rank": r.rank}
+            )
         for r in s_recs:
-            sar_zero_preds.append({"user_id": uid, "item_id": r.item_id, "score": r.score, "rank": r.rank})
+            sar_zero_preds.append(
+                {"user_id": uid, "item_id": r.item_id, "score": r.score, "rank": r.rank}
+            )
 
     pos_test = test_df[test_df["signal"] >= 4.0]
     df_pop = pd.DataFrame(pop_preds)
@@ -109,4 +114,3 @@ def test_cold_start_at_zero_likes_equals_popularity_baseline() -> None:
     assert r_pop == r_sar0
     assert n_pop == n_sar0
     assert h_pop == h_sar0
-
