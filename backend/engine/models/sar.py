@@ -46,34 +46,50 @@ def _pad_with_popular(
 def sparsify_similarity(
     sim: np.ndarray | sparse.spmatrix,
     top_k: int,
+    chunk_size: int = 1000,
 ) -> sparse.csr_matrix:
     """Retain only the top_k highest similarity neighbors per item row (excluding self).
 
     Zeroes out diagonal (self-similarity), drops non-positive scores, and retains at most
     top_k highest similarity entries per row, returning a compact scipy CSR matrix.
+    Processes rows in chunks so peak memory stays near the size of the sparse result.
     """
-    dense_sim = sim.toarray() if isinstance(sim, sparse.spmatrix) else np.array(sim, copy=True)
-
-    n = dense_sim.shape[0]
+    n = sim.shape[0]
     if n == 0:
         return sparse.csr_matrix((0, 0), dtype=float)
 
-    # Zero out diagonal (self similarity is not a neighbor)
-    np.fill_diagonal(dense_sim, 0.0)
+    if chunk_size <= 0:
+        chunk_size = 1000
 
-    # If number of candidate neighbors (n - 1) is <= top_k, drop non-positive values
-    if n - 1 <= top_k:
-        dense_sim[dense_sim <= 0.0] = 0.0
-        return sparse.csr_matrix(dense_sim)
-
-    # For each row, find indices that are NOT in the top_k
+    chunks: list[sparse.csr_matrix] = []
     kth = n - top_k
-    partitioned_indices = np.argpartition(dense_sim, kth, axis=1)
-    rows = np.arange(n)[:, None]
-    cols_to_zero = partitioned_indices[:, :kth]
-    dense_sim[rows, cols_to_zero] = 0.0
-    dense_sim[dense_sim <= 0.0] = 0.0
-    return sparse.csr_matrix(dense_sim)
+
+    for start in range(0, n, chunk_size):
+        end = min(start + chunk_size, n)
+        chunk_len = end - start
+
+        if isinstance(sim, sparse.spmatrix):
+            chunk = sim[start:end].toarray()
+        else:
+            chunk = np.array(sim[start:end], copy=True)
+
+        # Zero out diagonal (self-similarity is not a neighbor)
+        chunk[np.arange(chunk_len), np.arange(start, end)] = 0.0
+
+        if n - 1 <= top_k:
+            chunk[chunk <= 0.0] = 0.0
+        else:
+            partitioned_indices = np.argpartition(chunk, kth, axis=1)
+            rows = np.arange(chunk_len)[:, None]
+            cols_to_zero = partitioned_indices[:, :kth]
+            chunk[rows, cols_to_zero] = 0.0
+            chunk[chunk <= 0.0] = 0.0
+
+        chunks.append(sparse.csr_matrix(chunk))
+
+    if len(chunks) == 1:
+        return chunks[0]
+    return sparse.vstack(chunks, format="csr")
 
 
 @register_model("sar")

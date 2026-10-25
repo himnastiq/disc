@@ -14,7 +14,7 @@ from scipy import sparse
 from engine.config import load_config
 from engine.errors import UnknownItem, UnknownUser
 from engine.evaluation.checks import check_r3_model_invariants
-from engine.models.sar import SarModel
+from engine.models.sar import SarModel, sparsify_similarity
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -305,3 +305,48 @@ def test_sar_max_items_in_similarity_budget_cap(
     with pytest.raises(UnknownItem) as exc_info:
         model.similar_items("totally_unknown_movie", k=5)
     assert exc_info.value.item_id == "totally_unknown_movie"
+
+
+def test_sparsify_similarity_chunked_equality_on_random_matrix() -> None:
+    """Verify chunked sparsify_similarity matches non-chunked baseline on random dense/sparse matrices (FIX-15)."""
+
+    def _sparsify_non_chunked(dense_sim: np.ndarray, top_k: int) -> sparse.csr_matrix:
+        n = dense_sim.shape[0]
+        if n == 0:
+            return sparse.csr_matrix((0, 0), dtype=float)
+        mat = np.array(dense_sim, copy=True)
+        np.fill_diagonal(mat, 0.0)
+        if n - 1 <= top_k:
+            mat[mat <= 0.0] = 0.0
+            return sparse.csr_matrix(mat)
+        kth = n - top_k
+        partitioned_indices = np.argpartition(mat, kth, axis=1)
+        rows = np.arange(n)[:, None]
+        cols_to_zero = partitioned_indices[:, :kth]
+        mat[rows, cols_to_zero] = 0.0
+        mat[mat <= 0.0] = 0.0
+        return sparse.csr_matrix(mat)
+
+    rng = np.random.RandomState(42)
+    # Test multiple matrix shapes and top_k settings
+    for size in [5, 20, 75, 150]:
+        for top_k in [2, 5, 20]:
+            # Dense random matrix
+            mat_dense = rng.uniform(0.0, 1.0, size=(size, size))
+            expected = _sparsify_non_chunked(mat_dense, top_k=top_k)
+
+            # Test multiple chunk sizes: smaller than n, equal to n, larger than n
+            for chunk_size in [7, 25, size, size + 10]:
+                actual = sparsify_similarity(mat_dense, top_k=top_k, chunk_size=chunk_size)
+                assert isinstance(actual, sparse.csr_matrix)
+                np.testing.assert_allclose(actual.toarray(), expected.toarray(), atol=1e-12)
+
+            # Sparse random matrix
+            mat_sparse = sparse.random(size, size, density=0.25, random_state=rng, format="csr")
+            expected_sparse = _sparsify_non_chunked(mat_sparse.toarray(), top_k=top_k)
+            for chunk_size in [11, 50]:
+                actual_sparse = sparsify_similarity(mat_sparse, top_k=top_k, chunk_size=chunk_size)
+                assert isinstance(actual_sparse, sparse.csr_matrix)
+                np.testing.assert_allclose(
+                    actual_sparse.toarray(), expected_sparse.toarray(), atol=1e-12
+                )
