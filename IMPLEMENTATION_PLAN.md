@@ -37,7 +37,7 @@
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
-| 4 | Products pipeline (Amazon + SAR) | 7 | 0 | 0 | 8 | 87% |
+| 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **53** | | | **129** | **41%** |
+| | **Overall** | **54** | | | **129** | **41%** |
 
-`[########------------] 41%  (53/129 tasks)`
+`[########------------] 41%  (54/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -194,7 +194,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P4.5** Tune on validation, train, evaluate against baselines, cold-start curve, precompute artifacts, select demo users (same procedure as Phase 3). *Acceptance:* same artifact set as movies; R4 sanity results recorded honestly.
 - [x] **P4.6** Product-specific checks: sparse-data behaviour (many users with few interactions), long-tail items, category diversity of top-k, "similar alternatives" quality spot-check (top-5 similar items for 10 random products share category above a recorded rate). *Acceptance:* numbers in `metrics.json`.
 - [x] **P4.7** **Core unchanged check:** `git diff` between the Phase 3 end commit and now shows changes only in `adapters/`, `configs/`, tests, docs, and artifacts tooling; any core change requires a `docs/DECISIONS.md` entry explaining why the abstraction was insufficient (and a fix to the abstraction, not a special case). *Acceptance:* check script `tools/core_unchanged.py` added and passing.
-- [ ] **P4.8** Phase 4 Gate and "break your own work" ritual.
+- [x] **P4.8** Phase 4 Gate and "break your own work" ritual.
 
 ---
 
@@ -491,6 +491,37 @@ Each item must keep the API free of deep-learning imports (training offline, art
 - **Decisions made:** D-010 (Sparsification evidence and item budget cap), D-011 (Model evaluation against Popularity and Random).
 - **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (168 tests passing, 0 skipped, 0 failed), ruff clean, mypy strict clean (36 source files).
 - **Next steps:** Phase 4: Products pipeline (P4.1 — inspect `discovery.datasets.amazon_reviews`, select category, record in `docs/DATASETS.md` and `docs/DECISIONS.md`).
+
+### Session 7: 2026-10-25, agent session (Phase 4 Complete: Products pipeline, Amazon adapter, SAR reuse, product checks, core unchanged check, and Phase 4 Gate)
+- Started at: P4.1   Ended at: P4.8 (Phase 4 complete)
+- **Completed this session:**
+  - P4.1: Inspected `discovery.datasets.amazon_reviews`; selected Musical Instruments 5-core (10,261 reviews, 900 items) for fast mode and Video Games 5-core (231K reviews, 50K items) for standard mode; recorded D-012 in `docs/DECISIONS.md`, updated `docs/DATASETS.md`, and implemented `fetch_amazon` in `backend/scripts/fetch_data.py`.
+  - P4.2: Implemented `AmazonProductsAdapter` in `backend/engine/adapters/amazon.py` supporting string IDs (ASIN, reviewerID), rating weights, metadata join (title, brand, price, image URL, categories), missing-metadata fallbacks (title = id, categories = ["General"]), and popularity budget capping; added unit tests in `test_amazon_adapter.py`.
+  - P4.3: Validated R1 report and R2 chronological split without temporal leakage on real Amazon Instruments data in `test_products_split_leakage.py`.
+  - P4.4: Configured `backend/engine/configs/products.yaml` reusing `SarModel`; measured peak memory during training (22.13 MB) and serving (2.66 MB for 100 users, 0.37 MB sparse similarity matrix); recorded D-013 in `docs/DECISIONS.md`.
+  - P4.5: Executed pipeline (`python -m engine.train --type products --fast`); evaluated SAR against Popularity and Random (SAR beat Popularity NDCG 0.0027 vs 0.0016, HitRate 0.0952 vs 0.0476, Coverage 0.0789 vs 0.0100, Personalisation 0.8456 vs 0.2227); evaluated cold-start curve; precomputed top-N and user personas; selected 8 diverse demo users with verified pairwise Jaccard < 0.5.
+  - P4.6: Implemented `tools/product_checks.py` computing sparse user stats (39.05% users <= 5 interactions), long-tail catalogue volume share (51.41%) and recommendation share (10.40%), category diversity (15.94 unique categories at k=10), and similar alternatives spot-check (100% category match, target > 60%); embedded in `artifacts/products/metrics.json` and re-signed manifest; added unit tests in `test_product_checks.py`.
+  - P4.7: Implemented `tools/core_unchanged.py` and unit tests in `test_core_unchanged.py`; proved that git diff between Phase 3 end (`6da1d3a`) and current HEAD is strictly confined to `adapters/`, `configs/`, `tests/`, `docs/`, `tools/`, `scripts/`, and `IMPLEMENTATION_PLAN.md`. Exactly zero core engine files were modified.
+  - P4.8: Completed Phase 4 Gate and "break your own work" ritual in `backend/tests/integration/test_products_gate.py`:
+    1. String ID and ASIN integrity: Handled alphanumeric IDs without type distortion; verified string ID cold start.
+    2. Metadata fallback robustness: Gracefully defaulted missing metadata to title=id and categories=['General'].
+    3. Item budget cap invariance: SAR similarity matrix adhered strictly to `max_items_in_similarity` budget.
+    4. Future temporal leakage isolation: Future test items never leaked into train popularity or similarity.
+    5. Seen items exclusion: Seen items strictly excluded, even when user history matched top popular items.
+    6. Real products artifacts validation: Verified SHA-256 manifest, R1 data report, R4 metrics bounds, R5 cold start, demo users Jaccard < 0.5, and product-specific checks.
+    7. Core unchanged invariant: Confirmed zero modifications to core engine files.
+- **Phase 4 Gate results:**
+  - R1 (Data validity): Real products data report valid (10,261 interactions, 1,429 users, 900 items, 0.992022 sparsity) ✓
+  - R2 (No leakage): Chronological split verified on real Amazon Instruments data; temporal boundaries strictly preserved ✓
+  - R3 (Model invariants): Monotonic score order, no duplicate items, seen items strictly excluded, string IDs preserved ✓
+  - R4 (Evaluation validity): Identical candidate protocol; SAR decisively beats Popularity and Random ✓
+  - R5 (Cold start): Degrades predictably from 0 to 5 likes; string ASIN histories normalized and scored ✓
+  - R6 (Reproducibility): Cryptographic SHA-256 manifest verified on disk ✓
+  - Core Unchanged: 0 core engine files modified across Phase 4 ✓
+- **Decisions made:** D-012 (Amazon Reviews dataset selection), D-013 (SAR reuse and memory budgets for products).
+- **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (191 tests passing, 0 failed, 0 skipped), ruff clean, mypy strict clean (37 source files).
+- **Next steps:** Phase 5: Articles pipeline (P5.1 — Dataset step: fetch MIND-small via vendored helpers, record license and citation in `docs/DATASETS.md`).
+
 
 
 
