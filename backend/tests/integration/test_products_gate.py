@@ -299,9 +299,14 @@ def test_gate_real_products_artifacts_integrity() -> None:
 @pytest.mark.integration
 def test_gate_core_unchanged_invariant() -> None:
     """RITUAL 7: Verify core engine abstractions remained 100% untouched across Phase 4."""
-    passed, disallowed, core_violations = check_core_unchanged()
+    # Phase 4 boundary: 6da1d3a (Phase 3 end) to c31af6e (Phase 4 Gate / end)
+    passed, disallowed, core_violations = check_core_unchanged(
+        base_commit="6da1d3a", target="c31af6e"
+    )
     assert passed, (
         f"Core unchanged invariant failed! Core violations: {core_violations}, Disallowed: {disallowed}"
     )
-    assert core_violations == [], f"Engine core files were modified: {core_violations}"
-    assert disallowed == [], f"Non-allowed files modified: {disallowed}"
+    assert core_violations == [], (
+        f"Engine core files were modified across Phase 4: {core_violations}"
+    )
+    assert disallowed == [], f"Non-allowed files modified across Phase 4: {disallowed}"

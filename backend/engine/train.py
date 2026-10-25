@@ -204,26 +204,58 @@ def run_pipeline(
     primary_model = build_model(spec)
     log_event(logger, "model_built", model_name=spec.model.name)
 
-    eval_models = [PopularityModel(spec), RandomModel(spec)]
+    pop_model = PopularityModel(spec)
+    rand_model = RandomModel(spec)
+
+    eval_models = [pop_model, rand_model]
     if spec.model.name not in ("popularity", "random"):
         eval_models.append(primary_model)
     else:
         eval_models = (
-            [primary_model, RandomModel(spec)]
+            [primary_model, rand_model]
             if spec.model.name == "popularity"
-            else [PopularityModel(spec), primary_model]
+            else [pop_model, primary_model]
         )
 
     # 6. Run evaluation harness across baselines and primary model
-    harness = EvaluationHarness(spec, models=eval_models)
-    max_test = 50 if fast else 200
-    metrics = harness.run(
-        interactions=interactions,
-        items=items,
-        max_test_users=max_test,
-        cold_start_sample_users=20 if fast else 50,
-        split_data=(train_df, valid_df, test_df),
-    )
+    if (
+        content_type == "articles"
+        and hasattr(adapter, "impression_candidates")
+        and adapter.impression_candidates
+    ):
+        from engine.evaluation.articles_eval import run_articles_dual_protocol_eval
+
+        # Fit models on training split
+        for m in eval_models:
+            m.fit(train_df, items)
+
+        models_dict = {
+            "popularity": pop_model,
+            "random": rand_model,
+            spec.model.name: primary_model,
+        }
+        max_test = 50 if fast else 200
+        metrics = run_articles_dual_protocol_eval(
+            spec=spec,
+            train_df=train_df,
+            test_df=test_df,
+            items=items,
+            impressions=adapter.impression_candidates,
+            models=models_dict,
+            max_test_users=max_test,
+            max_impressions=100 if fast else 500,
+            cold_start_sample_users=20 if fast else 50,
+        )
+    else:
+        harness = EvaluationHarness(spec, models=eval_models)
+        max_test = 50 if fast else 200
+        metrics = harness.run(
+            interactions=interactions,
+            items=items,
+            max_test_users=max_test,
+            cold_start_sample_users=20 if fast else 50,
+            split_data=(train_df, valid_df, test_df),
+        )
 
     # 7. Precompute personas and user statistics
     users_df = compute_user_stats_and_personas(interactions, items)
@@ -285,6 +317,21 @@ def run_pipeline(
         print(
             f"  {m_name:<12} | NDCG: {ndcg_v:.4f} | HitRate: {hr_v:.4f} | Recall: {rec_v:.4f} | Coverage: {cov_v:.4f} | Div: {div_v:.4f} | Pers: {pers_v:.4f}"
         )
+
+    # Print Protocol (a) Impression Ranking summary if available
+    imp_summary = metrics.get("protocols", {}).get("impression_ranking", {})
+    if imp_summary and imp_summary.get("models"):
+        n_imps = imp_summary.get("evaluated_impressions", 0)
+        print(f"\n  Impression Ranking Protocol (MIND-style, N={n_imps} impressions):")
+        print("  " + "-" * 56)
+        for m_name, m_res in imp_summary["models"].items():
+            auc_v = m_res.get("auc", 0.0)
+            mrr_v = m_res.get("mrr", 0.0)
+            n5_v = m_res.get("ndcg@5", 0.0)
+            n10_v = m_res.get("ndcg@10", 0.0)
+            print(
+                f"  {m_name:<12} | AUC: {auc_v:.4f} | MRR: {mrr_v:.4f} | nDCG@5: {n5_v:.4f} | nDCG@10: {n10_v:.4f}"
+            )
     print("=" * 60 + "\n")
 
     return metrics

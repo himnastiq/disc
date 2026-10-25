@@ -48,8 +48,24 @@ def register_model(name: str) -> Callable[[type[M]], type[M]]:
     return decorator
 
 
+def _ensure_default_adapters() -> None:
+    """Ensure baseline and core adapters are registered without eager module-load circular imports."""
+    if "movielens" not in _ADAPTER_REGISTRY:
+        from engine.adapters import movielens  # noqa: F401
+    if "amazon_products" not in _ADAPTER_REGISTRY:
+        from engine.adapters import amazon  # noqa: F401
+    if "mind_articles" not in _ADAPTER_REGISTRY:
+        from engine.adapters import mind  # noqa: F401
+    if "toy" not in _ADAPTER_REGISTRY:
+        import contextlib
+
+        with contextlib.suppress(Exception):
+            from engine.adapters import toy  # noqa: F401
+
+
 def list_registered_adapters() -> list[str]:
     """Return sorted list of registered adapter names."""
+    _ensure_default_adapters()
     return sorted(_ADAPTER_REGISTRY.keys())
 
 
@@ -98,6 +114,7 @@ def list_available_content_types(configs_dir: Path | None = None) -> list[str]:
 
 def get_adapter_class(name: str) -> type[DatasetAdapter]:
     """Retrieve an adapter class by its registered name."""
+    _ensure_default_adapters()
     key = name.strip().lower()
     if key not in _ADAPTER_REGISTRY:
         raise ConfigError(

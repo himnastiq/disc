@@ -352,3 +352,121 @@ def personalisation_score(
         distances.append(dist)
 
     return float(np.mean(distances)) if distances else 0.0
+
+
+def impression_roc_auc(
+    y_true: Collection[int] | np.ndarray,
+    y_score: Collection[float] | np.ndarray,
+) -> float | None:
+    """Compute Area Under the ROC Curve (AUC) for a single impression's candidate list.
+
+    If an impression has only negative or only positive candidates, AUC is undefined and returns None.
+
+    Args:
+        y_true: Binary ground-truth click labels (0 or 1).
+        y_score: Model predicted preference scores for candidates.
+
+    Returns:
+        float | None: Impression ROC-AUC in [0.0, 1.0], or None if only one class is present.
+    """
+    labels = np.asarray(y_true, dtype=int)
+    scores = np.asarray(y_score, dtype=float)
+
+    if len(labels) == 0 or len(labels) != len(scores):
+        return None
+
+    unique_labels = np.unique(labels)
+    if len(unique_labels) < 2:
+        return None
+
+    from sklearn.metrics import roc_auc_score
+
+    try:
+        return float(roc_auc_score(labels, scores))
+    except ValueError:
+        return None
+
+
+def impression_mrr(
+    y_true: Collection[int] | np.ndarray,
+    y_score: Collection[float] | np.ndarray,
+    candidate_ids: Collection[str] | None = None,
+) -> float:
+    """Compute Mean Reciprocal Rank (MRR) for a single impression's candidate list.
+
+    Ranks candidates descending by predicted score, with deterministic tie-breaking.
+    Returns 1.0 / rank of the first clicked candidate (1-indexed).
+
+    Args:
+        y_true: Binary ground-truth click labels (0 or 1).
+        y_score: Model predicted preference scores for candidates.
+        candidate_ids: Optional candidate IDs used for deterministic tie-breaking.
+
+    Returns:
+        float: Reciprocal rank in [0.0, 1.0], or 0.0 if no clicked candidate exists.
+    """
+    labels = list(y_true)
+    scores = list(y_score)
+    cands = (
+        list(candidate_ids) if candidate_ids is not None else [str(i) for i in range(len(labels))]
+    )
+
+    if not labels or len(labels) != len(scores):
+        return 0.0
+
+    indexed = [(scores[i], cands[i], labels[i]) for i in range(len(labels))]
+    indexed.sort(key=lambda x: (-x[0], x[1]))
+
+    for rank, (_, _, label) in enumerate(indexed, start=1):
+        if label == 1:
+            return 1.0 / rank
+
+    return 0.0
+
+
+def impression_ndcg(
+    y_true: Collection[int] | np.ndarray,
+    y_score: Collection[float] | np.ndarray,
+    k: int = 10,
+    candidate_ids: Collection[str] | None = None,
+) -> float:
+    """Compute Normalized Discounted Cumulative Gain at K (nDCG@K) for a single impression.
+
+    Args:
+        y_true: Binary ground-truth click labels (0 or 1).
+        y_score: Model predicted preference scores for candidates.
+        k: Truncation cutoff rank.
+        candidate_ids: Optional candidate IDs used for deterministic tie-breaking.
+
+    Returns:
+        float: Normalized DCG@K in [0.0, 1.0].
+    """
+    labels = list(y_true)
+    scores = list(y_score)
+    cands = (
+        list(candidate_ids) if candidate_ids is not None else [str(i) for i in range(len(labels))]
+    )
+
+    if not labels or len(labels) != len(scores):
+        return 0.0
+
+    indexed = [(scores[i], cands[i], labels[i]) for i in range(len(labels))]
+    indexed.sort(key=lambda x: (-x[0], x[1]))
+
+    dcg = 0.0
+    for j in range(min(k, len(indexed))):
+        rel = indexed[j][2]
+        if rel > 0:
+            dcg += float(rel) / math.log2(j + 2)
+
+    ideal_labels = sorted(labels, reverse=True)
+    idcg = 0.0
+    for j in range(min(k, len(ideal_labels))):
+        rel = ideal_labels[j]
+        if rel > 0:
+            idcg += float(rel) / math.log2(j + 2)
+
+    if idcg <= 0.0:
+        return 0.0
+
+    return float(dcg / idcg)

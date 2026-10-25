@@ -463,6 +463,59 @@ class TfidfProfileModel(RecommenderModel):
             for rank, (score, item_id) in enumerate(top_k, start=1)
         ]
 
+    def score_candidate_items(
+        self,
+        candidate_ids: Collection[str],
+        user_id: str | None = None,
+        history: list[tuple[str, float]] | list[str] | None = None,
+    ) -> list[float]:
+        """Compute predicted preference scores for a list of candidate items.
+
+        Used in impression ranking evaluation to score candidate pools without full catalogue ranking.
+
+        Args:
+            candidate_ids: Collection of target candidate item IDs to score.
+            user_id: Optional known user ID to look up in training history.
+            history: Optional interaction history if user is cold or unobserved.
+
+        Returns:
+            list[float]: Predicted scores for each candidate in candidate_ids order.
+        """
+        if not self._is_fitted or self.tfidf_matrix is None:
+            raise RuntimeError("Model has not been fitted.")
+
+        profile: sparse.csr_matrix | None = None
+        if user_id is not None and str(user_id) in self.user_history:
+            profile = self._build_profile_vector(self.user_history[str(user_id)])
+        elif history:
+            norm_res = normalize_history(history, catalogue=self.catalogue)
+            profile = self._build_profile_vector(norm_res.normalized_history)
+
+        scores: list[float] = []
+        if profile is not None:
+            for cid in candidate_ids:
+                item_str = str(cid)
+                if item_str in self.item2index:
+                    idx = self.item2index[item_str]
+                    vec = self.tfidf_matrix[idx, :]
+                    raw_sim = float(vec.dot(profile.T).toarray()[0, 0])
+                    if np.isfinite(raw_sim) and raw_sim > 0.0:
+                        scores.append(raw_sim)
+                    else:
+                        pop_cnt = self.window_item_counts.get(
+                            item_str, self.item_counts.get(item_str, 0)
+                        )
+                        scores.append(float(pop_cnt) * 1e-6)
+                else:
+                    scores.append(0.0)
+        else:
+            for cid in candidate_ids:
+                item_str = str(cid)
+                pop_cnt = self.window_item_counts.get(item_str, self.item_counts.get(item_str, 0))
+                scores.append(float(pop_cnt))
+
+        return scores
+
     def similar_items(
         self,
         item_id: str,

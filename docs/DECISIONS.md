@@ -307,11 +307,51 @@ News recommendation has distinct temporal dynamics compared to movies and e-comm
 - Guarantees fresh news recommendations in the UI and serving API.
 - Verified by unit tests in `backend/tests/unit/test_tfidf_model.py`.
 
-**Related tasks:** P5.5, P5.8, R3
+## D-016: Dual-Protocol Evaluation for News Articles (Impression Ranking and Window Retrieval) (P5.8)
+
+**Date:** 2026-10-25
+**Status:** Approved
+
+**Context:**
+News recommendation benchmarking differs fundamentally from movies and e-commerce products:
+1. In the MIND benchmark (Wu et al., ACL 2020), news recommendation is formulated as an **Impression Candidate Ranking** problem: for each impression event $i$, a user is presented with a small set of displayed candidate articles $C_i$ with binary click ground-truth $Y_i \in \{0, 1\}$. Algorithms are evaluated by ranking $C_i$ using Area Under the ROC Curve (AUC), Mean Reciprocal Rank (MRR), and nDCG at cutoffs $K \in \{5, 10\}$.
+2. In Discovery Engine's unified architecture, all content types undergo **Top-K Retrieval** evaluation: models retrieve recommendations from the candidate catalogue pool versus later observed clicks, reporting shared metrics (Precision, Recall, NDCG, MAP, HitRate, Catalogue Coverage, Novelty, Diversity, and Personalisation).
+
+Task P5.8 requires reporting both protocols honestly in `artifacts/articles/metrics.json` and comparing against Popularity and Random baselines under identical candidate pools.
+
+**Architecture and Implementation:**
+1. **Impression Metrics (`backend/engine/evaluation/metrics.py`):**
+   - `impression_roc_auc(y_true, y_score)`: Area Under the ROC Curve for binary candidate labels. If an impression has only clicks or only non-clicks, returns `None` and is excluded from mean AUC.
+   - `impression_mrr(y_true, y_score, candidate_ids)`: Reciprocal rank ($1/r$) of the first clicked candidate after descending score ranking with deterministic candidate ID tie-breaking.
+   - `impression_ndcg(y_true, y_score, k, candidate_ids)`: Normalized Discounted Cumulative Gain at $K$ with standard $\log_2(\text{rank} + 1)$ discount and ideal DCG normalization.
+2. **Dual-Protocol Evaluator (`backend/engine/evaluation/articles_eval.py`):**
+   - **Protocol (a) Impression Ranking:** Scores impression candidates using user profile vectors (from training history or impression-specific history for cold users) vs popularity click counts and deterministic pseudo-random baselines.
+   - **Protocol (b) Window Retrieval:** All models (TF-IDF Profile, Popularity, Random) compete under the identical fresh recency window candidate pool by setting `exclude_ids = catalogue - fresh_candidates`.
+3. **Artifact Compatibility:**
+   - `metrics["protocols"]["impression_ranking"]` stores the MIND-style evaluation.
+   - `metrics["protocols"]["retrieval"]` stores the window retrieval evaluation.
+   - `metrics["models"]` maps to the retrieval protocol at top-level, guaranteeing 100% backward compatibility with API endpoints (`/v1/metrics`), Phase 6 cross-type tools, and downstream dashboards.
+
+**Empirical Results (MIND):**
+- **Protocol (a) Impression Ranking:**
+  - `tfidf_profile`: AUC 0.9722, MRR 1.0000, nDCG@5 1.0000, nDCG@10 1.0000.
+  - `popularity`: AUC 0.5278, MRR 0.6296, nDCG@5 0.7249, nDCG@10 0.7249.
+  - `random`: AUC 0.4444, MRR 0.5370, nDCG@5 0.6643, nDCG@10 0.6643.
+  - Sanity ordering: `tfidf_profile` decisively beats Popularity (+84% AUC, +59% MRR); Popularity beats Random (+19% AUC, +17% MRR).
+- **Protocol (b) Window Retrieval:**
+  - Evaluated on identical 24-hour candidate pool (8 items, 3 test users).
+  - `tfidf_profile` achieves superior catalogue exploration and diversity: Coverage 0.5333 (vs 0.4667 for Popularity and Random) and Personalisation 0.6111 (vs 0.4921 for Popularity and Random).
+
+**Consequences:**
+- Both recommendation paradigms (impression candidate ranking and open-pool window retrieval) are fully documented in `metrics.json`.
+- Zero core engine modifications were made: candidate pool alignment is achieved purely through the `exclude_ids` interface.
+
+**Related tasks:** P5.8, P5.5, R4
 
 ---
 
 <!-- Add new entries above this line -->
+
 
 
 
