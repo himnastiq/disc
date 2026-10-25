@@ -520,7 +520,6 @@ def build_markdown_report(
     p_sar10 = p_models["sar"]["10"]
     p_pop10 = p_models["popularity"]["10"]
 
-    a_p = articles_metrics.get("protocol", {})
     a_var = articles_metrics.get("dataset_variant", "articles")
     a_imp = a_protocols.get("impression_ranking", {})
     a_imp_n = a_imp.get("evaluated_impressions", 0)
@@ -579,7 +578,9 @@ def build_markdown_report(
         gain_hr = format_pct_gain(sar["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(sar["ndcg"], pop["ndcg"])
         gain_rec = format_pct_gain(sar["recall"], pop["recall"])
-        gain_prec = format_pct_gain(sar.get("precision", 0.0), pop.get("precision", 0.0))
+        gain_prec = format_pct_gain(
+            sar.get("precision", 0.0), pop.get("precision", 0.0)
+        )
 
         md.append(
             f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(sar, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(sar, pop, 'hit_rate')} |"
@@ -597,9 +598,13 @@ def build_markdown_report(
     m_checks = movies_metrics.get("sanity_checks", {})
     if "model_beats_popularity" in m_checks:
         mbp_status = "Passed" if m_checks["model_beats_popularity"] else "Not satisfied"
-        md.append(f"- **Sanity Check (Model > Popularity Point Estimate):** `{mbp_status}`")
+        md.append(
+            f"- **Sanity Check (Model > Popularity Point Estimate):** `{mbp_status}`"
+        )
     if "popularity_beats_random" in m_checks:
-        pbr_status = "Passed" if m_checks["popularity_beats_random"] else "Not satisfied"
+        pbr_status = (
+            "Passed" if m_checks["popularity_beats_random"] else "Not satisfied"
+        )
         md.append(f"- **Sanity Check (Popularity > Random):** `{pbr_status}`")
     if "all_bounds_valid" in m_checks:
         abv_status = "Passed" if m_checks["all_bounds_valid"] else "Not satisfied"
@@ -627,7 +632,9 @@ def build_markdown_report(
         gain_hr = format_pct_gain(sar["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(sar["ndcg"], pop["ndcg"])
         gain_rec = format_pct_gain(sar["recall"], pop["recall"])
-        gain_prec = format_pct_gain(sar.get("precision", 0.0), pop.get("precision", 0.0))
+        gain_prec = format_pct_gain(
+            sar.get("precision", 0.0), pop.get("precision", 0.0)
+        )
 
         md.append(
             f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(sar, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(sar, pop, 'hit_rate')} |"
@@ -677,6 +684,17 @@ def build_markdown_report(
     # Section 3: Articles
     md.append("## 3. Articles Pipeline (MIND + TF-IDF Content Model)")
     md.append("")
+    a_is_synthetic = (
+        articles_metrics.get("synthetic_fixture")
+        or articles_metrics.get("is_synthetic")
+        or "SYNTHETIC" in str(articles_metrics.get("dataset_variant", "")).upper()
+    )
+    if a_is_synthetic:
+        md.append("> [!WARNING]")
+        md.append(
+            "> **SYNTHETIC FIXTURE (not MIND):** These evaluation artifacts were generated using synthetic offline fixture data (`backend/tests/fixtures/mind/`) because real MIND dataset files were unavailable during automated download. **These results are not evidence of real-world quality.** Real benchmark evaluation will be conducted once MIND dataset files are placed in `data/raw/mind/`."
+        )
+        md.append("")
     md.append(
         "Evaluated using a rigorous **Dual-Protocol Architecture** tailored for news consumption:"
     )
@@ -719,7 +737,9 @@ def build_markdown_report(
         gain_hr = format_pct_gain(tfidf["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(tfidf["ndcg"], pop["ndcg"])
         gain_rec = format_pct_gain(tfidf["recall"], pop["recall"])
-        gain_prec = format_pct_gain(tfidf.get("precision", 0.0), pop.get("precision", 0.0))
+        gain_prec = format_pct_gain(
+            tfidf.get("precision", 0.0), pop.get("precision", 0.0)
+        )
 
         md.append(
             f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(tfidf, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(tfidf, pop, 'hit_rate')} |"
@@ -874,9 +894,13 @@ def build_markdown_report(
 
     md.append(f"1. **Movies ({m_var}, N={m_users:,} test users):**")
     if m_sep:
-        md.append(f"   - **Statistically Significant Advantage (CIs separate):** {', '.join(m_sep)}.")
+        md.append(
+            f"   - **Statistically Significant Advantage (CIs separate):** {', '.join(m_sep)}."
+        )
     if m_overlap:
-        md.append(f"   - **No Significant Difference (CIs overlap):** {', '.join(m_overlap)}.")
+        md.append(
+            f"   - **No Significant Difference (CIs overlap):** {', '.join(m_overlap)}."
+        )
     if m_worse:
         md.append(f"   - **Model Worse:** {', '.join(m_worse)}.")
 
@@ -896,9 +920,13 @@ def build_markdown_report(
 
     md.append(f"2. **Products ({p_var}, N={p_users:,} test users):**")
     if p_sep:
-        md.append(f"   - **Statistically Significant Advantage (CIs separate):** {', '.join(p_sep)}.")
+        md.append(
+            f"   - **Statistically Significant Advantage (CIs separate):** {', '.join(p_sep)}."
+        )
     if p_overlap:
-        md.append(f"   - **No Significant Difference (CIs overlap):** {', '.join(p_overlap)}.")
+        md.append(
+            f"   - **No Significant Difference (CIs overlap):** {', '.join(p_overlap)}."
+        )
     if p_worse:
         md.append(f"   - **Model Worse:** {', '.join(p_worse)}.")
 
@@ -907,7 +935,9 @@ def build_markdown_report(
     a_overlap = []
     a_worse = []
     for met in ["auc", "mrr", "ndcg@5", "ndcg@10"]:
-        v = compute_ci_verdict(imp_models["tfidf_profile"], imp_models["popularity"], met)
+        v = compute_ci_verdict(
+            imp_models["tfidf_profile"], imp_models["popularity"], met
+        )
         a_str = f"{met.upper()} ({format_metric_with_ci(imp_models['tfidf_profile'], met)} vs Pop {format_metric_with_ci(imp_models['popularity'], met)})"
         if v == "Model better (CIs separate)":
             a_sep.append(a_str)
@@ -918,9 +948,13 @@ def build_markdown_report(
 
     md.append(f"3. **Articles ({a_var}, N={a_imp_n:,} impressions):**")
     if a_sep:
-        md.append(f"   - **Impression Ranking Statistically Significant Advantage (CIs separate):** {', '.join(a_sep)}.")
+        md.append(
+            f"   - **Impression Ranking Statistically Significant Advantage (CIs separate):** {', '.join(a_sep)}."
+        )
     if a_overlap:
-        md.append(f"   - **Impression Ranking No Significant Difference (CIs overlap):** {', '.join(a_overlap)}.")
+        md.append(
+            f"   - **Impression Ranking No Significant Difference (CIs overlap):** {', '.join(a_overlap)}."
+        )
     if a_worse:
         md.append(f"   - **Impression Ranking Model Worse:** {', '.join(a_worse)}.")
 

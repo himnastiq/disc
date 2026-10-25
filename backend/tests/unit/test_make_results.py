@@ -191,3 +191,22 @@ def test_make_results_ci_verdicts_no_beats_when_overlapping() -> None:
     # Assert proper statistical verdict is rendered
     assert "No significant difference (CIs overlap)" in report
 
+
+def test_articles_provenance_synthetic_banner() -> None:
+    """Verify Articles provenance label and synthetic fixture warning banner (FIX-24)."""
+    if str(REPO_ROOT / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+    from make_results import build_markdown_report
+
+    m_dict = json.loads((ARTIFACTS_DIR / "movies" / "metrics.json").read_text(encoding="utf-8"))
+    p_dict = json.loads((ARTIFACTS_DIR / "products" / "metrics.json").read_text(encoding="utf-8"))
+    a_dict = json.loads((ARTIFACTS_DIR / "articles" / "metrics.json").read_text(encoding="utf-8"))
+
+    report = build_markdown_report(m_dict, p_dict, a_dict)
+
+    # 1. Labelled exactly as SYNTHETIC FIXTURE (not MIND)
+    assert "SYNTHETIC FIXTURE (not MIND)" in report
+    # 2. Warning banner present
+    assert "**SYNTHETIC FIXTURE (not MIND):**" in report
+    assert "results are not evidence of real-world quality" in report.lower()
+

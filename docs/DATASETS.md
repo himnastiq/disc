@@ -61,6 +61,16 @@
     `[ImpressionID, UserID, Time, History, Impressions]`
     where `History` contains space-separated clicked news IDs and `Impressions` contains candidate news IDs with click labels `NewsID-0` or `NewsID-1`.
 
+### Synthetic Offline Fixture (not MIND)
+
+- **Purpose:** Enables end-to-end testing, invariant verification (R1–R6), and architectural demonstration without requiring external network connectivity or manual dataset placement.
+- **Location:** `backend/tests/fixtures/mind/` (contains synthetic `train/` and `dev/` splits with `news.tsv` and `behaviors.tsv`).
+- **Generation Method:**
+  - **Articles (`news.tsv`):** Curated 15 synthetic news items spanning finance, technology, sports, and lifestyle categories with distinct titles, abstracts, subcategories, and Wikipedia entity IDs matching the official MIND 8-column schema.
+  - **Behaviors (`behaviors.tsv`):** Synthesized user impression sessions with timestamps, user IDs, interaction history lists, and impression candidates (1 positive click, 4 unclicked negative impressions per session). Timestamps are ordered chronologically to enforce the R2 temporal split invariant ($t_{max}^{train} \le t_{min}^{test}$).
+- **Provenance & Quality Notice:** Artifacts in `artifacts/articles/` produced from this data are labelled `"SYNTHETIC FIXTURE (not MIND)"`. **Results evaluated on this fixture are not evidence of real-world recommendation quality.**
+- **Production Switch:** When genuine MIND-small dataset files are placed in `data/raw/mind/train/` and `data/raw/mind/dev/`, running `python backend/scripts/train.py --type articles` automatically trains on real MIND data.
+
 ---
 
 ## General Notes
