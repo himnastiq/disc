@@ -48,13 +48,13 @@ DATASETS: dict[str, dict[str, str]] = {
     },
     "products": {
         "name": "Amazon Reviews",
-        "description": "Amazon product reviews dataset",
-        "url": "https://cseweb.ucsd.edu/~jmcauley/datasets/amazon_v2/",
+        "description": "Amazon product reviews dataset (Video Games and Musical Instruments 5-core)",
+        "url": "http://snap.stanford.edu/data/amazon/productGraph/",
         "target_dir": str(DATA_DIR / "amazon"),
         "manual_steps": (
-            "1. Visit https://cseweb.ucsd.edu/~jmcauley/datasets/amazon_v2/\n"
-            "2. Download a mid-size 5-core category (e.g., Electronics) and its metadata\n"
-            "3. Place files in data/raw/amazon/"
+            "1. Visit http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/\n"
+            "2. Download reviews_Video_Games_5.json.gz and meta_Video_Games.json.gz to data/raw/amazon/video_games/\n"
+            "3. Download reviews_Musical_Instruments_5.json.gz and meta_Musical_Instruments.json.gz to data/raw/amazon/instruments/"
         ),
     },
     "articles": {
@@ -170,6 +170,50 @@ def fetch_movielens(target_dir: Path, variant: str = "both") -> bool:
     return all_success
 
 
+def fetch_amazon(target_dir: Path, variant: str = "both") -> bool:
+    """Download Amazon reviews and metadata files for the specified category variant."""
+    categories: dict[str, str] = {
+        "instruments": "Musical_Instruments",
+        "video_games": "Video_Games",
+    }
+
+    v_lower = variant.lower()
+    if v_lower in categories:
+        selected_variants = [v_lower]
+    elif v_lower in ("both", "all", "default"):
+        selected_variants = ["instruments", "video_games"]
+    else:
+        logger.error(
+            "Unknown Amazon variant '%s'. Choose from %s or 'both'.",
+            variant,
+            list(categories.keys()),
+        )
+        return False
+
+    base_url = "http://snap.stanford.edu/data/amazon/productGraph/categoryFiles"
+    all_success = True
+
+    for v in selected_variants:
+        cat_name = categories[v]
+        v_dir = target_dir / v
+        v_dir.mkdir(parents=True, exist_ok=True)
+
+        reviews_filename = f"reviews_{cat_name}_5.json.gz"
+        meta_filename = f"meta_{cat_name}.json.gz"
+
+        logger.info("Fetching Amazon %s (%s)...", v, cat_name)
+        s1 = download_url(f"{base_url}/{reviews_filename}", v_dir / reviews_filename)
+        s2 = download_url(f"{base_url}/{meta_filename}", v_dir / meta_filename)
+
+        if not (s1 and s2):
+            logger.error("Failed downloading Amazon %s dataset files.", v)
+            all_success = False
+        else:
+            logger.info("Amazon %s (%s) files verified on disk.", v, cat_name)
+
+    return all_success
+
+
 def print_dataset_info(name: str, info: dict[str, str], dry_run: bool = False) -> None:
     """Print information about a dataset."""
     prefix = "[DRY RUN] " if dry_run else ""
@@ -227,9 +271,15 @@ def main() -> None:
                 success = fetch_movielens(target, variant=args.variant)
                 if not success:
                     print("\n[!] MovieLens fetch finished with errors or required manual steps.")
+            elif t == "products":
+                success = fetch_amazon(target, variant=args.variant)
+                if not success:
+                    print(
+                        "\n[!] Amazon Products fetch finished with errors or required manual steps."
+                    )
             else:
                 print(f"\n  Target directory created: {target}")
-                print(f"  NOTE: Actual download logic for {t} will be added in Phases 4-5.")
+                print(f"  NOTE: Actual download logic for {t} will be added in Phase 5.")
                 print("  For now, follow the manual steps above if needed.")
 
     print("\n" + "=" * 40)

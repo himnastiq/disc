@@ -195,10 +195,38 @@ Measured using `tools/measure_sparsification.py` on identical chronological trai
 **Decision:**
 Accept the trained SAR model and generated artifacts (`metrics.json`, `tuning.json`, `topn.parquet`, `users.parquet`, `items.parquet`, `demo_users.json`) as the validated production artifacts for MovieLens.
 
-**Related tasks:** P3.8, P3.9, P3.10, R4
+## D-012: Amazon Product Dataset Selection, Metadata Schema, and Fast Variant (P4.1)
+
+**Date:** 2026-10-25
+**Status:** Approved
+
+**Context:**
+Phase 4 introduces the second content type (`products`) using Amazon product reviews and SAR without altering the core engine abstractions. We inspected `discovery.datasets.amazon_reviews`, which pulls from Julian McAuley's Stanford SNAP / UCSD Amazon dataset repository (2014 snapshot).
+The helper functions in `discovery.datasets.amazon_reviews` (`get_review_data`, `data_preprocessing`) were designed for negative sampling experiments and discard item titles, prices, and image URLs. However, the raw Stanford SNAP archive contains comprehensive metadata files alongside 5-core review files:
+- Review files (`reviews_<category>_5.json.gz`): contain `reviewerID`, `asin`, `overall` (rating 1–5), `unixReviewTime`.
+- Metadata files (`meta_<category>.json.gz`): contain `asin`, `title`, `price`, `imUrl`, `categories`, and `brand`.
+
+We needed to decide on:
+1. A mid-sized, high-quality 5-core category for standard production training (`variant: "video_games"`).
+2. A lightweight 5-core category for fast development and testing (`variant: "instruments"`).
+3. Availability and accessibility of direct HTTP downloads vs manual steps.
+
+**Decision:**
+1. **Standard Category:** Use Amazon 5-core **Video Games** (`reviews_Video_Games_5.json.gz` ~108 MB, `meta_Video_Games.json.gz` ~22 MB). This provides 231,780 interactions across 24,309 users and 50,256 items with rich gaming metadata (titles, platforms, brands, price points, and cover art).
+2. **Fast Mode Category:** Use Amazon 5-core **Musical Instruments** (`reviews_Musical_Instruments_5.json.gz` ~2.3 MB, `meta_Musical_Instruments.json.gz` ~29 MB). This provides 10,261 reviews across 1,429 users and 900 items, executing the entire pipeline in under 5 seconds for CI and developer iteration.
+3. **Download Strategy:** Both datasets are publicly hosted by Stanford SNAP (`http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/`) with direct HTTP 200 availability. Automated download is implemented in `backend/scripts/fetch_data.py --type products` with automatic gzip streaming and graceful manual instructions if network access is restricted.
+4. **Metadata Extraction:** Implement an adapter `AmazonProductsAdapter` that parses raw review json lines directly into `Interaction` objects and metadata files into `Item` objects (mapping `asin` -> `item_id`, `imUrl` -> `image_url`, `title` with fallback to `asin`, and `categories[0]` flattened).
+
+**Consequences:**
+- Product recommendations have real product names, categories, prices, and image URLs rather than bare ASIN codes.
+- Fast mode executes quickly without downloading the full 108 MB Video Games dataset during unit tests.
+- Core engine abstractions remain untouched (R6 and "core unchanged" principle satisfied).
+
+**Related tasks:** P4.1, P4.2, P4.3, P4.4, P4.7
 
 ---
 
 <!-- Add new entries above this line -->
+
 
 

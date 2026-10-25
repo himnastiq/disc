@@ -21,14 +21,24 @@
   - `ml-1m/`: `ratings.dat` (`::`-separated: UserID, MovieID, Rating, Timestamp), `movies.dat` (`::`-separated: MovieID, Title with year, Genres separated by `|`).
 
 ## Amazon Reviews
-
-- **Provider:** Amazon / UCSD
-- **URL:** <!-- TODO: fill in after P4.1 dataset decision -->
-- **Variant used:** <!-- TODO: fill in after P4.1 -->
-- **License:** Academic use only
-- **Citation:** <!-- TODO: fill in after P4.1 -->
-- **Terms:** <!-- TODO: verify current terms when downloading -->
-- **Data location:** `data/raw/amazon/`
+ 
+- **Provider:** Stanford SNAP / UCSD (Julian McAuley)
+- **URL:** https://cseweb.ucsd.edu/~jmcauley/datasets/amazon_v2/ / http://snap.stanford.edu/data/amazon/productGraph/
+- **Variants used:**
+  - **Video Games (`video_games`):** 231,780 reviews across 24,309 users and 50,256 items (5-core subset). Contains gaming accessories, consoles, PC/console titles, and peripherals with rich item metadata (title, price, brand, image URL, categories). Used as standard production variant.
+  - **Musical Instruments (`instruments`):** 10,261 reviews across 1,429 users and 900 items (5-core subset). Lightweight dataset with complete item metadata used for fast developer mode (`--fast`) and CI regression testing.
+- **License:** Non-commercial academic research and educational use only.
+- **Citation:**
+  > R. He, J. McAuley. (2016). Upselling and Cross-selling: Modeling Item Relationships with Recommendation Networks. Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD '16), 865–874. https://doi.org/10.1145/2939672.2939747
+  > J. McAuley, C. Targett, J. Shi, A. van den Hengel. (2015). Image-based Recommendations on Styles and Substitutes. Proceedings of the 38th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '15), 43–52. https://doi.org/10.1145/2766462.2767755
+- **Terms:**
+  - Provided strictly for research and academic experimentation.
+  - Commercial use and redistribution of raw data files without attribution are prohibited.
+  - Citations to the SIGKDD 2016 and SIGIR 2015 papers above must be retained.
+- **Data location:** `data/raw/amazon/` (contains `video_games/` and `instruments/`).
+- **Files per variant:**
+  - `reviews_<category>_5.json.gz`: JSON-lines gzip archive containing `reviewerID`, `asin`, `overall`, `unixReviewTime`, and review summary.
+  - `meta_<category>.json.gz`: JSON-lines gzip archive containing `asin`, `title`, `price`, `imUrl`, `brand`, and `categories`.
 
 ## MIND (Microsoft News Dataset)
 
