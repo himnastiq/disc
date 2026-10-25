@@ -41,11 +41,8 @@ class PopularityModel(RecommenderModel):
         """Fit model on training interactions and item catalogue."""
         self.catalogue = sorted(items["item_id"].astype(str).unique())
 
-        if "positive" in train_interactions.columns:
-            positive_df = train_interactions[train_interactions["positive"] == True]  # noqa: E712
-        else:
-            threshold = self.spec.signal.positive_threshold
-            positive_df = train_interactions[train_interactions["signal"] >= threshold]
+        threshold = self.spec.signal.positive_threshold
+        positive_df = train_interactions[train_interactions["signal"] >= threshold]
 
         counts_series = positive_df["item_id"].astype(str).value_counts()
         counts_dict = counts_series.to_dict()

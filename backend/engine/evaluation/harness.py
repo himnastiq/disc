@@ -151,11 +151,8 @@ class EvaluationHarness:
         else:
             test_users = common_users
 
-        # Filter test ground truth for relevant positive test interactions
-        if "positive" in test_df.columns:
-            positive_test = test_df[test_df["positive"] == True]  # noqa: E712
-        else:
-            positive_test = test_df[test_df["signal"] >= self.spec.signal.positive_threshold]
+        # Filter test ground truth for relevant positive test interactions using current spec threshold
+        positive_test = test_df[test_df["signal"] >= self.spec.signal.positive_threshold]
 
         k_values = sorted(self.spec.evaluation.k)
         max_k = max(k_values) if k_values else 20

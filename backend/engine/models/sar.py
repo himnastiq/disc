@@ -122,12 +122,9 @@ class SarModel(RecommenderModel):
         """
         self.catalogue = sorted(items["item_id"].astype(str).unique())
 
-        # Compute popular item ordering from positive training interactions
-        if "positive" in train_interactions.columns:
-            positive_df = train_interactions[train_interactions["positive"] == True]  # noqa: E712
-        else:
-            threshold = self.spec.signal.positive_threshold
-            positive_df = train_interactions[train_interactions["signal"] >= threshold]
+        # Compute popular item ordering from positive training interactions using current threshold
+        threshold = self.spec.signal.positive_threshold
+        positive_df = train_interactions[train_interactions["signal"] >= threshold]
 
         counts_dict = positive_df["item_id"].astype(str).value_counts().to_dict()
         self.item_counts = {item_id: int(counts_dict.get(item_id, 0)) for item_id in self.catalogue}

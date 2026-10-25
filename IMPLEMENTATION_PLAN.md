@@ -36,7 +36,7 @@
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
-| 3 | Movies pipeline (MovieLens + SAR) | 8 | 0 | 0 | 13 | 61% |
+| 3 | Movies pipeline (MovieLens + SAR) | 9 | 0 | 0 | 13 | 69% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **41** | | | **129** | **31%** |
+| | **Overall** | **42** | | | **129** | **32%** |
 
-`[######--------------] 31%  (41/129 tasks)`
+`[######--------------] 32%  (42/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -174,7 +174,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P3.6** Cold-start scoring for SAR (see section 6.4): build the affinity vector from a history list (apply the same time-decay or weighting convention as training, or document why a flat weight is used for hypothetical histories without timestamps), multiply with the similarity structure, remove history items, return top-k. *Acceptance:* **consistency test**: for 50 sampled known users, top-10 from `recommend_user` equals top-10 from `recommend_history` on their training history (allowing documented tie-breaking differences); test lives in `tests/integration`.
 - [x] **P3.7** Faithful explanations: for recommended item `r` and history `H`, the reason item is `argmax_{h in H} affinity(h) * sim(h, r)`; show only when the contribution share exceeds a configurable threshold (default: top contributor accounts for at least a set fraction of the score; otherwise no reason). *Acceptance:* property test: the reason item is always a member of the history and is the true maximum contributor.
 - [x] **P3.8** Hyperparameter search on the **validation** split (small grid: similarity type, time decay on/off and coefficient, positive threshold). Log all trials to `artifacts/movies/tuning.json`; choose by ndcg@10 on validation; refit on train (+valid if configured); evaluate once on test. *Acceptance:* test split is not touched during selection (assert via the leakage checks and a log of which split each metric used).
-- [ ] **P3.9** Train the final model (`make train TYPE=movies`), evaluate against Random and Popularity, write `metrics.json`. Apply R4: report sanity ordering and extra metrics (coverage, novelty, diversity, personalisation). If the model does not beat popularity, investigate and document honestly. *Acceptance:* metrics file valid; findings recorded in `docs/DECISIONS.md`.
+- [x] **P3.9** Train the final model (`make train TYPE=movies`), evaluate against Random and Popularity, write `metrics.json`. Apply R4: report sanity ordering and extra metrics (coverage, novelty, diversity, personalisation). If the model does not beat popularity, investigate and document honestly. *Acceptance:* metrics file valid; findings recorded in `docs/DECISIONS.md`.
 - [ ] **P3.10** Cold-start curve for sizes in config (0 to 20 likes) using the harness. Report the curve and any non-monotonic points. *Acceptance:* curve stored in `metrics.json`.
 - [ ] **P3.11** Precompute `topn.parquet` (top-50 per known user), `users.parquet` (interaction counts, top categories, first/last timestamps, persona label such as heavy/light/niche/mainstream computed from data), and `items.parquet`. Run `tools/select_demo_users.py` to choose about 8 demo users with diverse tastes (seeded), saved to `demo_users.json` with persona labels. *Acceptance:* demo users produce visibly different top-10 lists (pairwise Jaccard below the configured threshold).
 - [ ] **P3.12** Golden-file regression test on the 100K `--fast` pipeline: top-5 for 3 fixed users and key metrics compared with stored values within tolerance. *Acceptance:* test in CI.
