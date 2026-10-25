@@ -38,7 +38,7 @@
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
-| 5 | Articles pipeline (MIND + TF-IDF content model) | 4 | 0 | 1 | 12 | 33% |
+| 5 | Articles pipeline (MIND + TF-IDF content model) | 5 | 0 | 1 | 12 | 41% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **58** | | | **129** | **44%** |
+| | **Overall** | **59** | | | **129** | **45%** |
 
-`[########------------] 44%  (58/129 tasks)`
+`[#########-----------] 45%  (59/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -208,7 +208,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P5.3** Define the time protocol: history items in MIND have no individual timestamps, so treat them as occurring before the user's first impression; split by impression time (earlier days train, later days test); record the actual date ranges in the data report. Leakage test: no test impression's clicked item is used as a training positive for that user. *Acceptance:* R2 test on real data.
 - [x] **P5.4** Implement `TfidfProfileModel` using the vendored TF-IDF utilities (verify the class and its cleaning/tokenising helpers) over `title + abstract + category tokens`: fit vocabulary on train-period articles only; store sparse matrix and vocabulary as scipy npz and json. User profile = weighted mean of clicked article vectors (more recent clicks weigh more; weighting scheme from config); score = cosine similarity to candidates. *Acceptance:* unit tests (profile of identical history equals that article's vector direction; empty history gives popularity).
 - [x] **P5.5** Freshness: candidates restricted to the config `recency_window` (for demo: articles that appear in the most recent impressions period); popularity baseline = click count within the window. Document the window choice and its effect. *Acceptance:* recommendations never include articles outside the window (R3 extension).
-- [ ] **P5.6** Cold start is native (`recommend_history` builds a profile from given article ids). Add a consistency test as in P3.6. *Acceptance:* test passes.
+- [x] **P5.6** Cold start is native (`recommend_history` builds a profile from given article ids). Add a consistency test as in P3.6. *Acceptance:* test passes.
 - [ ] **P5.7** Faithful explanations: the reason article is the history article with the highest cosine similarity to the recommended article; optionally add shared top TF-IDF terms (max 3) as extra explanation text. *Acceptance:* property test as in P3.7.
 - [ ] **P5.8** Evaluation with two protocols, both reported: (a) **impression ranking** (MIND-style: rank each impression's candidates; report AUC, MRR, nDCG@5, nDCG@10) and (b) **retrieval** (top-k from the window pool versus later clicks, using the shared ranking metrics). Compare against Random and Popularity under identical candidates. *Acceptance:* both protocols documented in `metrics.json`; sanity ordering recorded honestly.
 - [ ] **P5.9** Cold-start curve, precomputed top-N for sampled users, `users.parquet` stats (top categories from clicked articles), and demo users. *Acceptance:* artifact set identical in shape to the other types.
