@@ -206,7 +206,7 @@ def check_r3_model_invariants(
 
 
 def check_r4_evaluation_validity(
-    models_metrics: dict[str, dict[str, dict[str, float]]],
+    models_metrics: dict[str, Any],
     ref_k: int = 10,
 ) -> dict[str, bool]:
     """Validate R4 evaluation metrics bounds and sanity ordering.
@@ -218,6 +218,12 @@ def check_r4_evaluation_validity(
     Returns:
         dict[str, bool]: Status flags for evaluation invariants.
     """
+    models_dict: dict[str, Any] = (
+        models_metrics["models"]
+        if ("models" in models_metrics and isinstance(models_metrics["models"], dict))
+        else models_metrics
+    )
+
     bounded_metrics = {
         "precision",
         "recall",
@@ -230,8 +236,12 @@ def check_r4_evaluation_validity(
     }
 
     all_bounds_valid = True
-    for _model_name, k_dict in models_metrics.items():
+    for _model_name, k_dict in models_dict.items():
+        if not isinstance(k_dict, dict):
+            continue
         for _k_str, m_dict in k_dict.items():
+            if not isinstance(m_dict, dict):
+                continue
             for m_name, val in m_dict.items():
                 if math.isnan(val) or math.isinf(val):
                     all_bounds_valid = False
@@ -242,9 +252,9 @@ def check_r4_evaluation_validity(
 
     ref_k_str = str(ref_k)
     pop_beats_rnd = True
-    if "popularity" in models_metrics and "random" in models_metrics:
-        pop_m = models_metrics["popularity"].get(ref_k_str, {})
-        rnd_m = models_metrics["random"].get(ref_k_str, {})
+    if "popularity" in models_dict and "random" in models_dict:
+        pop_m = models_dict["popularity"].get(ref_k_str, {})
+        rnd_m = models_dict["random"].get(ref_k_str, {})
         if "ndcg" in pop_m and "ndcg" in rnd_m:
             pop_beats_rnd = pop_m["ndcg"] >= rnd_m["ndcg"]
 
