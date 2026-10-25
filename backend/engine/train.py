@@ -11,12 +11,14 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 import pandas as pd
 
 from engine.adapters import movielens as _movielens_adapter  # noqa: F401
 from engine.adapters import toy as _toy_adapter  # noqa: F401
 from engine.artifacts import save_artifacts
 from engine.config import load_config
+from engine.demo_users import select_demo_users_from_dfs
 from engine.evaluation.harness import EvaluationHarness
 from engine.evaluation.splits import split_interactions
 from engine.logging_utils import configure_logging, get_logger, log_event
@@ -31,18 +33,41 @@ if TYPE_CHECKING:
 
 def compute_user_stats_and_personas(
     interactions: pd.DataFrame,
-) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
-    """Compute per-user interaction statistics, persona labels, and demo user selections."""
-    user_counts = interactions.groupby("user_id").size().to_dict()
+    items: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    """Compute per-user interaction statistics, category preferences, timestamps, and persona labels."""
+    item_cats: dict[str, list[str]] = {}
+    if items is not None and "categories" in items.columns:
+        for _, row in items.iterrows():
+            cats = row["categories"]
+            item_cats[str(row["item_id"])] = (
+                list(cats) if isinstance(cats, (list, tuple, set, np.ndarray)) else []
+            )
+
+    top100_items = set(interactions["item_id"].astype(str).value_counts().head(100).index)
 
     user_rows = []
-    demo_users: list[dict[str, Any]] = []
+    for uid, group in interactions.groupby("user_id"):
+        count = len(group)
+        first_ts = int(group["timestamp"].min()) if "timestamp" in group.columns else 0
+        last_ts = int(group["timestamp"].max()) if "timestamp" in group.columns else 0
 
-    for uid, count in sorted(user_counts.items()):
-        # Assign transparent persona labels based on activity volume
-        if count >= 15:
+        cat_counts: dict[str, int] = {}
+        pop_count = 0
+        for iid in group["item_id"].astype(str):
+            if iid in top100_items:
+                pop_count += 1
+            for cat in item_cats.get(iid, []):
+                cat_counts[cat] = cat_counts.get(cat, 0) + 1
+
+        top_cats = [c for c, _ in sorted(cat_counts.items(), key=lambda x: -x[1])[:3]]
+        pop_ratio = (pop_count / count) if count > 0 else 0.0
+
+        if count >= 80:
             persona = "heavy"
-        elif count <= 3:
+        elif pop_ratio < 0.2 and count >= 10:
+            persona = "niche"
+        elif count <= 15:
             persona = "casual"
         else:
             persona = "mainstream"
@@ -51,36 +76,14 @@ def compute_user_stats_and_personas(
             {
                 "user_id": str(uid),
                 "interaction_count": int(count),
+                "top_categories": top_cats,
+                "first_timestamp": first_ts,
+                "last_timestamp": last_ts,
                 "persona": persona,
             }
         )
 
-    users_df = pd.DataFrame(user_rows)
-
-    # Select representative demo users across personas
-    for persona_type in ["heavy", "mainstream", "casual"]:
-        matching = users_df[users_df["persona"] == persona_type]
-        if not matching.empty:
-            for uid in matching["user_id"].head(3):
-                demo_users.append(
-                    {
-                        "user_id": str(uid),
-                        "persona": persona_type,
-                        "interaction_count": int(user_counts[uid]),
-                    }
-                )
-
-    if not demo_users and not users_df.empty:
-        for uid in users_df["user_id"].head(5):
-            demo_users.append(
-                {
-                    "user_id": str(uid),
-                    "persona": "standard",
-                    "interaction_count": int(user_counts[uid]),
-                }
-            )
-
-    return users_df, demo_users
+    return pd.DataFrame(user_rows)
 
 
 def precompute_topn_for_users(
@@ -215,13 +218,21 @@ def run_pipeline(
         split_data=(train_df, valid_df, test_df),
     )
 
-    # 7. Precompute personas and demo users
-    users_df, demo_users = compute_user_stats_and_personas(interactions)
+    # 7. Precompute personas and user statistics
+    users_df = compute_user_stats_and_personas(interactions, items)
 
     # 8. Precompute top-N recommendations using primary model
     known_users = list(users_df["user_id"])
     topn_df = precompute_topn_for_users(
         primary_model, users=known_users[: 100 if fast else 500], k=50
+    )
+
+    # 9. Select diverse demo users across personas (P3.11)
+    demo_users = select_demo_users_from_dfs(
+        users_df=users_df,
+        topn_df=topn_df,
+        seed=spec.split.seed or 42,
+        target_count=8,
     )
 
     # 9. Save model parameters to model/ subfolder
