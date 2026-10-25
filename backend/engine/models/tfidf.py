@@ -597,13 +597,45 @@ class TfidfProfileModel(RecommenderModel):
             share = best_contrib / total_contrib
             if share >= threshold:
                 h_title = self.item_titles.get(best_h, best_h)
+                shared_terms = self._get_shared_terms(best_h, rec_id, max_terms=3)
+                if shared_terms:
+                    text = f"Recommended based on reading '{h_title}' (topics: {', '.join(shared_terms)})"
+                else:
+                    text = f"Recommended based on reading '{h_title}'"
                 return Reason(
                     kind="article_similarity",
                     item_id=best_h,
-                    text=f"Recommended based on reading '{h_title}'",
+                    text=text,
                 )
 
         return None
+
+    def _get_shared_terms(self, item_a: str, item_b: str, max_terms: int = 3) -> list[str]:
+        """Find top shared TF-IDF terms between two articles by elementwise weight product."""
+        if (
+            self.tfidf_matrix is None
+            or self.vectorizer is None
+            or item_a not in self.item2index
+            or item_b not in self.item2index
+        ):
+            return []
+
+        idx_a = self.item2index[item_a]
+        idx_b = self.item2index[item_b]
+
+        vec_a = self.tfidf_matrix[idx_a, :]
+        vec_b = self.tfidf_matrix[idx_b, :]
+
+        shared = vec_a.multiply(vec_b)
+        if shared.nnz == 0:
+            return []
+
+        feature_names = self.vectorizer.get_feature_names_out()
+        cols = shared.indices
+        vals = shared.data
+
+        top_order = np.argsort(-vals)[:max_terms]
+        return [str(feature_names[cols[i]]) for i in top_order]
 
     def save(self, dir_path: Path) -> None:
         """Persist model sparse matrix, vocabulary, and metadata to directory."""
