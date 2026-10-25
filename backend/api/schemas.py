@@ -159,6 +159,8 @@ class AboutResponse(BaseModel):
 class MetricsResponse(BaseModel):
     """Schema for /v1/metrics endpoint response."""
 
+    model_config = {"extra": "allow"}
+
     content_type: str = Field(
         ..., description="Content type identifier: 'movies', 'products', or 'articles'"
     )
@@ -179,7 +181,6 @@ class MetricsResponse(BaseModel):
         default=None,
         description="Warning banner when metrics originate from synthetic fixture data",
     )
-    metrics: dict[str, Any] = Field(default_factory=dict, description="Complete metrics payload")
 
 
 # ---------------------------------------------------------------------------

@@ -18,6 +18,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.errors import register_error_handlers
+from api.routes.metadata import router as metadata_router
+from api.search import ItemSearchIndex
 from engine import registry
 from engine.artifacts import load_artifacts, verify_artifacts
 from engine.config import load_config
@@ -61,6 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.api_key = config["api_key"]
     app.state.artifacts = {}
     app.state.models = {}
+    app.state.search_indexes = {}
     app.state.availability = {}
     app.state.unavailable_reasons = {}
 
@@ -87,8 +90,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             model = registry.build_model(spec)
             model.load(loaded.model_dir)
 
+            # 3. Build text search index
+            search_index = ItemSearchIndex(loaded.items, loaded.interactions)
+
             app.state.artifacts[content_type] = loaded
             app.state.models[content_type] = model
+            app.state.search_indexes[content_type] = search_index
             app.state.availability[content_type] = True
             logger.info("Content type '%s' loaded successfully.", content_type)
         except Exception as exc:
@@ -124,6 +131,9 @@ def create_app() -> FastAPI:
 
     # Register standardized error handlers (P7.2)
     register_error_handlers(app)
+
+    # Register routers (P7.3)
+    app.include_router(metadata_router)
 
     return app
 
