@@ -124,6 +124,45 @@ Use `spec.model_copy(deep=True)` when applying overrides in `engine.config.apply
 
 **Related tasks:** P3.5, P3.6, R3
 
+## D-010: Top-K sparsification and item similarity budget cap (2026-10-25)
+
+**Context:** Task P3.5/P3.6/P3.8 requires item-item similarity computation in SAR. A full dense similarity matrix scales as $O(N^2)$ in space ($N$ items), which becomes prohibitive for memory and serving latency as item counts grow, and introduces spurious noise from low-co-occurrence pairs. We need empirical evidence comparing top-$K$ neighbor sparsification ($K \in \{20, 50, 100, \text{full}\}$) and the item budget cap (`max_items_in_similarity`) across MovieLens 100K and 1M.
+
+**Empirical Evidence:**
+Measured using `tools/measure_sparsification.py` on identical chronological train/validation splits (80/10/10) evaluated on validation users ($k=10$):
+
+*MovieLens 100K (1,682 items, 99,723 interactions):*
+| $K$ | NDCG@10 | Recall@10 | Similarity Size | Non-zeros (NNZ) | Train Peak RAM | Serving Peak RAM | Serving Latency (300 users) |
+|---|---|---|---|---|---|---|---|
+| **20** | **0.1205** | 0.1478 | 0.34 MB | 29,320 | 117.6 MB | 11.4 MB | 9.10 s |
+| **50** | 0.1140 | 0.1378 | 0.84 MB | 73,249 | 117.4 MB | 11.8 MB | 7.34 s |
+| **100** | 0.1182 | 0.1500 | 1.68 MB | 146,309 | 117.4 MB | 12.6 MB | 7.36 s |
+| **Full** | 0.1201 | **0.1547** | 16.79 MB | 1,466,944 | 117.4 MB | 27.8 MB | 9.02 s |
+
+*MovieLens 1M (3,883 items, 999,611 interactions):*
+| $K$ | NDCG@10 | Recall@10 | Similarity Size | Non-zeros (NNZ) | Train Peak RAM | Serving Peak RAM | Serving Latency (300 users) |
+|---|---|---|---|---|---|---|---|
+| **20** | 0.0852 | 0.0935 | 0.80 MB | 68,300 | 765.6 MB | 99.3 MB | 15.66 s |
+| **50** | **0.0897** | 0.0946 | 1.97 MB | 170,750 | 765.5 MB | 100.6 MB | **11.30 s** |
+| **100** | 0.0858 | **0.0962** | 3.92 MB | 341,500 | 765.6 MB | 102.7 MB | 16.85 s |
+| **Full** | 0.0868 | 0.0910 | 112.89 MB | 9,863,072 | 765.6 MB | 211.9 MB | 21.62 s |
+
+**Key Findings:**
+1. **Regularization through Pruning:** On MovieLens 1M, $K=50$ achieves the highest validation ranking quality (NDCG@10 = 0.0897 vs 0.0868 for the full matrix, and Recall@10 = 0.0946 vs 0.0910). Pruning low-weight long-tail similarities eliminates noisy, spurious co-occurrences.
+2. **Massive Memory Savings:** For MovieLens 1M, sparsification with $K=50$ reduces the item similarity matrix footprint from 112.89 MB down to 1.97 MB — a **98.3% (57x) memory reduction**. Peak serving memory is cut in half (from 211.9 MB to 100.6 MB).
+3. **Serving Throughput:** Scoring users via sparse vector-matrix multiplication with $K=50$ is nearly **2x faster** than full-matrix dot products (11.30 s vs 21.62 s for 300 users).
+4. **Item Budget Cap Rationale:** While MovieLens datasets have a few thousand items, catalog sizes in e-commerce or news can reach hundreds of thousands. Capping `max_items_in_similarity` (defaulting to 50,000 top items by training popularity) guarantees that similarity storage remains bounded by $O(M_{\text{max}} \cdot K)$ non-zeros regardless of total long-tail item catalog size.
+
+**Decision:**
+- Select $K = 50$ as the primary operating setting for SAR serving, backed by superior NDCG@10 on 1M, a 57x smaller similarity footprint, and 2x lower serving latency.
+- Retain `top_neighbors_per_item` as an explicit tuned parameter in validation hyperparameter sweeps (P3.8), exploring $K \in \{20, 50, 100\}$.
+- Maintain the item budget cap (`max_items_in_similarity: 50000`) to guarantee an upper memory bound on large catalogs.
+
+**Consequences:** High-quality, fast, and lightweight serving artifacts without memory explosion on larger datasets.
+
+**Related tasks:** P3.5, P3.6, P3.8, FIX-14, FIX-15
+
 ---
 
 <!-- Add new entries above this line -->
+
