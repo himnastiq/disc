@@ -42,6 +42,7 @@ dev = [
     "types-PyYAML>=6.0",
     "types-requests>=2.31",
     "types-tqdm>=4.65",
+    "matplotlib>=3.8",
 ]
 deep = [
     # Phase 12: optional deep learning models
