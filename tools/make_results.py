@@ -60,32 +60,44 @@ def format_metric_with_ci(
     return val_str
 
 
-def format_ci_verdict(
+def compute_ci_verdict(
     model_dict: dict[str, Any], pop_dict: dict[str, Any], key: str
 ) -> str:
-    """Assess whether model's advantage over popularity is outside the 95% confidence interval."""
+    """Compute statistical verdict from stored bootstrap CIs:
+    - 'Model better (CIs separate)'
+    - 'No significant difference (CIs overlap)'
+    - 'Model worse'
+    """
     m_val = model_dict.get(key, 0.0)
     p_val = pop_dict.get(key, 0.0)
     m_ci = model_dict.get(f"{key}_ci95")
     p_ci = pop_dict.get(f"{key}_ci95")
+
     if (
         m_ci
         and p_ci
         and isinstance(m_ci, (list, tuple))
         and isinstance(p_ci, (list, tuple))
+        and len(m_ci) == 2
+        and len(p_ci) == 2
     ):
         if m_ci[0] > p_ci[1]:
-            return "Yes (Model > Pop, p < 0.05) ✓"
-        elif p_ci[0] > m_ci[1]:
-            return "No (Pop > Model, p < 0.05)"
+            return "Model better (CIs separate)"
+        elif m_ci[1] < p_ci[0]:
+            return "Model worse"
         else:
-            return "CIs Overlap"
-    if m_val > p_val:
-        return "Model > Pop ✓"
-    elif m_val == p_val:
-        return "Tied"
+            return "No significant difference (CIs overlap)"
+
+    # Fallback when CIs are missing:
+    if m_val < p_val:
+        return "Model worse"
+    elif m_val > p_val:
+        return "Model better (CIs separate)"
     else:
-        return "Pop > Model"
+        return "No significant difference (CIs overlap)"
+
+
+format_ci_verdict = compute_ci_verdict  # Backwards compatibility alias
 
 
 def generate_figures(
@@ -489,19 +501,56 @@ def build_markdown_report(
     md.append("")
 
     # Executive Summary
+    m_p = movies_metrics.get("protocol", {})
+    m_users = m_p.get("evaluated_test_users", 0)
+    m_interactions = m_p.get("total_interactions", 0)
+    m_var = movies_metrics.get("dataset_variant", "movies")
+    m_sar10 = m_models["sar"]["10"]
+    m_pop10 = m_models["popularity"]["10"]
+    m_cov_ratio = (
+        (m_sar10["coverage"] / m_pop10["coverage"])
+        if m_pop10.get("coverage", 0) > 0
+        else 1.0
+    )
+
+    p_p = products_metrics.get("protocol", {})
+    p_users = p_p.get("evaluated_test_users", 0)
+    p_interactions = p_p.get("total_interactions", 0)
+    p_var = products_metrics.get("dataset_variant", "products")
+    p_sar10 = p_models["sar"]["10"]
+    p_pop10 = p_models["popularity"]["10"]
+
+    a_p = articles_metrics.get("protocol", {})
+    a_var = articles_metrics.get("dataset_variant", "articles")
+    a_imp = a_protocols.get("impression_ranking", {})
+    a_imp_n = a_imp.get("evaluated_impressions", 0)
+    imp_models = a_protocols["impression_ranking"]["models"]
+    a_tfidf_auc = imp_models["tfidf_profile"]
+    a_pop_auc = imp_models["popularity"]
+
     md.append("## Executive Summary")
     md.append("")
     md.append(
         "Discovery Engine unifies three fundamentally disparate recommendation regimes under a single extensible architecture:"
     )
+    md.append("")
     md.append(
-        "1. **Movies (Collaborative Filtering)**: Dense feedback (explicit ratings 1-5). High co-occurrence structure. SAR beats Popularity in NDCG@10 and Recall@10 while exploring **3.5x more catalogue items**."
+        f"1. **Movies (Collaborative Filtering)**: Evaluated on {m_var} ({m_interactions:,} interactions, {m_users:,} test users). "
+        f"Coverage ratio SAR/Popularity is {m_cov_ratio:.1f}x. NDCG@10: {format_metric_with_ci(m_sar10, 'ndcg')} vs Popularity {format_metric_with_ci(m_pop10, 'ndcg')} "
+        f"({compute_ci_verdict(m_sar10, m_pop10, 'ndcg')}). Recall@10: {format_metric_with_ci(m_sar10, 'recall')} vs Popularity {format_metric_with_ci(m_pop10, 'recall')} "
+        f"({compute_ci_verdict(m_sar10, m_pop10, 'recall')})."
     )
     md.append(
-        "2. **Products (E-Commerce)**: Extreme sparsity (99.2% matrix sparsity), cold users, and cold items. Item-budget sparsification protects peak memory (22.1 MB) while preserving 100% item category consistency in similar alternatives."
+        f"2. **Products (E-Commerce)**: Evaluated on {p_var} ({p_interactions:,} interactions, {p_users:,} test users). "
+        f"HitRate@10: {format_metric_with_ci(p_sar10, 'hit_rate')} vs Popularity {format_metric_with_ci(p_pop10, 'hit_rate')} "
+        f"({compute_ci_verdict(p_sar10, p_pop10, 'hit_rate')}). NDCG@10: {format_metric_with_ci(p_sar10, 'ndcg')} vs Popularity {format_metric_with_ci(p_pop10, 'ndcg')} "
+        f"({compute_ci_verdict(p_sar10, p_pop10, 'ndcg')})."
     )
     md.append(
-        "3. **Articles (Content & Recency)**: Rapid shelf-life decay and cold items. TF-IDF user profile model decisively outperforms popularity in impression ranking (+84.2% AUC, +58.8% MRR) while strictly enforcing 24h recency window candidate boundaries."
+        f"3. **Articles (Content & Recency)**: Evaluated on {a_var} ({a_imp_n} impressions). "
+        f"Impression AUC: {format_metric_with_ci(a_tfidf_auc, 'auc')} vs Popularity {format_metric_with_ci(a_pop_auc, 'auc')} "
+        f"({compute_ci_verdict(a_tfidf_auc, a_pop_auc, 'auc')}). Impression MRR: {format_metric_with_ci(a_tfidf_auc, 'mrr')} vs Popularity {format_metric_with_ci(a_pop_auc, 'mrr')} "
+        f"({compute_ci_verdict(a_tfidf_auc, a_pop_auc, 'mrr')})."
     )
     md.append("")
     md.append(
@@ -519,7 +568,7 @@ def build_markdown_report(
     )
     md.append("")
     md.append(
-        "| Metric @ K | Random Baseline | Popularity Baseline (95% CI) | SAR (Personalised, 95% CI) | Gain vs Popularity | Advantage Outside CI? |"
+        "| Metric @ K | Random Baseline | Popularity Baseline (95% CI) | SAR (Personalised, 95% CI) | Gain vs Popularity | Statistical Verdict |"
     )
     md.append("|---|---|---|---|---|---|")
     for k in ["5", "10", "20"]:
@@ -530,29 +579,31 @@ def build_markdown_report(
         gain_hr = format_pct_gain(sar["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(sar["ndcg"], pop["ndcg"])
         gain_rec = format_pct_gain(sar["recall"], pop["recall"])
+        gain_prec = format_pct_gain(sar.get("precision", 0.0), pop.get("precision", 0.0))
 
         md.append(
-            f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(sar, 'hit_rate')}** | **{gain_hr}** | {format_ci_verdict(sar, pop, 'hit_rate')} |"
+            f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(sar, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(sar, pop, 'hit_rate')} |"
         )
         md.append(
-            f"| **NDCG@{k}** | {rnd['ndcg']:.4f} | {format_metric_with_ci(pop, 'ndcg')} | **{format_metric_with_ci(sar, 'ndcg')}** | **{gain_ndcg}** | {format_ci_verdict(sar, pop, 'ndcg')} |"
+            f"| **NDCG@{k}** | {rnd['ndcg']:.4f} | {format_metric_with_ci(pop, 'ndcg')} | **{format_metric_with_ci(sar, 'ndcg')}** | **{gain_ndcg}** | {compute_ci_verdict(sar, pop, 'ndcg')} |"
         )
         md.append(
-            f"| **Recall@{k}** | {rnd['recall']:.4f} | {format_metric_with_ci(pop, 'recall')} | **{format_metric_with_ci(sar, 'recall')}** | **{gain_rec}** | {format_ci_verdict(sar, pop, 'recall')} |"
+            f"| **Recall@{k}** | {rnd['recall']:.4f} | {format_metric_with_ci(pop, 'recall')} | **{format_metric_with_ci(sar, 'recall')}** | **{gain_rec}** | {compute_ci_verdict(sar, pop, 'recall')} |"
         )
         md.append(
-            f"| **Coverage@{k}** | {rnd['coverage']:.4f} | {pop['coverage']:.4f} | **{sar['coverage']:.4f}** | {format_pct_gain(sar['coverage'], pop['coverage'])} | Catalogue exploration ✓ |"
+            f"| **Precision@{k}** | {rnd.get('precision', 0.0):.4f} | {format_metric_with_ci(pop, 'precision')} | **{format_metric_with_ci(sar, 'precision')}** | **{gain_prec}** | {compute_ci_verdict(sar, pop, 'precision')} |"
         )
     md.append("")
-    md.append(
-        f"- **Sanity Check:** `model_beats_popularity: {movies_metrics['sanity_checks']['model_beats_popularity']}`"
-    )
-    md.append(
-        f"- **Sanity Check:** `popularity_beats_random: {movies_metrics['sanity_checks']['popularity_beats_random']}`"
-    )
-    md.append(
-        f"- **Bounds Valid:** `all_bounds_valid: {movies_metrics['sanity_checks']['all_bounds_valid']}`"
-    )
+    m_checks = movies_metrics.get("sanity_checks", {})
+    if "model_beats_popularity" in m_checks:
+        mbp_status = "Passed" if m_checks["model_beats_popularity"] else "Not satisfied"
+        md.append(f"- **Sanity Check (Model > Popularity Point Estimate):** `{mbp_status}`")
+    if "popularity_beats_random" in m_checks:
+        pbr_status = "Passed" if m_checks["popularity_beats_random"] else "Not satisfied"
+        md.append(f"- **Sanity Check (Popularity > Random):** `{pbr_status}`")
+    if "all_bounds_valid" in m_checks:
+        abv_status = "Passed" if m_checks["all_bounds_valid"] else "Not satisfied"
+        md.append(f"- **Sanity Check (Bounds Valid):** `{abv_status}`")
     md.append("")
     md.append("---")
     md.append("")
@@ -565,7 +616,7 @@ def build_markdown_report(
     )
     md.append("")
     md.append(
-        "| Metric @ K | Random Baseline | Popularity Baseline (95% CI) | SAR (Personalised, 95% CI) | Gain vs Popularity | Advantage Outside CI? |"
+        "| Metric @ K | Random Baseline | Popularity Baseline (95% CI) | SAR (Personalised, 95% CI) | Gain vs Popularity | Statistical Verdict |"
     )
     md.append("|---|---|---|---|---|---|")
     for k in ["5", "10", "20"]:
@@ -576,18 +627,19 @@ def build_markdown_report(
         gain_hr = format_pct_gain(sar["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(sar["ndcg"], pop["ndcg"])
         gain_rec = format_pct_gain(sar["recall"], pop["recall"])
+        gain_prec = format_pct_gain(sar.get("precision", 0.0), pop.get("precision", 0.0))
 
         md.append(
-            f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(sar, 'hit_rate')}** | **{gain_hr}** | {format_ci_verdict(sar, pop, 'hit_rate')} |"
+            f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(sar, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(sar, pop, 'hit_rate')} |"
         )
         md.append(
-            f"| **NDCG@{k}** | {rnd['ndcg']:.4f} | {format_metric_with_ci(pop, 'ndcg')} | **{format_metric_with_ci(sar, 'ndcg')}** | **{gain_ndcg}** | {format_ci_verdict(sar, pop, 'ndcg')} |"
+            f"| **NDCG@{k}** | {rnd['ndcg']:.4f} | {format_metric_with_ci(pop, 'ndcg')} | **{format_metric_with_ci(sar, 'ndcg')}** | **{gain_ndcg}** | {compute_ci_verdict(sar, pop, 'ndcg')} |"
         )
         md.append(
-            f"| **Recall@{k}** | {rnd['recall']:.4f} | {format_metric_with_ci(pop, 'recall')} | **{format_metric_with_ci(sar, 'recall')}** | **{gain_rec}** | {format_ci_verdict(sar, pop, 'recall')} |"
+            f"| **Recall@{k}** | {rnd['recall']:.4f} | {format_metric_with_ci(pop, 'recall')} | **{format_metric_with_ci(sar, 'recall')}** | **{gain_rec}** | {compute_ci_verdict(sar, pop, 'recall')} |"
         )
         md.append(
-            f"| **Personalisation@{k}** | {rnd['personalisation']:.4f} | {pop['personalisation']:.4f} | **{sar['personalisation']:.4f}** | {format_pct_gain(sar['personalisation'], pop['personalisation'])} | Diverse recommendation lists ✓ |"
+            f"| **Precision@{k}** | {rnd.get('precision', 0.0):.4f} | {format_metric_with_ci(pop, 'precision')} | **{format_metric_with_ci(sar, 'precision')}** | **{gain_prec}** | {compute_ci_verdict(sar, pop, 'precision')} |"
         )
     md.append("")
 
@@ -603,19 +655,19 @@ def build_markdown_report(
         md.append("| Check | Measured Value | Target / Baseline | Status |")
         md.append("|---|---|---|---|")
         md.append(
-            f"| **Sparse User Share (<= 5 ratings)** | `{sparse_info.get('sparse_user_ratio', 0.0) * 100:.1f}%` ({sparse_info.get('sparse_user_count')}/{sparse_info.get('total_users')} users) | Informative metric | Verified ✓ |"
+            f"| **Sparse User Share (<= 5 ratings)** | `{sparse_info.get('sparse_user_ratio', 0.0) * 100:.1f}%` ({sparse_info.get('sparse_user_count')}/{sparse_info.get('total_users')} users) | Informative metric | Verified |"
         )
         md.append(
-            f"| **Long-Tail Volume Share** | `{tail_info.get('tail_interaction_volume_share', 0.0) * 100:.1f}%` ({tail_info.get('tail_item_count')}/{tail_info.get('total_items')} items) | > 50% tail volume | Verified ✓ |"
+            f"| **Long-Tail Volume Share** | `{tail_info.get('tail_interaction_volume_share', 0.0) * 100:.1f}%` ({tail_info.get('tail_item_count')}/{tail_info.get('total_items')} items) | > 50% tail volume | Verified |"
         )
         md.append(
-            f"| **Long-Tail Rec Share @ 10** | `{tail_info.get('tail_recommendation_share_at_k', 0.0) * 100:.1f}%` of recommended items | > 5% tail exploration | Verified ✓ |"
+            f"| **Long-Tail Rec Share @ 10** | `{tail_info.get('tail_recommendation_share_at_k', 0.0) * 100:.1f}%` of recommended items | > 5% tail exploration | Verified |"
         )
         md.append(
-            f"| **Category Diversity @ 10** | `{cat_info.get('mean_unique_categories', 0.0):.2f}` unique categories/user | Min: `{cat_info.get('min_unique_categories')}`, Max: `{cat_info.get('max_unique_categories')}` | Verified ✓ |"
+            f"| **Category Diversity @ 10** | `{cat_info.get('mean_unique_categories', 0.0):.2f}` unique categories/user | Min: `{cat_info.get('min_unique_categories')}`, Max: `{cat_info.get('max_unique_categories')}` | Verified |"
         )
         md.append(
-            f"| **Similar Alternatives Spot-Check** | `{sim_info.get('shared_category_rate', 0.0) * 100:.1f}%` shared categories | Target > 60.0% | PASSED ✓ |"
+            f"| **Similar Alternatives Spot-Check** | `{sim_info.get('shared_category_rate', 0.0) * 100:.1f}%` shared categories | Target > 60.0% | {'Passed' if sim_info.get('passed', True) else 'Failed'} |"
         )
         md.append("")
 
@@ -636,17 +688,17 @@ def build_markdown_report(
     md.append("")
     imp_models = a_protocols["impression_ranking"]["models"]
     md.append(
-        "| Model | AUC (95% CI) | MRR (95% CI) | nDCG@5 (95% CI) | nDCG@10 (95% CI) | Invariant Verdict |"
+        "| Model | AUC (95% CI) | MRR (95% CI) | nDCG@5 (95% CI) | nDCG@10 (95% CI) | Statistical Verdict (vs Pop) |"
     )
     md.append("|---|---|---|---|---|---|")
     md.append(
-        f"| **Random** | `{format_metric_with_ci(imp_models['random'], 'auc')}` | `{format_metric_with_ci(imp_models['random'], 'mrr')}` | `{format_metric_with_ci(imp_models['random'], 'ndcg@5')}` | `{format_metric_with_ci(imp_models['random'], 'ndcg@10')}` | Baseline |"
+        f"| **Random** | `{format_metric_with_ci(imp_models['random'], 'auc')}` | `{format_metric_with_ci(imp_models['random'], 'mrr')}` | `{format_metric_with_ci(imp_models['random'], 'ndcg@5')}` | `{format_metric_with_ci(imp_models['random'], 'ndcg@10')}` | {compute_ci_verdict(imp_models['random'], imp_models['popularity'], 'auc')} |"
     )
     md.append(
-        f"| **Popularity** | `{format_metric_with_ci(imp_models['popularity'], 'auc')}` | `{format_metric_with_ci(imp_models['popularity'], 'mrr')}` | `{format_metric_with_ci(imp_models['popularity'], 'ndcg@5')}` | `{format_metric_with_ci(imp_models['popularity'], 'ndcg@10')}` | Popularity beats Random ✓ |"
+        f"| **Popularity** | `{format_metric_with_ci(imp_models['popularity'], 'auc')}` | `{format_metric_with_ci(imp_models['popularity'], 'mrr')}` | `{format_metric_with_ci(imp_models['popularity'], 'ndcg@5')}` | `{format_metric_with_ci(imp_models['popularity'], 'ndcg@10')}` | Baseline |"
     )
     md.append(
-        f"| **TF-IDF Profile** | **`{format_metric_with_ci(imp_models['tfidf_profile'], 'auc')}`** | **`{format_metric_with_ci(imp_models['tfidf_profile'], 'mrr')}`** | **`{format_metric_with_ci(imp_models['tfidf_profile'], 'ndcg@5')}`** | **`{format_metric_with_ci(imp_models['tfidf_profile'], 'ndcg@10')}`** | **TF-IDF decisively beats Popularity (p < 0.05) ✓** |"
+        f"| **TF-IDF Profile** | **`{format_metric_with_ci(imp_models['tfidf_profile'], 'auc')}`** | **`{format_metric_with_ci(imp_models['tfidf_profile'], 'mrr')}`** | **`{format_metric_with_ci(imp_models['tfidf_profile'], 'ndcg@5')}`** | **`{format_metric_with_ci(imp_models['tfidf_profile'], 'ndcg@10')}`** | {compute_ci_verdict(imp_models['tfidf_profile'], imp_models['popularity'], 'auc')} |"
     )
     md.append("")
 
@@ -656,7 +708,7 @@ def build_markdown_report(
     )
     md.append("")
     md.append(
-        "| Metric @ K | Random Baseline | Popularity Baseline (95% CI) | TF-IDF Profile (95% CI) | Gain vs Popularity | Advantage Outside CI? |"
+        "| Metric @ K | Random Baseline | Popularity Baseline (95% CI) | TF-IDF Profile (95% CI) | Gain vs Popularity | Statistical Verdict |"
     )
     md.append("|---|---|---|---|---|---|")
     for k in ["5", "10", "20"]:
@@ -666,15 +718,20 @@ def build_markdown_report(
 
         gain_hr = format_pct_gain(tfidf["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(tfidf["ndcg"], pop["ndcg"])
+        gain_rec = format_pct_gain(tfidf["recall"], pop["recall"])
+        gain_prec = format_pct_gain(tfidf.get("precision", 0.0), pop.get("precision", 0.0))
 
         md.append(
-            f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(tfidf, 'hit_rate')}** | **{gain_hr}** | {format_ci_verdict(tfidf, pop, 'hit_rate')} |"
+            f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(tfidf, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(tfidf, pop, 'hit_rate')} |"
         )
         md.append(
-            f"| **NDCG@{k}** | {rnd['ndcg']:.4f} | {format_metric_with_ci(pop, 'ndcg')} | **{format_metric_with_ci(tfidf, 'ndcg')}** | **{gain_ndcg}** | {format_ci_verdict(tfidf, pop, 'ndcg')} |"
+            f"| **NDCG@{k}** | {rnd['ndcg']:.4f} | {format_metric_with_ci(pop, 'ndcg')} | **{format_metric_with_ci(tfidf, 'ndcg')}** | **{gain_ndcg}** | {compute_ci_verdict(tfidf, pop, 'ndcg')} |"
         )
         md.append(
-            f"| **Diversity@{k}** | {rnd['diversity']:.4f} | {pop['diversity']:.4f} | **{tfidf['diversity']:.4f}** | {format_pct_gain(tfidf['diversity'], pop['diversity'])} | Lexical diversity ✓ |"
+            f"| **Recall@{k}** | {rnd['recall']:.4f} | {format_metric_with_ci(pop, 'recall')} | **{format_metric_with_ci(tfidf, 'recall')}** | **{gain_rec}** | {compute_ci_verdict(tfidf, pop, 'recall')} |"
+        )
+        md.append(
+            f"| **Precision@{k}** | {rnd.get('precision', 0.0):.4f} | {format_metric_with_ci(pop, 'precision')} | **{format_metric_with_ci(tfidf, 'precision')}** | **{gain_prec}** | {compute_ci_verdict(tfidf, pop, 'precision')} |"
         )
     md.append("")
     md.append("![News Articles Dual Protocol](figures/articles_protocols.png)")
@@ -786,10 +843,10 @@ def build_markdown_report(
     md.append("## 7. Statistical Honesty & Bootstrap Analysis")
     md.append("")
     md.append(
-        "To prevent statistical delusion and over-claiming subtle ranking gains, all headline ranking metrics"
+        "To prevent statistical delusion and over-claiming subtle ranking gains, headline ranking metrics"
     )
     md.append(
-        "are evaluated with non-parametric bootstrap 95% confidence intervals (500 resamples over test users)."
+        "are evaluated with non-parametric bootstrap 95% confidence intervals (500 resamples over test users/impressions)."
     )
     md.append(
         "A model's advantage over the non-personalised popularity baseline is considered statistically significant"
@@ -800,41 +857,87 @@ def build_markdown_report(
     md.append("")
     md.append("### Empirical Findings Across Domains")
     md.append("")
-    md.append("1. **Movies (MovieLens 100k, N=1,918 test users):**")
-    md.append(
-        "   - **Statistically Significant Separation:** SAR decisively outperforms Popularity on **Recall@10** ([0.0577, 0.0716] vs Pop [0.0389, 0.0494], p < 0.05) and **Recall@20** ([0.0974, 0.1170] vs Pop [0.0689, 0.0847], p < 0.05)."
-    )
-    md.append(
-        "   - **Confidence Interval Overlap:** On HitRate@10 ([0.2625, 0.3011] vs Pop [0.2289, 0.2677]) and NDCG@10 ([0.0541, 0.0644] vs Pop [0.0492, 0.0606]), the 95% confidence intervals overlap. While SAR's point estimates are consistently higher (+12.7% HitRate@10, +6.3% NDCG@10), high blockbuster concentration in MovieLens prevents claiming statistically significant separation at alpha=0.05 for ranking position alone. However, SAR delivers **3.5x higher catalogue coverage** (0.0551 vs 0.0131)."
-    )
-    md.append("2. **Products (Amazon Musical Instruments, N=1,222 test users):**")
-    md.append(
-        "   - **Decisive Statistical Separation:** Despite extreme sparsity (99.2%), SAR achieves non-overlapping statistical separation over Popularity across **Recall@10** ([0.1095, 0.1455] vs Pop [0.0651, 0.0948], p < 0.05), **HitRate@10** ([0.1105, 0.1514] vs Pop [0.0647, 0.0949], p < 0.05), and **Precision@10** ([0.0114, 0.0151] vs Pop [0.0066, 0.0097], p < 0.05)."
-    )
-    md.append(
-        "   - **Personalisation:** SAR achieves 0.9996 personalisation vs 0.0000 for popularity, proving distinct item lists tailored to sparse individual purchasing paths."
-    )
-    md.append("3. **Articles (MIND News Impressions, N=9 impressions):**")
-    md.append(
-        "   - **Impression Ranking Separation:** TF-IDF Profile model achieves complete statistical separation over Popularity in impression ranking **AUC** ([0.9167, 1.0000] vs Pop [0.2778, 0.7500], p < 0.05) and **MRR** ([1.0000, 1.0000] vs Pop [0.4444, 0.8148], p < 0.05)."
-    )
-    md.append(
-        "   - **Window Candidate Retrieval:** In 24h candidate retrieval, small sample test user pool yields overlapping CIs across models, faithfully reported without exaggeration."
-    )
+
+    # Movies empirical findings
+    m_sep = []
+    m_overlap = []
+    m_worse = []
+    for met in ["recall", "ndcg", "hit_rate", "precision"]:
+        v = compute_ci_verdict(m_models["sar"]["10"], m_models["popularity"]["10"], met)
+        m_str = f"{met.upper()}@10 ({format_metric_with_ci(m_models['sar']['10'], met)} vs Pop {format_metric_with_ci(m_models['popularity']['10'], met)})"
+        if v == "Model better (CIs separate)":
+            m_sep.append(m_str)
+        elif v == "Model worse":
+            m_worse.append(m_str)
+        else:
+            m_overlap.append(m_str)
+
+    md.append(f"1. **Movies ({m_var}, N={m_users:,} test users):**")
+    if m_sep:
+        md.append(f"   - **Statistically Significant Advantage (CIs separate):** {', '.join(m_sep)}.")
+    if m_overlap:
+        md.append(f"   - **No Significant Difference (CIs overlap):** {', '.join(m_overlap)}.")
+    if m_worse:
+        md.append(f"   - **Model Worse:** {', '.join(m_worse)}.")
+
+    # Products empirical findings
+    p_sep = []
+    p_overlap = []
+    p_worse = []
+    for met in ["recall", "ndcg", "hit_rate", "precision"]:
+        v = compute_ci_verdict(p_models["sar"]["10"], p_models["popularity"]["10"], met)
+        p_str = f"{met.upper()}@10 ({format_metric_with_ci(p_models['sar']['10'], met)} vs Pop {format_metric_with_ci(p_models['popularity']['10'], met)})"
+        if v == "Model better (CIs separate)":
+            p_sep.append(p_str)
+        elif v == "Model worse":
+            p_worse.append(p_str)
+        else:
+            p_overlap.append(p_str)
+
+    md.append(f"2. **Products ({p_var}, N={p_users:,} test users):**")
+    if p_sep:
+        md.append(f"   - **Statistically Significant Advantage (CIs separate):** {', '.join(p_sep)}.")
+    if p_overlap:
+        md.append(f"   - **No Significant Difference (CIs overlap):** {', '.join(p_overlap)}.")
+    if p_worse:
+        md.append(f"   - **Model Worse:** {', '.join(p_worse)}.")
+
+    # Articles empirical findings
+    a_sep = []
+    a_overlap = []
+    a_worse = []
+    for met in ["auc", "mrr", "ndcg@5", "ndcg@10"]:
+        v = compute_ci_verdict(imp_models["tfidf_profile"], imp_models["popularity"], met)
+        a_str = f"{met.upper()} ({format_metric_with_ci(imp_models['tfidf_profile'], met)} vs Pop {format_metric_with_ci(imp_models['popularity'], met)})"
+        if v == "Model better (CIs separate)":
+            a_sep.append(a_str)
+        elif v == "Model worse":
+            a_worse.append(a_str)
+        else:
+            a_overlap.append(a_str)
+
+    md.append(f"3. **Articles ({a_var}, N={a_imp_n:,} impressions):**")
+    if a_sep:
+        md.append(f"   - **Impression Ranking Statistically Significant Advantage (CIs separate):** {', '.join(a_sep)}.")
+    if a_overlap:
+        md.append(f"   - **Impression Ranking No Significant Difference (CIs overlap):** {', '.join(a_overlap)}.")
+    if a_worse:
+        md.append(f"   - **Impression Ranking Model Worse:** {', '.join(a_worse)}.")
+
     md.append("")
     md.append("### Known Limitations & Failure Modes")
     md.append("")
     md.append(
-        "1. **Popularity Bias in Dense Corpora:** In MovieLens, popular blockbuster movies dominate user consumption. SAR slightly underperforms Popularity on raw HitRate@5 (0.2240 vs 0.2135) but achieves **3.5x higher catalogue coverage** (0.0551 vs 0.0131) and significantly higher personalization (0.9582 vs 0.7220)."
+        "1. **Popularity Bias in Dense Corpora:** In dense collaborative filtering domains (e.g. MovieLens), popular blockbuster items dominate user interactions. Non-personalized popularity baselines achieve competitive hit rates by recommending narrow subsets of blockbuster items. While collaborative models achieve higher catalogue coverage and personalization, overlapping confidence intervals on ranking position demonstrate that ranking position advantage requires cautious interpretation."
     )
     md.append(
-        r"2. **Sparse E-Commerce Feedback:** In Amazon Instruments, 39.0% of users have $\le 5$ total interactions. While SAR achieves +100% HitRate@5 over Popularity (0.0952 vs 0.0476), absolute HitRate remains under 10% due to extreme catalogue sparsity (99.2%)."
+        "2. **Sparse E-Commerce Feedback:** In high-sparsity product catalogs, a substantial share of users have few total interactions. Absolute hit rates remain low across all models due to catalog sparsity, and sparse taste vectors can yield confidence interval overlap on cold users."
     )
     md.append(
-        "3. **News Freshness Horizon:** Offline evaluation on MIND fixture uses a 24-hour recency window. Articles older than 24 hours are excluded from candidate pools, causing older historic clicks to be un-retrievable."
+        "3. **News Freshness Horizon:** Candidate pools restricted to active recency windows eliminate outdated articles but restrict the retrievable candidate set."
     )
     md.append(
-        "4. **Offline vs Online Gap:** High offline AUC (0.9722) on MIND reflects reranking clicked vs unclicked impression candidates from logging policy; live production click-through rates will vary due to position bias."
+        "4. **Offline vs Online Gap:** Offline evaluation on historical logs reflects past logging policy candidates; live click-through performance is subject to presentation and position bias."
     )
     md.append("")
 

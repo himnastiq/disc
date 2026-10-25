@@ -133,3 +133,61 @@ def test_make_results_idempotency(tmp_path: Path) -> None:
     subprocess.run([*base_cmd, "--output-md", str(out_md2)], check=True)
 
     assert out_md1.read_text(encoding="utf-8") == out_md2.read_text(encoding="utf-8")
+
+
+def test_make_results_ci_verdicts_no_beats_when_overlapping() -> None:
+    """Verify that when SAR < Popularity and CIs overlap, no 'beats' verdict is produced (FIX-23)."""
+    if str(REPO_ROOT / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+    from make_results import build_markdown_report, compute_ci_verdict
+
+    # 1. Direct unit assertions on compute_ci_verdict
+    # Separate CIs: model better
+    v_better = compute_ci_verdict(
+        {"hit_rate": 0.20, "hit_rate_ci95": [0.18, 0.22]},
+        {"hit_rate": 0.12, "hit_rate_ci95": [0.10, 0.14]},
+        "hit_rate",
+    )
+    assert v_better == "Model better (CIs separate)"
+
+    # Overlapping CIs: SAR < Popularity
+    v_overlap = compute_ci_verdict(
+        {"hit_rate": 0.14, "hit_rate_ci95": [0.11, 0.17]},
+        {"hit_rate": 0.16, "hit_rate_ci95": [0.13, 0.19]},
+        "hit_rate",
+    )
+    assert v_overlap == "No significant difference (CIs overlap)"
+    assert "beats" not in v_overlap.lower()
+
+    # Separate CIs: model worse
+    v_worse = compute_ci_verdict(
+        {"hit_rate": 0.08, "hit_rate_ci95": [0.06, 0.09]},
+        {"hit_rate": 0.15, "hit_rate_ci95": [0.13, 0.17]},
+        "hit_rate",
+    )
+    assert v_worse == "Model worse"
+    assert "beats" not in v_worse.lower()
+
+    # 2. End-to-end report generation with SAR < Popularity and overlapping CIs
+    m_dict = json.loads((ARTIFACTS_DIR / "movies" / "metrics.json").read_text(encoding="utf-8"))
+    p_dict = json.loads((ARTIFACTS_DIR / "products" / "metrics.json").read_text(encoding="utf-8"))
+    a_dict = json.loads((ARTIFACTS_DIR / "articles" / "metrics.json").read_text(encoding="utf-8"))
+
+    # Force SAR < Popularity with overlapping CIs across all movie metrics
+    for k in ["5", "10", "20"]:
+        for met in ["hit_rate", "ndcg", "recall", "precision"]:
+            m_dict["models"]["sar"][k][met] = 0.040
+            m_dict["models"]["sar"][k][f"{met}_ci95"] = [0.030, 0.055]
+            m_dict["models"]["popularity"][k][met] = 0.045
+            m_dict["models"]["popularity"][k][f"{met}_ci95"] = [0.035, 0.060]
+
+    report = build_markdown_report(m_dict, p_dict, a_dict)
+
+    # Assert that no "beats" verdict appears anywhere in the output report
+    assert "Model beats Popularity" not in report
+    assert "beats Popularity" not in report
+    assert "beats Random" not in report
+    assert "decisively beats" not in report
+    # Assert proper statistical verdict is rendered
+    assert "No significant difference (CIs overlap)" in report
+
