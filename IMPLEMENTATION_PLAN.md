@@ -966,6 +966,29 @@ backend\tests\integration\test_phase6_gate.py::test_phase6_gate_break_ritual_5_s
 ```
 - **Next Steps:** Phase 6 is 100% complete (8/8 tasks). Proceed to Phase 7: FastAPI backend (P7.1 skeleton, lifespans, schemas, and endpoints).
 
+### Session 19: FIX-27 (Dynamic Results Generation & Honest Manifest Provenance)
+- **Completed Fixes (FIX-27):**
+  - **FIX-27(a) Status Column:** Implemented `format_target_status` in `tools/make_results.py`. The Status column now reports "Verified" only when the measured value meets the stated target; otherwise "Not met (<measured>% vs > <target>%)" with both numbers. Added unit test with 43.0% vs > 50% target.
+  - **FIX-27(b) Manifest-Driven Headings & Names:** Added `dataset_name` and `section_heading` to `artifacts/{movies,products,articles}/manifest.json` and `backend/engine/artifacts.py`. `tools/make_results.py` reads section headings and dataset names dynamically from manifests rather than hardcoding.
+  - **FIX-27(c) Row-Computed Sanity Line:** Replaced hardcoded "Passed" with `compute_model_beats_popularity_sanity`. The "Model > Popularity" sanity line is computed directly from table rows across all cutoffs and metrics. If any point estimate is below Popularity, it prints `Mixed: model below Popularity on <list of metrics>` (e.g. MovieLens reports `Mixed: model below Popularity on ndcg@5, precision@5, precision@10, precision@20`). Never "Passed" unless all rows pass.
+  - **FIX-27(d) Minimum-Sample Rule:** Implemented minimum-sample threshold (< 200 evaluated users/impressions or synthetic flag). `compute_ci_verdict` prints `No verdict (synthetic / n=<n>)` instead of any better/worse verdict, and keeps numbers out of the Executive Summary as "demo only". Added unit tests with n=3 and n=9.
+  - **Regenerated `docs/RESULTS.md`:** Preserved Section 8 API benchmark performance data while fully updating Sections 1-7.
+- **`make check` Raw Output:**
+```
+cd backend && E:/discover/.venv/Scripts/python.exe -m ruff check .
+All checks passed!
+cd backend && E:/discover/.venv/Scripts/python.exe -m ruff format --check .
+114 files already formatted
+cd backend && E:/discover/.venv/Scripts/python.exe -m mypy engine/ api/
+Success: no issues found in 44 source files
+cd backend && E:/discover/.venv/Scripts/python.exe -m pytest tests/ -q -rs
+408 passed, 1 skipped, 1 warning in 244.60s (0:04:04)
+E:/discover/.venv/Scripts/python.exe tools/core_unchanged.py
+E:/discover/.venv/Scripts/python.exe tools/vendored_manifest.py --check
+"All checks passed."
+```
+
+
 
 
 

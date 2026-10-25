@@ -107,6 +107,28 @@ def save_artifacts(
             rel_path = p.relative_to(artifact_dir).as_posix()
             file_checksums[rel_path] = compute_file_sha256(p)
 
+    # Derive dataset_name and section_heading
+    dataset_name = spec.dataset.variant
+    if spec.type == "movies":
+        dataset_name = (
+            "MovieLens 1M" if spec.dataset.variant == "1m" else f"MovieLens {spec.dataset.variant}"
+        )
+    elif spec.type == "products":
+        variant_title = spec.dataset.variant.replace("_", " ").title()
+        dataset_name = f"Amazon {variant_title}"
+    elif spec.type == "articles":
+        dataset_name = (
+            spec.dataset.variant if "SYNTHETIC" in spec.dataset.variant.upper() else "MIND"
+        )
+
+    model_display = spec.model.name.upper()
+    if spec.model.name == "tfidf_profile":
+        model_display = "TF-IDF Content Model"
+    elif spec.model.name == "sar":
+        model_display = "SAR"
+
+    section_heading = f"{spec.display_name} ({dataset_name} + {model_display})"
+
     # 5. Build and write manifest.json
     manifest_data: dict[str, Any] = {
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
@@ -115,6 +137,8 @@ def save_artifacts(
         "config_hash": compute_config_hash(spec),
         "git_sha": get_git_sha(),
         "dataset_variant": spec.dataset.variant,
+        "dataset_name": dataset_name,
+        "section_heading": section_heading,
         "created_at": datetime.now(UTC).isoformat(),
         "files": file_checksums,
     }
