@@ -726,6 +726,42 @@ tests\integration\test_products_gate.py .......                          [100%]
 ============================= 12 passed in 6.02s ==============================
 ```
 
+### Session 10: FIX-18 Cold start exact equality with popularity baseline at 0 likes
+- **Root Cause Analysis:**
+  - In headline evaluation, `PopularityModel.recommend_user(uid, k)` enforces `allow_repeat: false` by excluding `user_seen.get(uid, set())` (the user's training items).
+  - In `EvaluationHarness.run()`, cold-start curve simulation called `model.recommend_history(history=hist_sample, k=eval_k)` without passing seen training items to `exclude_ids`.
+  - When `size == 0`, `hist_sample = []`, so zero items were excluded. The model returned global top-10 popular items, many of which test users had already interacted with during training. Because test interactions contain only held-out items, recommending already-seen items wasted slots and artificially depressed Recall@10 from 0.0465/0.0505 down to 0.0193.
+  - When `exclude_ids = user_train_seen` is provided under `allow_repeat: false`, `SarModel.recommend_history([], k=10, exclude_ids=user_train_seen)` and `PopularityModel.recommend_user(uid, k=10)` produce bit-for-bit identical recommendations.
+- **Empirical Proof on Same Users and Protocol (`cs_users` N=50):**
+```
+1. Headline Popularity (recommend_user):               0.04652
+2. SAR recommend_history([], k=10) no exclude:        0.01931
+3. SAR recommend_history([], k=10) with user_seen:    0.04652
+4. Pop recommend_history([], k=10) no exclude:        0.01931
+5. Pop recommend_history([], k=10) with user_seen:    0.04652
+
+Pop:  Recall=0.04652, NDCG=0.06416, HitRate=0.26000
+SAR0: Recall=0.04652, NDCG=0.06416, HitRate=0.26000
+EXACT MATCH ON ALL METRICS CONFIRMED!
+```
+- **Fix Applied:**
+  - `backend/engine/evaluation/harness.py`: compute `exclude_seen = {item for item, _ in full_hist} if not self.spec.model.allow_repeat else set()` and pass `exclude_ids=exclude_seen` to `model.recommend_history()`.
+  - `backend/tests/unit/test_cold_start_curve.py`: added `test_cold_start_at_zero_likes_equals_popularity_baseline` asserting recommendation item equality and metric identity.
+- **Regression Tests Output (`pytest tests/unit/test_cold_start_curve.py`):**
+```
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.7.0
+rootdir: E:\discover\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, hypothesis-6.170.9, platformdirs-4.13.5, cov-7.1.0
+collected 2 items
+
+tests\unit\test_cold_start_curve.py ..                                   [100%]
+
+============================== 2 passed in 4.09s ==============================
+```
+
+
 
 
 

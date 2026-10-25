@@ -8,7 +8,7 @@
 
 | Content Type | Dataset Variant | Git Commit | Config Hash | Seed | Evaluation Protocol |
 |---|---|---|---|---|---|
-| **Movies** | `1m` | `2c140c1` | `5611260f` | `42` | Chronological per-user split (80/20) |
+| **Movies** | `1m` | `58be077` | `5611260f` | `42` | Chronological per-user split (80/20) |
 | **Products** | `instruments` | `2c140c1` | `94853c7c` | `42` | Chronological per-user split (budget-capped) |
 | **Articles** | `small` | `69c0763` | `b9ac2896` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
 
@@ -120,13 +120,13 @@ At $k=0$ likes, all models safely fall back to popularity.
 
 | History Size (Likes) | Movies Recall@10 | Movies NDCG@10 | Products HitRate@10 | Products NDCG@10 | Articles HitRate@10 | Articles NDCG@10 |
 |---|---|---|---|---|---|---|
-| **0 likes** | `0.0193` | `0.0172` | `0.0769` | `0.0769` | `0.3333` | `0.2103` |
-| **1 likes** | `0.0176` | `0.0176` | `0.0000` | `0.0000` | `0.3333` | `0.2103` |
-| **2 likes** | `0.0272` | `0.0274` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
-| **3 likes** | `0.0219` | `0.0269` | `0.0769` | `0.0256` | `0.3333` | `0.3333` |
-| **5 likes** | `0.0314` | `0.0325` | `0.0769` | `0.0485` | `0.3333` | `0.3333` |
-| **10 likes** | `0.0329` | `0.0299` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
-| **20 likes** | `0.0490` | `0.0426` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
+| **0 likes** | `0.0465` | `0.0642` | `0.0769` | `0.0769` | `0.3333` | `0.2103` |
+| **1 likes** | `0.0241` | `0.0293` | `0.0000` | `0.0000` | `0.3333` | `0.2103` |
+| **2 likes** | `0.0373` | `0.0431` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
+| **3 likes** | `0.0325` | `0.0436` | `0.0769` | `0.0256` | `0.3333` | `0.3333` |
+| **5 likes** | `0.0377` | `0.0527` | `0.0769` | `0.0485` | `0.3333` | `0.3333` |
+| **10 likes** | `0.0518` | `0.0627` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
+| **20 likes** | `0.0600` | `0.0786` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
 
 ![Cold Start Curves](figures/cold_start_curves.png)
 

@@ -257,7 +257,16 @@ class EvaluationHarness:
                 for uid in cs_users:
                     full_hist = user_train_hist.get(uid, [])
                     hist_sample = full_hist[:size]
-                    recs = model.recommend_history(history=hist_sample, k=eval_k)
+                    exclude_seen = (
+                        {item for item, _ in full_hist}
+                        if not self.spec.model.allow_repeat
+                        else set()
+                    )
+                    recs = model.recommend_history(
+                        history=hist_sample,
+                        k=eval_k,
+                        exclude_ids=exclude_seen,
+                    )
                     for r in recs:
                         cs_preds_rows.append(
                             {
