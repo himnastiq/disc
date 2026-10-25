@@ -397,6 +397,113 @@ Wall-clock elapsed times and any necessary manual steps must be recorded and ver
 
 **Related tasks:** P6.4
 
+## D-018: Failure-Mode Review and Known Limitations Across Content Domains (P6.7)
+
+**Date:** 2026-10-25
+**Status:** Approved
+
+**Context:**
+A critical requirement of professional recommender systems engineering is intellectual honesty regarding model limitations, domain assumptions, and failure modes. Discovery Engine spans three fundamentally distinct domains (Movies, Products, Articles). Each domain embodies unique data-generating mechanisms, behavioral incentives, and failure dynamics. This decision record synthesizes seven core failure modes, documenting concrete, measured examples from production artifacts wherever possible.
+
+---
+
+### 1. Popularity Bias in Dense Feedback (Measured Example: MovieLens 100k)
+
+**Mechanism:**
+In dense collaborative filtering regimes with power-law item popularity distributions, popular blockbuster items receive an overwhelming share of historical ratings. Because collaborative filtering algorithms (including SAR) compute item similarity based on user co-occurrence ($C_{ij} = r_i^T r_j$), highly popular items co-occur with nearly all catalogue items, inflating their similarity scores and presence across recommendation lists.
+
+**Empirical Measurement:**
+- In MovieLens 100k ($N=1,918$ test users), the non-personalized Popularity baseline achieves a HitRate@5 of **0.2240** (vs SAR's **0.2135**) and NDCG@10 of **0.0549** (vs SAR's **0.0583**).
+- Popularity achieves this high hit rate by concentrating recommendations on just **22 items out of 1,682** (a catalogue coverage of only **1.31%**).
+- **Bootstrap 95% Confidence Intervals:** On NDCG@10, SAR's 95% CI is `[0.0541, 0.0644]` and Popularity's 95% CI is `[0.0492, 0.0606]`. Because these intervals overlap, SAR cannot claim statistically significant separation at $\alpha=0.05$ on ranking position alone.
+- **Trade-off and Mitigation:** While Popularity achieves competitive hit rates on blockbuster-heavy test sets, it delivers a monoculture experience (personalisation score of only 0.7220). SAR expands catalogue exploration by **3.5x** (5.51% coverage at $k=10$, 8.44% at $k=20$) with high personalization (0.9582), recommending long-tail and genre-specific titles that match user taste vectors.
+
+---
+
+### 2. Cold-Start Items Not in Training (Observed Example: Catalogue vs Interaction Split)
+
+**Mechanism:**
+Collaborative filtering models depend strictly on historical user-item interactions to construct the item similarity matrix $S \in \mathbb{R}^{M \times M}$. Any item present in the catalogue (`items.parquet`) that has zero interactions in the training split has an all-zero row and column in the co-occurrence matrix $C$.
+
+**Empirical Observation:**
+- In sparse regimes or when new products/movies are onboarded into the catalogue, collaborative filtering algorithms cannot compute similarity to or from these items.
+- In MovieLens and Amazon Instruments, unobserved items receive a score of $0.0$ and are relegated behind all interacted items, effectively rendering them invisible in personalized serving lists.
+- **Contrast with Content-Based Recommenders:** The `TfidfProfileModel` in the Articles pipeline completely circumvents this limitation. Because articles are represented as textual feature vectors derived from titles, abstracts, and categories, new articles can be scored and recommended the moment they are indexed into the TF-IDF feature space, even with zero prior reader clicks.
+
+---
+
+### 3. Domain Shift and Signal Heterogeneity (Observed Example: Explicit Ratings vs Verified Purchases vs Implicit Clicks)
+
+**Mechanism:**
+A common pitfall in recommender systems is assuming that interaction signals across domains represent interchangeable user preference data. In reality, the semantic intent and acquisition cost differ drastically:
+1. **Movies (Explicit Ratings):** Users actively rate content on a 1-5 scale after consumption. Ratings exhibit strong positivity bias (average rating ~3.5), and unrated items reflect lack of awareness rather than dislike.
+2. **Products (Verified Purchases):** Interactions represent monetary transactions and physical deliveries. Repeat purchases within short windows are rare for durable goods (e.g. musical instruments), and matrix sparsity reaches **99.2%**.
+3. **Articles (Implicit News Clicks):** Interactions represent ephemeral browsing clicks within impression logs. Clicks are noisy, low-friction, subject to misleading headlines, and decay in relevance within hours.
+
+**Empirical Consequence:**
+- Cross-domain metrics cannot be directly compared. A HitRate@10 of **0.1309** on Amazon Products represents exceptional personalization (+63.3% gain over Popularity's 0.0802), whereas an impression AUC of **0.9722** on MIND reflects candidate re-ranking within logged impression lists.
+- Discovery Engine resolves this by enforcing domain-specific adapter pipelines and signal thresholds (`configs/*.yaml`) while unifying serving under standard pydantic contracts (`ScoredItem`).
+
+---
+
+### 4. Short Interaction Histories and Cold-Start Valleys (Measured Example: Amazon Products $\le 5$ Interactions)
+
+**Mechanism:**
+Users with very few interactions provide weak, high-variance taste signals. Collaborative models trained on sparse data may over-index on a single incidental purchase, recommending hyper-specific or irrelevant accessories rather than establishing broad user preference.
+
+**Empirical Measurement:**
+- In Amazon Musical Instruments, **39.0% of users** ($1,061 / 2,723$) have $\le 5$ total lifetime ratings.
+- The cold-start degradation curve reveals a "cold-start valley":
+  - **0 likes (Pure Popularity fallback):** HitRate@10 = **0.0802** (NDCG@10 = 0.0471).
+  - **1 like:** HitRate@10 drops slightly to **0.0768** (NDCG@10 = 0.0452). A single purchase (e.g. guitar picks) can dilute robust popularity baselines without providing sufficient signal to find meaningful collaborative neighbors.
+  - **3 likes:** HitRate@10 recovers and surpasses popularity to **0.0917** (NDCG@10 = 0.0558).
+  - **10-20 likes:** HitRate@10 surges to **0.1274** / **0.1342** (NDCG@10 = 0.0687), achieving over +60% improvement.
+- **Mitigation:** Discovery Engine's serving API enforces a configurable minimum history threshold (`min_history_for_personalization`, default 3). Users below this threshold gracefully receive popularity-padded recommendations.
+
+---
+
+### 5. News Freshness Horizon and Recency Decay (Measured Example: MIND 24h Window Horizon)
+
+**Mechanism:**
+News articles experience extreme temporal decay. An article published 48 hours ago often has near-zero relevance to today's news cycle, regardless of semantic match to a user's historical interests.
+
+**Empirical Measurement:**
+- In the Articles pipeline (`configs/articles.yaml`), the active recency window is set to **24 hours** (`recency_window_seconds: 86400.0`).
+- The candidate pool for open-pool retrieval is strictly restricted to articles active within this window (8 articles in the fixture partition).
+- **Failure Mode & Trade-off:** While recency filtering guarantees fresh content and eliminates dead news links, it introduces a severe candidate restriction:
+  - If a user was interested in a specialized niche topic (e.g. macroeconomics) that had no articles published within the last 24 hours, the model cannot recommend relevant content and must fall back to general fresh news.
+  - Offline retrieval evaluation on restricted candidate pools yields lower absolute NDCG (0.3333) due to small candidate sets ($N=8$).
+
+---
+
+### 6. Offline vs. Online Evaluation Gap (Observed Example: MIND Impression Logging Policy Bias)
+
+**Mechanism:**
+Offline evaluation metrics are computed retrospectively on logged interaction data collected under historical production policies. In news impression logs (MIND), the candidate set shown to each user was selected and ranked by Microsoft News's production recommendation model at the time of presentation.
+
+**Empirical Observation:**
+- **Counterfactual Logging Bias:** We can only evaluate candidates that the historical production system chose to display. Items that might have interested the user but were never shown are unobserved and cannot be credited.
+- **Position Bias:** In live environments, users disproportionately click top-ranked items regardless of relevance.
+- **Observed Metrics vs Production Reality:** While our TF-IDF Profile model achieves an impressive offline AUC of **0.9722** and MRR of **1.0000** on MIND impression candidates, online A/B test results will exhibit a narrower margin due to user fatigue, layout friction, and position bias.
+
+---
+
+### 7. Dataset Licensing and Commercial Constraints (Documented Constraints)
+
+**Summary of Terms:**
+1. **MovieLens 100k:** Released by GroupLens Research (University of Minnesota). Permitted for academic research and educational use only; commercial use is strictly prohibited without a commercial license.
+2. **Amazon Product Reviews (Musical Instruments):** Sourced from the SNAP research repository (Julian McAuley et al., UCSD). Intended for research and non-commercial academic experimentation.
+3. **MIND (Microsoft News Dataset):** Distributed under the *Microsoft Research Data License Agreement for Microsoft News Dataset (MIND)*. Explicitly restricted to non-commercial research and academic validation. Direct anonymous Azure blob access was decommissioned by Microsoft, necessitating local fixture archiving and manual download fallbacks.
+
+**System Architectural Consequence:**
+- Discovery Engine is designed and structured as a research-grade, pedagogical, and extensible reference architecture.
+- All core engine code, adapters, and schemas are strictly decoupled from proprietary datasets.
+- To deploy Discovery Engine in a commercial enterprise, operators replace the raw research data adapters with internal tracking logs (e.g. Kafka, Snowflake, ClickHouse) while reusing 100% of the core models, artifact builders, and FastAPI serving layer.
+
+---
+
+**Related tasks:** P6.7, P6.6, R1-R6
+
 ---
 
 <!-- Add new entries above this line -->

@@ -39,16 +39,16 @@
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 10 | 0 | 1 | 12 | 83% |
-| 6 | Cross-type hardening and evidence | 6 | 0 | 0 | 8 | 75% |
+| 6 | Cross-type hardening and evidence | 7 | 0 | 0 | 8 | 87% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **70** | | | **129** | **54%** |
+| | **Overall** | **71** | | | **129** | **55%** |
 
-`[##########----------] 54%  (70/129 tasks)`
+`[###########---------] 55%  (71/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -229,7 +229,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P6.4** Clean-room rebuild: from a fresh clone and fresh virtualenv run `make setup data train-fast eval`; record wall-clock times and any manual steps. *Acceptance:* works using only README commands (update the README if not).
 - [x] **P6.5** Cross-type consistency checks: all three artifact sets load through the same loader; all models pass the same R3 invariant suite via one parametrised test over registered types. *Acceptance:* parametrised test over `registry.types()`.
 - [x] **P6.6** Statistical honesty: for each type and headline metric, compute a bootstrap confidence interval over users (at least 200 resamples) and report whether the model's advantage over popularity is outside the interval. *Acceptance:* intervals in `metrics.json` and shown in RESULTS.md.
-- [ ] **P6.7** Failure-mode review: write `docs/DECISIONS.md` entries for known limitations (popularity bias, cold-start items not in training, domain shift, short histories, news freshness, offline-versus-online gap, dataset licences). *Acceptance:* each limitation has a measured or observed example where possible.
+- [x] **P6.7** Failure-mode review: write `docs/DECISIONS.md` entries for known limitations (popularity bias, cold-start items not in training, domain shift, short histories, news freshness, offline-versus-online gap, dataset licences). *Acceptance:* each limitation has a measured or observed example where possible.
 - [ ] **P6.8** Phase 6 Gate and "break your own work" ritual (include: shuffled-label test: training on shuffled user-item pairs must give metrics near Random; if not, the evaluation is leaking).
 
 ---
