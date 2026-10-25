@@ -18,7 +18,10 @@ make data
 # 3. Train models (use train-fast for quick iteration)
 make train-fast
 
-# 4. Launch the demo (API + frontend)
+# 4. Evaluate models and generate results report
+make eval
+
+# 5. Launch the demo (API + frontend)
 make demo
 ```
 

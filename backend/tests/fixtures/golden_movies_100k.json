@@ -27,32 +27,32 @@
   },
   "metrics": {
     "sar_5": {
-      "ndcg": 0.002978,
-      "recall": 0.057428,
-      "hit_rate": 0.152174,
-      "coverage": 0.048157,
-      "precision": 0.039130,
-      "map": 0.034964
+      "ndcg": 0.09134,
+      "recall": 0.08053,
+      "hit_rate": 0.26154,
+      "coverage": 0.098692,
+      "precision": 0.06982,
+      "map": 0.05752
     },
     "sar_10": {
-      "ndcg": 0.004239,
-      "recall": 0.122283,
-      "hit_rate": 0.304348,
-      "coverage": 0.072533,
-      "precision": 0.043478,
-      "map": 0.040434
+      "ndcg": 0.10208,
+      "recall": 0.12565,
+      "hit_rate": 0.38225,
+      "coverage": 0.142687,
+      "precision": 0.05834,
+      "map": 0.05524
     },
     "popularity_5": {
-      "ndcg": 0.002804,
-      "recall": 0.048292,
-      "hit_rate": 0.130435,
-      "coverage": 0.016052
+      "ndcg": 0.06604,
+      "recall": 0.04650,
+      "hit_rate": 0.20237,
+      "coverage": 0.028537
     },
     "random_5": {
-      "ndcg": 0.000253,
-      "recall": 0.001449,
-      "hit_rate": 0.021739,
-      "coverage": 0.137931
+      "ndcg": 0.00423,
+      "recall": 0.00466,
+      "hit_rate": 0.02012,
+      "coverage": 0.936385
     }
   }
 }

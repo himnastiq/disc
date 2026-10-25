@@ -151,13 +151,15 @@ def test_hypothesis_tfidf_explanations_ground_truth(
 
     if share >= threshold and best_contrib > 0.0:
         assert reason is not None, f"Expected reason for {target_id} with share {share:.3f}"
-        assert reason.item_id == best_h, (
-            f"Expected reason item {best_h} with contrib {best_contrib}, got {reason.item_id}"
+        history_item_ids = {h_id for h_id, _ in history}
+        assert reason.item_id in history_item_ids, (
+            f"Reason item {reason.item_id} not in history {history_item_ids}"
+        )
+        reason_contrib = contribs.get(reason.item_id or "", 0.0)
+        assert pytest.approx(reason_contrib, rel=1e-5) == best_contrib, (
+            f"Reason item {reason.item_id} contrib {reason_contrib} is not maximum {best_contrib}"
         )
         assert reason.kind == "article_similarity"
-        # Invariant: reason item MUST be in the history
-        history_item_ids = {h_id for h_id, _ in history}
-        assert reason.item_id in history_item_ids
     else:
         assert reason is None
 

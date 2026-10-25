@@ -60,7 +60,9 @@ def generate_figures(
 
     # Configure clean styling
     plt.style.use(
-        "seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default"
+        "seaborn-v0_8-whitegrid"
+        if "seaborn-v0_8-whitegrid" in plt.style.available
+        else "default"
     )
     plt.rcParams.update(
         {
@@ -170,7 +172,9 @@ def generate_figures(
     axes[1].grid(axis="y", linestyle="--", alpha=0.7)
 
     fig.suptitle(
-        "Discovery Engine: Cross-Domain Recommendation Performance", fontweight="bold", y=1.02
+        "Discovery Engine: Cross-Domain Recommendation Performance",
+        fontweight="bold",
+        y=1.02,
     )
     fig.tight_layout()
     p1 = figures_dir / "ranking_comparison.png"
@@ -195,7 +199,9 @@ def generate_figures(
 
         # Extract model curve and popularity baseline
         y_model = [
-            curves[model_key][k].get("hit_rate@10", curves[model_key][k].get("recall@10", 0.0))
+            curves[model_key][k].get(
+                "hit_rate@10", curves[model_key][k].get("recall@10", 0.0)
+            )
             for k in history_keys
         ]
         y_pop = [
@@ -231,7 +237,9 @@ def generate_figures(
         ax.grid(True, linestyle="--", alpha=0.6)
 
     fig.suptitle(
-        "Native Cold-Start Adaptation Curve (0 to 20 Signal Points)", fontweight="bold", y=1.03
+        "Native Cold-Start Adaptation Curve (0 to 20 Signal Points)",
+        fontweight="bold",
+        y=1.03,
     )
     fig.tight_layout()
     p2 = figures_dir / "cold_start_curves.png"
@@ -383,7 +391,11 @@ def generate_figures(
     axes[1].legend(frameon=True)
     axes[1].grid(axis="y", linestyle="--", alpha=0.7)
 
-    fig.suptitle("News Articles: Dual-Protocol Evaluation Architecture", fontweight="bold", y=1.02)
+    fig.suptitle(
+        "News Articles: Dual-Protocol Evaluation Architecture",
+        fontweight="bold",
+        y=1.02,
+    )
     fig.tight_layout()
     p4 = figures_dir / "articles_protocols.png"
     fig.savefig(p4, bbox_inches="tight")
@@ -452,7 +464,9 @@ def build_markdown_report(
         "3. **Articles (Content & Recency)**: Rapid shelf-life decay and cold items. TF-IDF user profile model decisively outperforms popularity in impression ranking (+84.2% AUC, +58.8% MRR) while strictly enforcing 24h recency window candidate boundaries."
     )
     md.append("")
-    md.append("![Cross-Domain Recommendation Performance](figures/ranking_comparison.png)")
+    md.append(
+        "![Cross-Domain Recommendation Performance](figures/ranking_comparison.png)"
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -506,7 +520,9 @@ def build_markdown_report(
     # Section 2: Products
     md.append("## 2. Products Pipeline (Amazon Instruments + SAR)")
     md.append("")
-    md.append("Evaluated on sparse verified purchase ratings under budget-capped SAR similarity.")
+    md.append(
+        "Evaluated on sparse verified purchase ratings under budget-capped SAR similarity."
+    )
     md.append("")
     md.append(
         "| Metric @ K | Random Baseline | Popularity Baseline | SAR (Personalised) | Gain vs Popularity | Invariant Verdict |"
@@ -641,7 +657,9 @@ def build_markdown_report(
     p_cs = products_metrics["cold_start_curves"]["sar"]
     a_cs = articles_metrics["cold_start_curves"]["tfidf_profile"]
 
-    all_sizes = sorted(set(m_cs.keys()) | set(p_cs.keys()) | set(a_cs.keys()), key=lambda k: int(k))
+    all_sizes = sorted(
+        set(m_cs.keys()) | set(p_cs.keys()) | set(a_cs.keys()), key=lambda k: int(k)
+    )
     for s in all_sizes:
         m_r = m_cs.get(s, {}).get("recall@10", 0.0)
         m_n = m_cs.get(s, {}).get("ndcg@10", 0.0)
@@ -664,7 +682,9 @@ def build_markdown_report(
     md.append(
         "Accuracy alone does not capture recommendation health. Popularity baseline achieves strong hit rates by concentrating"
     )
-    md.append("all recommendations on a microscopic sliver of the catalogue (< 2% coverage).")
+    md.append(
+        "all recommendations on a microscopic sliver of the catalogue (< 2% coverage)."
+    )
     md.append("")
     md.append(
         "| Content Type | Model | Coverage@10 | Intra-List Diversity@10 | Novelty@10 (bits) | Personalisation@10 |"

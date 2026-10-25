@@ -176,6 +176,9 @@ def test_shuffled_label_sanity_test_near_random(
     assert hr_genuine >= hr_shuffled, (
         f"HitRate@10 did not degrade: genuine={hr_genuine:.4f}, shuffled={hr_shuffled:.4f}"
     )
+    assert abs(hr_shuffled - hr_random) < 0.25, (
+        f"HitRate@10 shuffled not near random: shuffled={hr_shuffled:.4f}, random={hr_random:.4f}"
+    )
 
     # 3. Recall@10
     rec_genuine = recall(pos_valid, df_genuine, k=10)
@@ -183,4 +186,7 @@ def test_shuffled_label_sanity_test_near_random(
     rec_random = recall(pos_valid, df_random, k=10)
     assert rec_genuine >= rec_shuffled, (
         f"Recall@10 did not degrade: genuine={rec_genuine:.4f}, shuffled={rec_shuffled:.4f}"
+    )
+    assert abs(rec_shuffled - rec_random) < 0.25, (
+        f"Recall@10 shuffled not near random: shuffled={rec_shuffled:.4f}, random={rec_random:.4f}"
     )
