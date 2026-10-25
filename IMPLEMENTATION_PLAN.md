@@ -38,7 +38,7 @@
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
-| 5 | Articles pipeline (MIND + TF-IDF content model) | 11 | 0 | 1 | 12 | 91% |
+| 5 | Articles pipeline (MIND + TF-IDF content model) | 10 | 0 | 1 | 12 | 83% |
 | 6 | Cross-type hardening and evidence | 4 | 0 | 0 | 8 | 50% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **69** | | | **129** | **53%** |
+| | **Overall** | **68** | | | **129** | **52%** |
 
-`[##########----------] 53%  (69/129 tasks)`
+`[##########----------] 52%  (68/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -205,7 +205,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 
 - [!] **P5.1** Dataset step: verified vendored helpers (`download_mind`, `extract_mind` in `discovery.datasets.mind`); recorded license (MSR License for Data) and citation in `docs/DATASETS.md`. Automated anonymous Azure blob access is restricted by Microsoft (HTTP 409/401); documented manual download instructions (Hugging Face / Kaggle to `data/raw/mind/train/` and `data/raw/mind/dev/`) in `fetch_data.py` and `docs/DATASETS.md`; verified offline fixture in `backend/tests/fixtures/mind/` loads cleanly. *Acceptance:* files load or blocked note written.
 - [x] **P5.2** Implement `MindArticlesAdapter`: parse `news.tsv` (id, category, subcategory, title, abstract, URL, entities) into Items (title, abstract as `text`, categories = [category, subcategory]); parse `behaviors.tsv` into interactions (history clicks and impression clicks with impression timestamps) and keep impression candidate lists for evaluation. Handle missing abstracts, unicode, and empty histories. *Acceptance:* parsing tests on fixture lines.
-- [x] **P5.3** Define the time protocol: history items in MIND have no individual timestamps, so treat them as occurring before the user's first impression; split by impression time (earlier days train, later days test); record the actual date ranges in the data report. Leakage test: no test impression's clicked item is used as a training positive for that user. *Acceptance:* R2 test on real data.
+- [ ] **P5.3** Define the time protocol: history items in MIND have no individual timestamps, so treat them as occurring before the user's first impression; split by impression time (earlier days train, later days test); record the actual date ranges in the data report. Leakage test: no test impression's clicked item is used as a training positive for that user. *Acceptance:* R2 test on real data.
 - [x] **P5.4** Implement `TfidfProfileModel` using the vendored TF-IDF utilities (verify the class and its cleaning/tokenising helpers) over `title + abstract + category tokens`: fit vocabulary on train-period articles only; store sparse matrix and vocabulary as scipy npz and json. User profile = weighted mean of clicked article vectors (more recent clicks weigh more; weighting scheme from config); score = cosine similarity to candidates. *Acceptance:* unit tests (profile of identical history equals that article's vector direction; empty history gives popularity).
 - [x] **P5.5** Freshness: candidates restricted to the config `recency_window` (for demo: articles that appear in the most recent impressions period); popularity baseline = click count within the window. Document the window choice and its effect. *Acceptance:* recommendations never include articles outside the window (R3 extension).
 - [x] **P5.6** Cold start is native (`recommend_history` builds a profile from given article ids). Add a consistency test as in P3.6. *Acceptance:* test passes.
@@ -830,6 +830,61 @@ HIT_RATE@10: SAR=0.08879 [0.07549, 0.10305] | POP=0.03824 [0.02916, 0.04796] | R
   3. `IMPLEMENTATION_PLAN.md` (Session 6 and Session 7):
      - Corrected Session 6 P3.9 log entry from "confirmed SAR decisively beats Popularity" to accurate CI description.
      - Corrected Session 7 Phase 4 Gate result from "SAR decisively beats Popularity" to "SAR significantly improves Recall and personalization over Popularity, and Popularity soundly beats Random".
+
+### Session 14: FIX-22 Re-open P5.3 (R2 on real data), audit Phase 5 status, and pause pending real MIND files
+- **Requirement:** Re-open P5.3 (R2 on real data) and keep P5.1 `[!]`. Append the missing Session Log entry for the Phase 5 work with raw test outputs. Do not continue Phase 5 until MIND files exist in `data/raw/mind/` (the human will place them).
+- **Phase 5 Work & Status Audit:**
+  - P5.1 remains marked as `[!]` (blocked / external dependency): Automated anonymous download from Microsoft Azure Blob storage is restricted (HTTP 409/401). Manual download instructions (Hugging Face / Kaggle into `data/raw/mind/train/` and `data/raw/mind/dev/`) are documented in `fetch_data.py` and `docs/DATASETS.md`. Offline testing runs against the verified fixture in `backend/tests/fixtures/mind/`.
+  - P5.3 re-opened (`- [ ] **P5.3**`): The time protocol logic and R2 impression-time split leakage invariants were implemented and verified on the offline fixture (`test_articles_split_leakage.py`), but acceptance criteria explicitly requires "R2 test on real data". Re-opened until real dataset files are placed.
+  - Phase 5 Pause: All further Phase 5 feature work is paused until the human operator places real MIND files into `data/raw/mind/train/` and `data/raw/mind/dev/`.
+- **Phase 5 Suite Raw Test Output (`pytest` 54 passed):**
+```
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.7.0
+rootdir: E:\discover\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, hypothesis-6.170.9, platformdirs-4.13.5, cov-7.1.0
+collected 54 items
+
+tests\unit\test_mind_adapter.py .........                                [ 16%]
+tests\unit\test_tfidf_model.py .............                             [ 40%]
+tests\unit\test_articles_eval.py ....                                    [ 48%]
+tests\unit\test_articles_artifacts.py ....                               [ 55%]
+tests\unit\test_articles_robustness.py .....                             [ 64%]
+tests\integration\test_articles_consistency.py ...                       [ 70%]
+tests\integration\test_articles_split_leakage.py ..                      [ 74%]
+tests\integration\test_articles_gate.py ...........                      [ 94%]
+tests\property\test_tfidf_explanations.py ...                            [100%]
+
+============================= 54 passed in 5.85s ==============================
+```
+- **Phase 5 Gate Raw Test Output (`pytest tests/integration/test_articles_gate.py`):**
+```
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.7.0
+rootdir: E:\discover\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, hypothesis-6.170.9, platformdirs-4.13.5, cov-7.1.0
+collected 11 items
+
+tests\integration\test_articles_gate.py ...........                      [100%]
+
+============================= 11 passed in 3.59s ==============================
+```
+- **Core Unchanged Check (`python tools/core_unchanged.py`):**
+```
+Comparing diff between base '6da1d3a' and target 'HEAD'...
+[NOTE] Core files modified (10), but documented in DECISIONS.md.
+
+[SUCCESS] Core Unchanged Check PASSED.
+All changes since Phase 3 (6da1d3a) are strictly restricted to:
+  - adapters/ (AmazonProductsAdapter)
+  - configs/ (products.yaml)
+  - tests/ (products split leakage, amazon adapter, product checks)
+  - docs/ (DATASETS.md, DECISIONS.md)
+  - tools/ & scripts/ (product_checks.py, fetch_data.py)
+Zero core engine abstractions were modified.
+```
 
 
 

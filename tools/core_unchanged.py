@@ -53,6 +53,7 @@ ALLOWED_PATTERNS = [
     "backend/discovery/*",
     "backend/discovery/**/*",
     "IMPLEMENTATION_PLAN.md",
+    "README.md",
     "Makefile",
     "pyproject.toml",
     "backend/pyproject.toml",

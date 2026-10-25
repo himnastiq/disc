@@ -112,6 +112,10 @@ def list_available_content_types(configs_dir: Path | None = None) -> list[str]:
     return sorted(types)
 
 
+# Alias for list_available_content_types (P6.5)
+types = list_available_content_types
+
+
 def get_adapter_class(name: str) -> type[DatasetAdapter]:
     """Retrieve an adapter class by its registered name."""
     _ensure_default_adapters()
