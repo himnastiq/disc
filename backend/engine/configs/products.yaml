@@ -3,7 +3,7 @@ display_name: Products
 card_type: product
 dataset:
   adapter: amazon_products
-  variant: "default"
+  variant: "video_games"
   min_user_interactions: 5
   min_item_interactions: 5
 signal:
@@ -30,7 +30,9 @@ serving:
   max_items_in_similarity: 8000
 fast:
   dataset:
-    variant: "default"
+    variant: "instruments"
+    min_user_interactions: 3
+    min_item_interactions: 3
   serving:
     max_items_in_similarity: 2000
   evaluation:

@@ -37,7 +37,7 @@
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
-| 4 | Products pipeline (Amazon + SAR) | 1 | 0 | 0 | 8 | 12% |
+| 4 | Products pipeline (Amazon + SAR) | 2 | 0 | 0 | 8 | 25% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **47** | | | **129** | **36%** |
+| | **Overall** | **48** | | | **129** | **37%** |
 
-`[#######-------------] 36%  (47/129 tasks)`
+`[#######-------------] 37%  (48/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -188,7 +188,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 **Gates:** R1 to R6, plus "core unchanged" check.
 
 - [x] **P4.1** Inspect what `discovery.datasets.amazon_reviews` actually provides (category, item metadata, titles, categories, images). Decide the dataset: use the loader's data if it has usable product metadata, else one mid-size Amazon 5-core category plus metadata. Record the decision and license notes in `docs/DATASETS.md` and `docs/DECISIONS.md`. If a manual download is required, mark `[!]`, tell the human exactly what to place where, and continue with Phase 5. *Acceptance:* decision recorded.
-- [ ] **P4.2** Implement `AmazonProductsAdapter`: ids to strings, signal rule from config (positive if rating >= threshold), timestamps, metadata join (title, brand, categories, price, image URL when present), missing-metadata fallbacks (title = id, flagged and counted), item cap by popularity to respect `max_items_in_similarity`. *Acceptance:* adapter tests on a small fixture; cap behaviour tested.
+- [x] **P4.2** Implement `AmazonProductsAdapter`: ids to strings, signal rule from config (positive if rating >= threshold), timestamps, metadata join (title, brand, categories, price, image URL when present), missing-metadata fallbacks (title = id, flagged and counted), item cap by popularity to respect `max_items_in_similarity`. *Acceptance:* adapter tests on a small fixture; cap behaviour tested.
 - [ ] **P4.3** Validation report (R1) and chronological split with leakage test (R2). *Acceptance:* report and test pass.
 - [ ] **P4.4** Add `configs/products.yaml` reusing `SarModel` (no new model code unless a documented need appears). Check memory usage of the similarity structure and keep the budget in R8. *Acceptance:* peak memory during training and serving recorded.
 - [ ] **P4.5** Tune on validation, train, evaluate against baselines, cold-start curve, precompute artifacts, select demo users (same procedure as Phase 3). *Acceptance:* same artifact set as movies; R4 sanity results recorded honestly.
