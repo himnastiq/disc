@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.errors import register_error_handlers
 from api.routes.metadata import router as metadata_router
+from api.routes.recommend import router as recommend_router
 from api.routes.users import router as users_router
 from api.search import ItemSearchIndex
 from engine import registry
@@ -133,9 +134,10 @@ def create_app() -> FastAPI:
     # Register standardized error handlers (P7.2)
     register_error_handlers(app)
 
-    # Register routers (P7.3, P7.4)
+    # Register routers (P7.3, P7.4, P7.5)
     app.include_router(metadata_router)
     app.include_router(users_router)
+    app.include_router(recommend_router)
 
     return app
 

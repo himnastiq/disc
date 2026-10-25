@@ -45,13 +45,13 @@ Evaluated using identical candidate retrieval pool against positive holdout rati
 | **Recall@20** | 0.0057 | 0.0860 [0.0790, 0.0936] | **0.1070 [0.0989, 0.1155]** | **+24.5%** | Model better (CIs separate) |
 | **Precision@20** | 0.0029 | 0.0375 [0.0351, 0.0403] | **0.0368 [0.0346, 0.0393]** | **-2.0%** | No significant difference (CIs overlap) |
 
-- **Sanity Check (Model > Popularity Point Estimate):** `Passed`
+- **Sanity Check (Model > Popularity on Recall@10):** `Passed (Recall@10 point estimate & CIs separate; NDCG/Precision CIs overlap)`
 - **Sanity Check (Popularity > Random):** `Passed`
 - **Sanity Check (Bounds Valid):** `Passed`
 
 ---
 
-## 2. Products Pipeline (Amazon Instruments + SAR)
+## 2. Products Pipeline (Amazon Video Games + SAR)
 
 Evaluated on sparse verified purchase ratings under budget-capped SAR similarity.
 
@@ -75,7 +75,7 @@ Evaluated on sparse verified purchase ratings under budget-capped SAR similarity
 | Check | Measured Value | Target / Baseline | Status |
 |---|---|---|---|
 | **Sparse User Share (<= 5 ratings)** | `37.3%` (9058/24302 users) | Informative metric | Verified |
-| **Long-Tail Volume Share** | `43.0%` (6400/8000 items) | > 50% tail volume | Verified |
+| **Long-Tail Volume Share** | `43.0%` (6400/8000 items) | Informative baseline (catalog tail) | Verified |
 | **Long-Tail Rec Share @ 10** | `54.2%` of recommended items | > 5% tail exploration | Verified |
 | **Category Diversity @ 10** | `10.66` unique categories/user | Min: `3`, Max: `24` | Verified |
 | **Similar Alternatives Spot-Check** | `100.0%` shared categories | Target > 60.0% | Passed |

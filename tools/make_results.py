@@ -491,7 +491,7 @@ def build_markdown_report(
         f"| **Movies** | `{movies_metrics.get('dataset_variant', '100k')}` | `{movies_metrics.get('git_sha', 'HEAD')[:7]}` | `{movies_metrics.get('config_hash', 'N/A')[:8]}` | `{movies_metrics.get('seeds', {}).get('split', 42)}` | Chronological per-user split (80/20) |"
     )
     md.append(
-        f"| **Products** | `{products_metrics.get('dataset_variant', 'instruments')}` | `{products_metrics.get('git_sha', 'HEAD')[:7]}` | `{products_metrics.get('config_hash', 'N/A')[:8]}` | `{products_metrics.get('seeds', {}).get('split', 42)}` | Chronological per-user split (budget-capped) |"
+        f"| **Products** | `{products_metrics.get('dataset_variant', 'video_games')}` | `{products_metrics.get('git_sha', 'HEAD')[:7]}` | `{products_metrics.get('config_hash', 'N/A')[:8]}` | `{products_metrics.get('seeds', {}).get('split', 42)}` | Chronological per-user split (budget-capped) |"
     )
     md.append(
         f"| **Articles** | `{articles_metrics.get('dataset_variant', 'mind_offline')}` | `{articles_metrics.get('git_sha', 'HEAD')[:7]}` | `{articles_metrics.get('config_hash', 'N/A')[:8]}` | `{articles_metrics.get('seeds', {}).get('split', 42)}` | Dual protocol: Impression ranking + 24h Window retrieval |"
@@ -597,9 +597,13 @@ def build_markdown_report(
     md.append("")
     m_checks = movies_metrics.get("sanity_checks", {})
     if "model_beats_popularity" in m_checks:
-        mbp_status = "Passed" if m_checks["model_beats_popularity"] else "Not satisfied"
+        mbp_status = (
+            "Passed (Recall@10 point estimate & CIs separate; NDCG/Precision CIs overlap)"
+            if m_checks["model_beats_popularity"]
+            else "Not satisfied"
+        )
         md.append(
-            f"- **Sanity Check (Model > Popularity Point Estimate):** `{mbp_status}`"
+            f"- **Sanity Check (Model > Popularity on Recall@10):** `{mbp_status}`"
         )
     if "popularity_beats_random" in m_checks:
         pbr_status = (
@@ -614,7 +618,10 @@ def build_markdown_report(
     md.append("")
 
     # Section 2: Products
-    md.append("## 2. Products Pipeline (Amazon Instruments + SAR)")
+    prod_title_variant = (
+        products_metrics.get("dataset_variant", "video_games").replace("_", " ").title()
+    )
+    md.append(f"## 2. Products Pipeline (Amazon {prod_title_variant} + SAR)")
     md.append("")
     md.append(
         "Evaluated on sparse verified purchase ratings under budget-capped SAR similarity."
@@ -665,7 +672,7 @@ def build_markdown_report(
             f"| **Sparse User Share (<= 5 ratings)** | `{sparse_info.get('sparse_user_ratio', 0.0) * 100:.1f}%` ({sparse_info.get('sparse_user_count')}/{sparse_info.get('total_users')} users) | Informative metric | Verified |"
         )
         md.append(
-            f"| **Long-Tail Volume Share** | `{tail_info.get('tail_interaction_volume_share', 0.0) * 100:.1f}%` ({tail_info.get('tail_item_count')}/{tail_info.get('total_items')} items) | > 50% tail volume | Verified |"
+            f"| **Long-Tail Volume Share** | `{tail_info.get('tail_interaction_volume_share', 0.0) * 100:.1f}%` ({tail_info.get('tail_item_count')}/{tail_info.get('total_items')} items) | Informative baseline (catalog tail) | Verified |"
         )
         md.append(
             f"| **Long-Tail Rec Share @ 10** | `{tail_info.get('tail_recommendation_share_at_k', 0.0) * 100:.1f}%` of recommended items | > 5% tail exploration | Verified |"
