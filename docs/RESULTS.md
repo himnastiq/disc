@@ -9,7 +9,7 @@
 | Content Type | Dataset Variant | Git Commit | Config Hash | Seed | Evaluation Protocol |
 |---|---|---|---|---|---|
 | **Movies** | `1m` | `58be077` | `5611260f` | `42` | Chronological per-user split (80/20) |
-| **Products** | `instruments` | `2c140c1` | `94853c7c` | `42` | Chronological per-user split (budget-capped) |
+| **Products** | `video_games` | `3a183b5` | `4113810a` | `42` | Chronological per-user split (budget-capped) |
 | **Articles** | `SYNTHETIC DEMO (not MIND)` | `90b281a` | `b9ac2896` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
 
 ---
@@ -19,7 +19,7 @@
 Discovery Engine unifies three fundamentally disparate recommendation regimes under a single extensible architecture:
 
 1. **Movies (Collaborative Filtering)**: Evaluated on 1m (999,611 interactions, 1,918 test users). Coverage ratio SAR/Popularity is 5.7x. NDCG@10: 0.0592 [0.0541, 0.0644] vs Popularity 0.0546 [0.0492, 0.0606] (No significant difference (CIs overlap)). Recall@10: 0.0645 [0.0577, 0.0716] vs Popularity 0.0445 [0.0389, 0.0494] (Model better (CIs separate)).
-2. **Products (E-Commerce)**: Evaluated on instruments (10,261 interactions, 1,222 test users). HitRate@10: 0.1309 [0.1105, 0.1514] vs Popularity 0.0802 [0.0646, 0.0949] (Model better (CIs separate)). NDCG@10: 0.0687 [0.0569, 0.0797] vs Popularity 0.0471 [0.0378, 0.0571] (No significant difference (CIs overlap)).
+2. **Products (E-Commerce)**: Evaluated on video_games (216,994 interactions, 1,534 test users). HitRate@10: 0.0861 [0.0740, 0.1017] vs Popularity 0.0358 [0.0267, 0.0450] (Model better (CIs separate)). NDCG@10: 0.0453 [0.0377, 0.0544] vs Popularity 0.0163 [0.0120, 0.0217] (Model better (CIs separate)).
 3. **Articles (Content & Recency)**: Evaluated on SYNTHETIC DEMO (not MIND) (9 impressions). Impression AUC: 0.9722 [0.9167, 1.0000] vs Popularity 0.5278 [0.2778, 0.7500] (Model better (CIs separate)). Impression MRR: 1.0000 [1.0000, 1.0000] vs Popularity 0.6296 [0.4444, 0.8148] (Model better (CIs separate)).
 
 ![Cross-Domain Recommendation Performance](figures/ranking_comparison.png)
@@ -57,27 +57,27 @@ Evaluated on sparse verified purchase ratings under budget-capped SAR similarity
 
 | Metric @ K | Random Baseline | Popularity Baseline (95% CI) | SAR (Personalised, 95% CI) | Gain vs Popularity | Statistical Verdict |
 |---|---|---|---|---|---|
-| **HitRate@5** | 0.0049 | 0.0589 [0.0466, 0.0728] | **0.0908 [0.0753, 0.1085]** | **+54.2%** | Model better (CIs separate) |
-| **NDCG@5** | 0.0028 | 0.0404 [0.0309, 0.0504] | **0.0562 [0.0453, 0.0676]** | **+39.1%** | No significant difference (CIs overlap) |
-| **Recall@5** | 0.0049 | 0.0585 [0.0458, 0.0726] | **0.0891 [0.0753, 0.1057]** | **+52.2%** | Model better (CIs separate) |
-| **Precision@5** | 0.0010 | 0.0120 [0.0095, 0.0150] | **0.0182 [0.0149, 0.0216]** | **+52.1%** | No significant difference (CIs overlap) |
-| **HitRate@10** | 0.0106 | 0.0802 [0.0646, 0.0949] | **0.1309 [0.1105, 0.1514]** | **+63.3%** | Model better (CIs separate) |
-| **NDCG@10** | 0.0047 | 0.0471 [0.0378, 0.0571] | **0.0687 [0.0569, 0.0797]** | **+46.0%** | No significant difference (CIs overlap) |
-| **Recall@10** | 0.0106 | 0.0786 [0.0651, 0.0948] | **0.1274 [0.1095, 0.1455]** | **+62.2%** | Model better (CIs separate) |
-| **Precision@10** | 0.0011 | 0.0081 [0.0066, 0.0097] | **0.0132 [0.0114, 0.0151]** | **+62.7%** | Model better (CIs separate) |
-| **HitRate@20** | 0.0180 | 0.1236 [0.1056, 0.1399] | **0.1743 [0.1542, 0.1956]** | **+41.1%** | Model better (CIs separate) |
-| **NDCG@20** | 0.0065 | 0.0578 [0.0473, 0.0681] | **0.0795 [0.0688, 0.0907]** | **+37.6%** | Model better (CIs separate) |
-| **Recall@20** | 0.0180 | 0.1204 [0.1035, 0.1396] | **0.1702 [0.1524, 0.1912]** | **+41.3%** | Model better (CIs separate) |
-| **Precision@20** | 0.0009 | 0.0063 [0.0054, 0.0072] | **0.0088 [0.0079, 0.0098]** | **+40.6%** | Model better (CIs separate) |
+| **HitRate@5** | 0.0006 | 0.0182 [0.0117, 0.0254] | **0.0593 [0.0479, 0.0714]** | **+225.0%** | Model better (CIs separate) |
+| **NDCG@5** | 0.0002 | 0.0111 [0.0072, 0.0155] | **0.0373 [0.0300, 0.0459]** | **+235.0%** | Model better (CIs separate) |
+| **Recall@5** | 0.0003 | 0.0171 [0.0112, 0.0240] | **0.0554 [0.0441, 0.0671]** | **+223.7%** | Model better (CIs separate) |
+| **Precision@5** | 0.0001 | 0.0037 [0.0024, 0.0052] | **0.0120 [0.0097, 0.0145]** | **+228.5%** | Model better (CIs separate) |
+| **HitRate@10** | 0.0013 | 0.0358 [0.0267, 0.0450] | **0.0861 [0.0740, 0.1017]** | **+140.0%** | Model better (CIs separate) |
+| **NDCG@10** | 0.0004 | 0.0163 [0.0120, 0.0217] | **0.0453 [0.0377, 0.0544]** | **+178.1%** | Model better (CIs separate) |
+| **Recall@10** | 0.0010 | 0.0324 [0.0248, 0.0416] | **0.0799 [0.0676, 0.0920]** | **+146.8%** | Model better (CIs separate) |
+| **Precision@10** | 0.0001 | 0.0036 [0.0027, 0.0046] | **0.0088 [0.0075, 0.0103]** | **+145.1%** | Model better (CIs separate) |
+| **HitRate@20** | 0.0020 | 0.0522 [0.0404, 0.0639] | **0.1226 [0.1053, 0.1382]** | **+135.0%** | Model better (CIs separate) |
+| **NDCG@20** | 0.0005 | 0.0201 [0.0156, 0.0253] | **0.0539 [0.0452, 0.0621]** | **+168.1%** | Model better (CIs separate) |
+| **Recall@20** | 0.0016 | 0.0474 [0.0372, 0.0574] | **0.1134 [0.0985, 0.1295]** | **+139.4%** | Model better (CIs separate) |
+| **Precision@20** | 0.0001 | 0.0026 [0.0020, 0.0032] | **0.0063 [0.0054, 0.0071]** | **+141.0%** | Model better (CIs separate) |
 
 ### Product-Specific Robustness Checks
 
 | Check | Measured Value | Target / Baseline | Status |
 |---|---|---|---|
-| **Sparse User Share (<= 5 ratings)** | `39.0%` (558/1429 users) | Informative metric | Verified |
-| **Long-Tail Volume Share** | `51.4%` (720/900 items) | > 50% tail volume | Verified |
-| **Long-Tail Rec Share @ 10** | `10.4%` of recommended items | > 5% tail exploration | Verified |
-| **Category Diversity @ 10** | `15.94` unique categories/user | Min: `11`, Max: `26` | Verified |
+| **Sparse User Share (<= 5 ratings)** | `37.3%` (9058/24302 users) | Informative metric | Verified |
+| **Long-Tail Volume Share** | `43.0%` (6400/8000 items) | > 50% tail volume | Verified |
+| **Long-Tail Rec Share @ 10** | `54.2%` of recommended items | > 5% tail exploration | Verified |
+| **Category Diversity @ 10** | `10.66` unique categories/user | Min: `3`, Max: `24` | Verified |
 | **Similar Alternatives Spot-Check** | `100.0%` shared categories | Target > 60.0% | Passed |
 
 ---
@@ -127,13 +127,13 @@ At $k=0$ likes, all models safely fall back to popularity.
 
 | History Size (Likes) | Movies Recall@10 | Movies NDCG@10 | Products HitRate@10 | Products NDCG@10 | Articles HitRate@10 | Articles NDCG@10 |
 |---|---|---|---|---|---|---|
-| **0 likes** | `0.0465` | `0.0642` | `0.0769` | `0.0769` | `0.3333` | `0.2103` |
-| **1 likes** | `0.0241` | `0.0293` | `0.0000` | `0.0000` | `0.3333` | `0.2103` |
-| **2 likes** | `0.0373` | `0.0431` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
-| **3 likes** | `0.0325` | `0.0436` | `0.0769` | `0.0256` | `0.3333` | `0.3333` |
-| **5 likes** | `0.0377` | `0.0527` | `0.0769` | `0.0485` | `0.3333` | `0.3333` |
-| **10 likes** | `0.0518` | `0.0627` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
-| **20 likes** | `0.0600` | `0.0786` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
+| **0 likes** | `0.0465` | `0.0642` | `0.0000` | `0.0000` | `0.3333` | `0.2103` |
+| **1 likes** | `0.0241` | `0.0293` | `0.0278` | `0.0093` | `0.3333` | `0.2103` |
+| **2 likes** | `0.0373` | `0.0431` | `0.0556` | `0.0283` | `0.0000` | `0.0000` |
+| **3 likes** | `0.0325` | `0.0436` | `0.0556` | `0.0259` | `0.3333` | `0.3333` |
+| **5 likes** | `0.0377` | `0.0527` | `0.0556` | `0.0259` | `0.3333` | `0.3333` |
+| **10 likes** | `0.0518` | `0.0627` | `0.0833` | `0.0302` | `0.0000` | `0.0000` |
+| **20 likes** | `0.0600` | `0.0786` | `0.0833` | `0.0309` | `0.0000` | `0.0000` |
 
 ![Cold Start Curves](figures/cold_start_curves.png)
 
@@ -149,9 +149,9 @@ all recommendations on a microscopic sliver of the catalogue (< 2% coverage).
 | **Movies** | Random | `0.9948` | `0.8239` | `13.97` bits | `0.9987` |
 | **Movies** | Popularity | `0.0288` | `0.7662` | `8.48` bits | `0.6712` |
 | **Movies** | Personalised (sar) | `0.1638` | `0.6983` | `9.12` bits | `0.9366` |
-| **Products** | Random | `1.0000` | `0.7627` | `10.25` bits | `0.9942` |
-| **Products** | Popularity | `0.0211` | `0.4883` | `6.78` bits | `0.1727` |
-| **Products** | Personalised (sar) | `0.5822` | `0.5814` | `7.59` bits | `0.8281` |
+| **Products** | Random | `0.9193` | `0.6452` | `13.58` bits | `0.9993` |
+| **Products** | Popularity | `0.0019` | `0.7634` | `8.88` bits | `0.0610` |
+| **Products** | Personalised (sar) | `0.7051` | `0.3555` | `12.55` bits | `0.9970` |
 | **Articles** | Random | `0.5333` | `0.8910` | `3.82` bits | `0.4167` |
 | **Articles** | Popularity | `0.5333` | `0.8910` | `3.82` bits | `0.4167` |
 | **Articles** | Personalised (tfidf_profile) | `0.5333` | `0.8910` | `3.82` bits | `0.4167` |
@@ -185,9 +185,8 @@ if and only if the model's lower confidence bound strictly exceeds popularity's 
 1. **Movies (1m, N=1,918 test users):**
    - **Statistically Significant Advantage (CIs separate):** RECALL@10 (0.0645 [0.0577, 0.0716] vs Pop 0.0445 [0.0389, 0.0494]).
    - **No Significant Difference (CIs overlap):** NDCG@10 (0.0592 [0.0541, 0.0644] vs Pop 0.0546 [0.0492, 0.0606]), HIT_RATE@10 (0.2826 [0.2625, 0.3011] vs Pop 0.2487 [0.2289, 0.2677]), PRECISION@10 (0.0413 [0.0381, 0.0447] vs Pop 0.0418 [0.0380, 0.0459]).
-2. **Products (instruments, N=1,222 test users):**
-   - **Statistically Significant Advantage (CIs separate):** RECALL@10 (0.1274 [0.1095, 0.1455] vs Pop 0.0786 [0.0651, 0.0948]), HIT_RATE@10 (0.1309 [0.1105, 0.1514] vs Pop 0.0802 [0.0646, 0.0949]), PRECISION@10 (0.0132 [0.0114, 0.0151] vs Pop 0.0081 [0.0066, 0.0097]).
-   - **No Significant Difference (CIs overlap):** NDCG@10 (0.0687 [0.0569, 0.0797] vs Pop 0.0471 [0.0378, 0.0571]).
+2. **Products (video_games, N=1,534 test users):**
+   - **Statistically Significant Advantage (CIs separate):** RECALL@10 (0.0799 [0.0676, 0.0920] vs Pop 0.0324 [0.0248, 0.0416]), NDCG@10 (0.0453 [0.0377, 0.0544] vs Pop 0.0163 [0.0120, 0.0217]), HIT_RATE@10 (0.0861 [0.0740, 0.1017] vs Pop 0.0358 [0.0267, 0.0450]), PRECISION@10 (0.0088 [0.0075, 0.0103] vs Pop 0.0036 [0.0027, 0.0046]).
 3. **Articles (SYNTHETIC DEMO (not MIND), N=9 impressions):**
    - **Impression Ranking Statistically Significant Advantage (CIs separate):** AUC (0.9722 [0.9167, 1.0000] vs Pop 0.5278 [0.2778, 0.7500]), MRR (1.0000 [1.0000, 1.0000] vs Pop 0.6296 [0.4444, 0.8148]), NDCG@5 (1.0000 [1.0000, 1.0000] vs Pop 0.7249 [0.5873, 0.8624]), NDCG@10 (1.0000 [1.0000, 1.0000] vs Pop 0.7249 [0.5873, 0.8624]).
 

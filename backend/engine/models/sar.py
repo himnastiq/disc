@@ -221,24 +221,30 @@ class SarModel(RecommenderModel):
         user_vec = self.sar.user_affinity[u_idx, :]
         raw_scores = user_vec.dot(self.sar.item_similarity)
 
-        if isinstance(raw_scores, sparse.spmatrix):
-            scores_arr = raw_scores.toarray().flatten()
-        else:
-            scores_arr = np.asarray(raw_scores).flatten()
-
         exclusions = set(str(x) for x in exclude_ids)
         if not self.spec.model.allow_repeat:
             exclusions.update(self.user_seen.get(uid, set()))
 
         # Collect and rank scored candidates
         candidates: list[tuple[float, str]] = []
-        for i_idx, score_val in enumerate(scores_arr):
-            item_id = self.sar.index2item[i_idx]
-            if item_id in exclusions:
-                continue
-            s = float(score_val)
-            if np.isfinite(s) and s > 0.0:
-                candidates.append((s, item_id))
+        if isinstance(raw_scores, sparse.spmatrix):
+            raw_coo = raw_scores.tocoo()
+            for i_idx, score_val in zip(raw_coo.col, raw_coo.data, strict=False):
+                item_id = self.sar.index2item[int(i_idx)]
+                if item_id in exclusions:
+                    continue
+                s = float(score_val)
+                if np.isfinite(s) and s > 0.0:
+                    candidates.append((s, item_id))
+        else:
+            scores_arr = np.asarray(raw_scores).flatten()
+            for i_idx, score_val in enumerate(scores_arr):
+                item_id = self.sar.index2item[i_idx]
+                if item_id in exclusions:
+                    continue
+                s = float(score_val)
+                if np.isfinite(s) and s > 0.0:
+                    candidates.append((s, item_id))
 
         # Sort descending by score, breaking ties by item_id ascending
         candidates.sort(key=lambda x: (-x[0], x[1]))
@@ -293,23 +299,30 @@ class SarModel(RecommenderModel):
         )
 
         raw_scores = affinity_vec.dot(self.sar.item_similarity)
-        if isinstance(raw_scores, sparse.spmatrix):
-            scores_arr = raw_scores.toarray().flatten()
-        else:
-            scores_arr = np.asarray(raw_scores).flatten()
 
         exclusions = set(str(x) for x in exclude_ids)
         if not self.spec.model.allow_repeat:
             exclusions.update(item_id for item_id, _ in norm_res.normalized_history)
 
         candidates: list[tuple[float, str]] = []
-        for i_idx, score_val in enumerate(scores_arr):
-            item_id = self.sar.index2item[i_idx]
-            if item_id in exclusions:
-                continue
-            s = float(score_val)
-            if np.isfinite(s) and s > 0.0:
-                candidates.append((s, item_id))
+        if isinstance(raw_scores, sparse.spmatrix):
+            raw_coo = raw_scores.tocoo()
+            for i_idx, score_val in zip(raw_coo.col, raw_coo.data, strict=False):
+                item_id = self.sar.index2item[int(i_idx)]
+                if item_id in exclusions:
+                    continue
+                s = float(score_val)
+                if np.isfinite(s) and s > 0.0:
+                    candidates.append((s, item_id))
+        else:
+            scores_arr = np.asarray(raw_scores).flatten()
+            for i_idx, score_val in enumerate(scores_arr):
+                item_id = self.sar.index2item[i_idx]
+                if item_id in exclusions:
+                    continue
+                s = float(score_val)
+                if np.isfinite(s) and s > 0.0:
+                    candidates.append((s, item_id))
 
         candidates.sort(key=lambda x: (-x[0], x[1]))
 
