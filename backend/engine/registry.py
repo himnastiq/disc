@@ -54,12 +54,22 @@ def list_registered_adapters() -> list[str]:
 
 
 def _ensure_default_models() -> None:
-    """Ensure baseline models are registered without eager module-load circular imports."""
+    """Ensure baseline and core models are registered without eager module-load circular imports."""
     if "popularity" not in _MODEL_REGISTRY or "random" not in _MODEL_REGISTRY:
         from engine.models.baselines import PopularityModel, RandomModel
 
         _MODEL_REGISTRY["popularity"] = PopularityModel
         _MODEL_REGISTRY["random"] = RandomModel
+
+    if "sar" not in _MODEL_REGISTRY:
+        from engine.models.sar import SarModel
+
+        _MODEL_REGISTRY["sar"] = SarModel
+
+    if "tfidf_profile" not in _MODEL_REGISTRY:
+        from engine.models.tfidf import TfidfProfileModel
+
+        _MODEL_REGISTRY["tfidf_profile"] = TfidfProfileModel
 
 
 def list_registered_models() -> list[str]:

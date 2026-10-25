@@ -52,6 +52,8 @@ ALLOWED_PATTERNS = [
     "scripts/**/*",
     "IMPLEMENTATION_PLAN.md",
     "Makefile",
+    "pyproject.toml",
+    "backend/pyproject.toml",
     ".gitignore",
     ".gitattributes",
 ]

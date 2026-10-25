@@ -254,9 +254,41 @@ Reuse `SarModel` without any modifications to model code for the products pipeli
 
 **Related tasks:** P4.4, P4.7
 
+## D-014: TF-IDF Profile Model: Content-Based Recommender Abstraction (P5.4)
+
+**Date:** 2026-10-25
+**Status:** Approved
+
+**Context:**
+Phase 5 introduces the third content type (`articles`) using news text from the MIND dataset. Unlike Movies and Products which leverage collaborative filtering via SAR (`SarModel`), news recommendations rely on content-based matching of articles (`title + abstract + category tokens`) against evolving user preference profiles, handling rapid content turnover and zero-interaction cold items.
+We need to register and implement `TfidfProfileModel` behind the existing unified `RecommenderModel` abstraction (`backend/engine/models/base.py`) without modifying the base interface or breaking existing models.
+
+**Architecture and Design:**
+1. **Core Abstraction Conformance:** `TfidfProfileModel` inherits directly from `RecommenderModel`, providing `fit`, `recommend_user`, `recommend_history`, `similar_items`, `popular`, `explain`, `save`, and `load`.
+2. **Text Representation & Vocabulary Fitting (R2 No-Leakage):**
+   - Document representations combine article title, text/abstract, and category tokens (`clean_article_text` removes punctuation, HTML, and normalizes unicode via NFC).
+   - In accordance with R2 leakage rules, the `TfidfVectorizer` vocabulary and IDF weights are fitted strictly on articles that appeared in `train_interactions`. Candidate articles published later or unread during training are projected into the fitted vocabulary space during `transform`, avoiding representation leakage.
+3. **User Profile Aggregation & Recency Weighting:**
+   - User profile is the weighted mean of clicked article TF-IDF vectors.
+   - When `recency_weight: true`, exponential time-decay is applied ($2^{-\Delta t / t_{\text{half}}}$ with 7-day default half-life when timestamps are available; sequence-based exponential decay when timestamps are uniform or cold-start).
+   - The aggregated profile is L2-normalized, guaranteeing that for a history of identical articles the profile equals that article's vector direction (cosine similarity 1.0).
+4. **Scoring & Cold Start:**
+   - Scores are cosine similarities computed via sparse matrix-vector dot product ($\mathbf{V} \mathbf{u}^T$).
+   - Cold start is native: `recommend_history` builds user profile vectors directly from client-provided interaction histories normalized via `engine.coldstart.normalize_history`.
+   - Empty histories or histories with zero catalogue matches fall back deterministically to global popularity.
+5. **Persistence:**
+   - Standard non-pickle storage: `tfidf_matrix.npz`, `vocabulary.json`, `idf.npy`, `item_ids.json`, `item_titles.json`, and `model_meta.json`.
+
+**Consequences:**
+- The engine supports content-based recommendations natively across all interfaces and tools without modifying `RecommenderModel` base methods.
+- Lazily registered under `"tfidf_profile"` in `backend/engine/registry.py` and exported in `backend/engine/models/__init__.py`.
+
+**Related tasks:** P5.4, P5.6, P5.7, P5.11
+
 ---
 
 <!-- Add new entries above this line -->
+
 
 
 

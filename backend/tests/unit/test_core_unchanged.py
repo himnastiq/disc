@@ -56,11 +56,25 @@ def test_disallowed_arbitrary_files() -> None:
     assert not is_allowed_path("backend/extra_module.py")
 
 
+PHASE_4_END_COMMIT = "c31af6e"
+
+
+def test_phase_4_git_history_zero_core_violations() -> None:
+    """Verify that Phase 4 real git history (6da1d3a..c31af6e) contains zero core engine changes."""
+    passed, disallowed, core_violations = check_core_unchanged(
+        base_commit="6da1d3a", target=PHASE_4_END_COMMIT
+    )
+    assert passed, (
+        f"Phase 4 check failed! Disallowed: {disallowed}, Core violations: {core_violations}"
+    )
+    assert disallowed == []
+    assert core_violations == []
+
+
 def test_real_repo_passes_core_unchanged() -> None:
-    """Verify that Phase 4 real git history passes core unchanged check with 0 core violations."""
+    """Verify that current repo passes core unchanged check and any core additions are documented."""
     passed, disallowed, core_violations = check_core_unchanged()
     assert passed, (
         f"Core unchanged check failed! Disallowed: {disallowed}, Core violations: {core_violations}"
     )
     assert disallowed == []
-    assert core_violations == []
