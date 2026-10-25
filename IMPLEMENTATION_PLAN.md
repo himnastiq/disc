@@ -40,15 +40,15 @@
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 10 | 0 | 1 | 12 | 83% |
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
-| 7 | FastAPI backend | 10 | 0 | 0 | 13 | 76% |
+| 7 | FastAPI backend | 11 | 0 | 0 | 13 | 84% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **82** | | | **129** | **63%** |
+| | **Overall** | **83** | | | **129** | **64%** |
 
-`[############--------] 63%  (82/129 tasks)`
+`[############--------] 64%  (83/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -249,7 +249,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P7.8** Security: optional API key header `X-API-Key` compared in constant time **on encoded bytes**; CORS from env; request body size limit; input length limits (search query max 100 chars); no debug output. *Acceptance:* tests with a non-ASCII key header return 401, not 500.
 - [x] **P7.9** Export `openapi.json` (`scripts/export_openapi.py`) and commit it; add a CI check that the committed file equals the generated one. *Acceptance:* check script passes.
 - [x] **P7.10** Contract and property tests: parametrise every endpoint over `registry.types()`; invariants from R3; fuzz with hypothesis (random k, random strings, random id lists); run schemathesis against the OpenAPI schema if it can be installed. *Acceptance:* zero 500 responses across the fuzz run.
-- [ ] **P7.11** Performance and memory: `scripts/bench_api.py` (warm-up, 500 requests per endpoint, report p50/p95/p99 and RSS). Meet R8 budgets or document why not. *Acceptance:* results appended to `docs/RESULTS.md` (generated section).
+- [x] **P7.11** Performance and memory: `scripts/bench_api.py` (warm-up, 500 requests per endpoint, report p50/p95/p99 and RSS). Meet R8 budgets or document why not. *Acceptance:* results appended to `docs/RESULTS.md` (generated section).
 - [ ] **P7.12** Runtime purity test: start the app in a subprocess, hit all endpoints, then assert that `tensorflow`, `pyspark`, `torch`, and `cornac` were never imported (read `sys.modules` via a test-only debug hook or run with an import blocker). *Acceptance:* test passes.
 - [ ] **P7.13** Phase 7 Gate and "break your own work" ritual (include: recommend for a user then add one of the results to `exclude`: it must disappear; changing `k` must not reorder the common prefix; concurrent requests give identical results).
 
