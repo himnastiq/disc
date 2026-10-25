@@ -395,18 +395,23 @@ class SarModel(RecommenderModel):
 
     def explain(
         self,
-        history_item_ids: list[str],
-        recommended_item_id: str,
+        recommended_item_id: str = "",
+        history: list[tuple[str, float]] | list[str] | None = None,
+        user_id: str | None = None,
         min_threshold: float | None = None,
+        **kwargs: Any,
     ) -> Reason | None:
         """Produce faithful attribution identifying which history item contributed most.
 
-        For recommended item `r` and history `H`, the reason item is:
+        For recommended item `r` and history `H` (or known `user_id`), the reason item is:
             argmax_{h in H} affinity(h) * sim(h, r)
         Show only when contribution share exceeds configurable threshold.
         """
-        if not self._is_fitted or self.sar is None or not history_item_ids:
+        if not self._is_fitted or self.sar is None:
             return None
+
+        if history is None and "history_item_ids" in kwargs:
+            history = kwargs["history_item_ids"]
 
         threshold = (
             min_threshold
@@ -419,18 +424,62 @@ class SarModel(RecommenderModel):
             return None
 
         rec_idx = self.sar.item2index[rec_id]
-        contributions: dict[str, float] = {}
 
-        for h_id in history_item_ids:
+        # 1. Derive user affinities if known user provided
+        user_affinities: dict[str, float] = {}
+        if user_id is not None:
+            uid = str(user_id)
+            if uid in self.sar.user2index:
+                u_idx = self.sar.user2index[uid]
+                user_row = self.sar.user_affinity[u_idx, :]
+                if isinstance(user_row, sparse.csr_matrix):
+                    for h_idx, aff_val in zip(user_row.indices, user_row.data, strict=False):
+                        if aff_val > 0.0:
+                            h_id = self.sar.index2item[h_idx]
+                            user_affinities[h_id] = float(aff_val)
+                else:
+                    user_arr = np.asarray(
+                        user_row.toarray() if isinstance(user_row, sparse.spmatrix) else user_row
+                    ).flatten()
+                    for h_idx, aff_val in enumerate(user_arr):
+                        if aff_val > 0.0:
+                            h_id = self.sar.index2item[h_idx]
+                            user_affinities[h_id] = float(aff_val)
+
+        # 2. Extract affinities from history if provided
+        affinities: dict[str, float] = {}
+        if history:
+            norm_res = normalize_history(history, catalogue=self.catalogue, max_history_length=None)
+            for h_id, sig in norm_res.normalized_history:
+                # If known user has time-decayed affinity and history provided as plain IDs, use user affinity
+                if (
+                    user_affinities
+                    and h_id in user_affinities
+                    and (isinstance(history[0], str) if history else False)
+                ):
+                    affinities[h_id] = user_affinities[h_id]
+                elif sig > 0.0:
+                    affinities[h_id] = float(sig)
+        elif user_affinities:
+            affinities = user_affinities
+
+        if not affinities:
+            return None
+
+        # 3. Compute contributions: affinity(h) * sim(h, r)
+        contributions: dict[str, float] = {}
+        for h_id, aff in affinities.items():
             h_str = str(h_id)
+            if h_str == rec_id:
+                continue
             if h_str not in self.sar.item2index:
                 continue
             h_idx = self.sar.item2index[h_str]
             sim_val = float(self.sar.item_similarity[h_idx, rec_idx])
-            if sim_val > 0.0:
-                contributions[h_str] = sim_val
+            if sim_val > 0.0 and aff > 0.0:
+                contributions[h_str] = aff * sim_val
 
-        top = find_top_contributor(history_item_ids, contributions)
+        top = find_top_contributor(list(affinities.keys()), contributions)
         if top is not None:
             best_item, _, share = top
             return format_reason(

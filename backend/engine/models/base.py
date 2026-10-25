@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -127,16 +127,23 @@ class RecommenderModel(ABC):
     @abstractmethod
     def explain(
         self,
-        history_item_ids: list[str],
-        recommended_item_id: str,
+        recommended_item_id: str = "",
+        history: list[tuple[str, float]] | list[str] | None = None,
+        user_id: str | None = None,
         min_threshold: float | None = None,
+        **kwargs: Any,
     ) -> Reason | None:
         """Produce a faithful explanation identifying which history item contributed most to the score.
 
+        For recommended item `r` and history `H` (or known `user_id`), the reason item is:
+            argmax_{h in H} affinity(h) * sim(h, r)
+
         Args:
-            history_item_ids: List of item IDs from the user's history.
             recommended_item_id: Recommended item ID to explain.
+            history: Optional list of (item_id, signal) pairs or item IDs.
+            user_id: Optional known user ID to derive user's affinity vector from model.
             min_threshold: Optional minimum contribution share threshold (defaults to serving config).
+            kwargs: Additional model-specific parameters or legacy keyword arguments.
 
         Returns:
             Reason | None: Faithful attribution reason, or None if no sufficient attribution exists.

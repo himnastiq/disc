@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from engine.errors import UnknownItem, UnknownUser
 from engine.models.base import RecommenderModel
@@ -135,9 +135,11 @@ class PopularityModel(RecommenderModel):
 
     def explain(
         self,
-        history_item_ids: list[str],
-        recommended_item_id: str,
+        recommended_item_id: str = "",
+        history: list[tuple[str, float]] | list[str] | None = None,
+        user_id: str | None = None,
         min_threshold: float | None = None,
+        **kwargs: Any,
     ) -> Reason | None:
         # Popularity recommendations are independent of user history items.
         return None
@@ -267,9 +269,11 @@ class RandomModel(RecommenderModel):
 
     def explain(
         self,
-        history_item_ids: list[str],
-        recommended_item_id: str,
+        recommended_item_id: str = "",
+        history: list[tuple[str, float]] | list[str] | None = None,
+        user_id: str | None = None,
         min_threshold: float | None = None,
+        **kwargs: Any,
     ) -> Reason | None:
         # Random model recommendations are independent of user history items.
         return None

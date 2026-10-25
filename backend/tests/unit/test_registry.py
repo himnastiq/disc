@@ -78,7 +78,14 @@ class DummyTestModel(RecommenderModel):
     def popular(self, k: int, exclude_ids: Collection[str] = ()) -> list[ScoredItem]:
         return []
 
-    def explain(self, history_item_ids: list[str], recommended_item_id: str) -> Reason | None:
+    def explain(
+        self,
+        recommended_item_id: str = "",
+        history: list[tuple[str, float]] | list[str] | None = None,
+        user_id: str | None = None,
+        min_threshold: float | None = None,
+        **kwargs: Any,
+    ) -> Reason | None:
         return None
 
     def save(self, dir_path: Path) -> None:

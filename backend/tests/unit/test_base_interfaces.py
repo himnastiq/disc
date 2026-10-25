@@ -120,14 +120,23 @@ class ConcreteTestModel(RecommenderModel):
 
     def explain(
         self,
-        history_item_ids: list[str],
-        recommended_item_id: str,
+        recommended_item_id: str = "",
+        history: list[tuple[str, float]] | list[str] | None = None,
+        user_id: str | None = None,
+        min_threshold: float | None = None,
+        **kwargs: Any,
     ) -> Reason | None:
-        if history_item_ids:
+        if isinstance(recommended_item_id, (list, tuple)) and isinstance(history, str):
+            history, recommended_item_id = recommended_item_id, history  # type: ignore[assignment]
+        elif history is None and "history_item_ids" in kwargs:
+            history = kwargs["history_item_ids"]
+        if history:
+            h0 = history[0]
+            item_id = h0[0] if isinstance(h0, (list, tuple)) else str(h0)
             return Reason(
-                item_id=history_item_ids[0],
+                item_id=item_id,
                 kind="co_occurrence",
-                text=f"Because you interacted with {history_item_ids[0]}",
+                text=f"Because you interacted with {item_id}",
             )
         return None
 
