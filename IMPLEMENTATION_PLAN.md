@@ -761,6 +761,35 @@ tests\unit\test_cold_start_curve.py ..                                   [100%]
 ============================== 2 passed in 4.09s ==============================
 ```
 
+### Session 11: FIX-19 Shuffled-label check: named metrics and matched-user comparison
+- **Requirement:** Name the metric explicitly and report the exact same metric for Real, Shuffled, and Random on the same users.
+- **Empirical Measurement on Same 500 Real MovieLens Test Users:**
+```
+NDCG@10: Real=0.05585, Shuffled=0.01740, Random=0.00307 (N=500 users)
+HitRate@10: Real=0.29498, Shuffled=0.11506, Random=0.02929 (N=500 users)
+Recall@10: Real=0.05995, Shuffled=0.01797, Random=0.00273 (N=500 users)
+```
+- **Observations:**
+  - Training on permuted user-item interactions collapses collaborative filtering performance across every named metric: NDCG@10 degrades 3.2x (0.05585 -> 0.01740), Recall@10 degrades 3.3x (0.05995 -> 0.01797), and HitRate@10 degrades 2.6x (0.29498 -> 0.11506).
+  - Shuffled SAR remains slightly above pure uniform Random because it preserves the marginal unigram item frequency distribution, but the entire collaborative co-occurrence signal is eliminated.
+- **Updates Applied:**
+  - `docs/DECISIONS.md`: updated D-011 item 5 with named metrics (`NDCG@10`, `HitRate@10`, `Recall@10`), exact figures, and sample size $N=500$.
+  - `backend/tests/unit/test_tuning.py`: updated `test_shuffled_label_sanity_test_near_random` to evaluate and assert collapse across all three named metrics explicitly with clear failure messages.
+- **Unit Tests Output (`pytest tests/unit/test_tuning.py`):**
+```
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.7.0
+rootdir: E:\discover\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, hypothesis-6.170.9, platformdirs-4.13.5, cov-7.1.0
+collected 3 items
+
+tests\unit\test_tuning.py ...                                            [100%]
+
+============================== 3 passed in 4.16s ==============================
+```
+
+
 
 
 

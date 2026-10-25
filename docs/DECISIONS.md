@@ -191,7 +191,11 @@ Measured using `tools/measure_sparsification.py` on identical chronological trai
 2. **Sanity Ordering Holds:** SAR beats Popularity across NDCG, HitRate, and Recall at K=10 and K=20 (`model_beats_popularity: true`); Popularity soundly beats Random across all ranking metrics (`popularity_beats_random: true`).
 3. **Personalisation & Diversity:** Popularity offers static recommendations with low personalization (0.6931) and narrow coverage (2.2% of catalogue). In contrast, SAR achieves 0.9323 personalization and explores 3.5x more catalogue items (7.8% at K=10, 11.1% at K=20) while sustaining substantially higher recall (+37.4% at K=10, +40.7% at K=20).
 4. **Cold-Start Degradation Curve (P3.10):** Measured across history sizes $\{0, 1, 2, 3, 5, 10, 20\}$ likes. Recall@10 increases monotonically from 0.0193 at 0 likes (pure popular fallback) to 0.0490 at 20 likes (+154% gain), and NDCG@10 increases from 0.0172 to 0.0381 (+122% gain), proving that SAR adapts dynamically to incremental user signals.
-5. **Shuffled-Label Sanity Verification:** When trained on permuted user-item interactions, SAR performance collapsed from 0.0953 down to 0.0275 (near Random), verifying that collaborative filtering structure is genuine and uncorrupted by label leakage.
+5. **Shuffled-Label Sanity Verification (FIX-19):** Evaluated on the exact same N=500 real MovieLens test users across Real SAR, Shuffled SAR (trained on permuted user-item training interactions), and Random baseline:
+   - **NDCG@10:** Real = 0.05585, Shuffled = 0.01740, Random = 0.00307 (3.2x collapse towards Random)
+   - **HitRate@10:** Real = 0.29498, Shuffled = 0.11506, Random = 0.02929 (2.6x collapse towards Random)
+   - **Recall@10:** Real = 0.05995, Shuffled = 0.01797, Random = 0.00273 (3.3x collapse towards Random)
+   This confirms collaborative filtering co-occurrence is genuine and uncorrupted by data or temporal leakage (shuffling labels destroys co-occurrence while retaining only marginal item frequency bias).
 
 **Decision:**
 Accept the trained SAR model and generated artifacts (`metrics.json`, `tuning.json`, `topn.parquet`, `users.parquet`, `items.parquet`, `demo_users.json`) as the validated production artifacts for MovieLens.

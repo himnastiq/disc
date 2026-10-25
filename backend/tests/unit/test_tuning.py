@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from engine.config import load_config
-from engine.evaluation.metrics import ndcg
+from engine.evaluation.metrics import hit_rate, ndcg, recall
 from engine.models.baselines import RandomModel
 from engine.models.sar import SarModel
 from engine.tuning import tune_sar_on_validation
@@ -154,11 +154,33 @@ def test_shuffled_label_sanity_test_near_random(
             )
 
     pos_valid = valid_df[valid_df["signal"] >= spec.signal.positive_threshold]
-    ndcg_genuine = ndcg(pos_valid, pd.DataFrame(preds_genuine), k=10)
-    ndcg_shuffled = ndcg(pos_valid, pd.DataFrame(preds_shuffled), k=10)
-    ndcg_random = ndcg(pos_valid, pd.DataFrame(preds_random), k=10)
+    df_genuine = pd.DataFrame(preds_genuine)
+    df_shuffled = pd.DataFrame(preds_shuffled)
+    df_random = pd.DataFrame(preds_random)
 
-    # Shuffled score must drop significantly relative to genuine model (>2x degradation)
-    assert ndcg_genuine > 2 * ndcg_shuffled
-    # Shuffled score must be near random baseline (within 0.15 margin on 20-item synthetic fixture)
-    assert abs(ndcg_shuffled - ndcg_random) < 0.15
+    # 1. NDCG@10
+    ndcg_genuine = ndcg(pos_valid, df_genuine, k=10)
+    ndcg_shuffled = ndcg(pos_valid, df_shuffled, k=10)
+    ndcg_random = ndcg(pos_valid, df_random, k=10)
+    assert ndcg_genuine > 2 * ndcg_shuffled, (
+        f"NDCG@10 did not collapse: genuine={ndcg_genuine:.4f}, shuffled={ndcg_shuffled:.4f}"
+    )
+    assert abs(ndcg_shuffled - ndcg_random) < 0.15, (
+        f"NDCG@10 shuffled not near random: shuffled={ndcg_shuffled:.4f}, random={ndcg_random:.4f}"
+    )
+
+    # 2. HitRate@10
+    hr_genuine = hit_rate(pos_valid, df_genuine, k=10)
+    hr_shuffled = hit_rate(pos_valid, df_shuffled, k=10)
+    hr_random = hit_rate(pos_valid, df_random, k=10)
+    assert hr_genuine >= hr_shuffled, (
+        f"HitRate@10 did not degrade: genuine={hr_genuine:.4f}, shuffled={hr_shuffled:.4f}"
+    )
+
+    # 3. Recall@10
+    rec_genuine = recall(pos_valid, df_genuine, k=10)
+    rec_shuffled = recall(pos_valid, df_shuffled, k=10)
+    rec_random = recall(pos_valid, df_random, k=10)
+    assert rec_genuine >= rec_shuffled, (
+        f"Recall@10 did not degrade: genuine={rec_genuine:.4f}, shuffled={rec_shuffled:.4f}"
+    )
