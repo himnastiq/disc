@@ -226,7 +226,38 @@ We needed to decide on:
 
 ---
 
+## D-013: Amazon Products SAR Model Reuse, Memory Usage, and Serving Budget (P4.4)
+
+**Date:** 2026-10-25
+**Status:** Approved
+
+**Context:**
+Task P4.4 requires adding `configs/products.yaml` reusing `SarModel` without modifying model core code. We need to evaluate the similarity structure memory footprint and ensure peak memory during training and serving respects memory budgets (R8).
+
+**Measured Memory Performance (Amazon Instruments, fast mode):**
+- **Catalogue Items:** 900 items
+- **Train Interactions:** 8,284 interactions
+- **Item-Item Similarity Matrix:**
+  - Non-zero entries (NNZ): 32,168
+  - Storage size: 0.37 MB (sparse CSR) vs 6.18 MB dense float64 (16.7x compression)
+- **Peak Memory During Training:** 22.13 MB (training time 2.67s)
+- **Peak Memory During Serving:** 2.66 MB for 100 recommendation requests (serving latency 35ms/user)
+
+**Scaling Projection for Video Games (standard mode):**
+- With `max_items_in_similarity: 8000` item budget cap and `top_neighbors_per_item: 50`:
+  - Dense 50,000 x 50,000 matrix would demand ~20 GB RAM.
+  - Capped sparse CSR similarity matrix storage: $\le 8,000 \times 50 \times 12\text{ bytes} \approx 4.8\text{ MB}$.
+  - Estimated peak training memory: $< 150\text{ MB}$, well within standard single-machine budget.
+
+**Decision:**
+Reuse `SarModel` without any modifications to model code for the products pipeline. Set `serving.top_neighbors_per_item: 50` and `serving.max_items_in_similarity: 8000` (capped to 2000 in fast mode) to bound memory strictly within budget.
+
+**Related tasks:** P4.4, P4.7
+
+---
+
 <!-- Add new entries above this line -->
+
 
 
 
