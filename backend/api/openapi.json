@@ -1,0 +1,1779 @@
+{
+  "components": {
+    "schemas": {
+      "AboutResponse": {
+        "description": "Response schema for /v1/about.",
+        "properties": {
+          "attributions": {
+            "description": "Attribution records for all upstream data sources",
+            "items": {
+              "$ref": "#/components/schemas/DatasetAttribution"
+            },
+            "title": "Attributions",
+            "type": "array"
+          },
+          "description": {
+            "description": "Architectural overview and purpose",
+            "title": "Description",
+            "type": "string"
+          },
+          "non_commercial_notice": {
+            "description": "Notice regarding research and non-commercial educational use",
+            "title": "Non Commercial Notice",
+            "type": "string"
+          },
+          "title": {
+            "default": "Discovery Engine",
+            "description": "System title",
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "default": "1.0.0",
+            "description": "System version",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "attributions",
+          "non_commercial_notice"
+        ],
+        "title": "AboutResponse",
+        "type": "object"
+      },
+      "CategoryShare": {
+        "description": "Category preference breakdown item.",
+        "properties": {
+          "category": {
+            "description": "Category label",
+            "title": "Category",
+            "type": "string"
+          },
+          "count": {
+            "description": "Number of interactions in this category",
+            "title": "Count",
+            "type": "integer"
+          },
+          "share": {
+            "description": "Fraction of total user interactions",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Share",
+            "type": "number"
+          }
+        },
+        "required": [
+          "category",
+          "count",
+          "share"
+        ],
+        "title": "CategoryShare",
+        "type": "object"
+      },
+      "ColdStartRequest": {
+        "description": "Request schema for POST /v1/recommend/cold-start.",
+        "properties": {
+          "exclude": {
+            "description": "Item IDs to explicitly exclude",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500,
+            "title": "Exclude",
+            "type": "array"
+          },
+          "history": {
+            "description": "Hypothetical user history (max 200 items)",
+            "items": {
+              "$ref": "#/components/schemas/HistoryItemInput"
+            },
+            "maxItems": 200,
+            "title": "History",
+            "type": "array"
+          },
+          "k": {
+            "default": 10,
+            "description": "Number of recommendations requested [1, 100]",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "K",
+            "type": "integer"
+          },
+          "type": {
+            "description": "Content type identifier",
+            "maxLength": 50,
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "history"
+        ],
+        "title": "ColdStartRequest",
+        "type": "object"
+      },
+      "ColdStartResponse": {
+        "description": "Response schema for POST /v1/recommend/cold-start.",
+        "properties": {
+          "content_type": {
+            "description": "Content type identifier",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "ignored_item_ids": {
+            "description": "History items that were not found in catalogue",
+            "items": {
+              "type": "string"
+            },
+            "title": "Ignored Item Ids",
+            "type": "array"
+          },
+          "k": {
+            "description": "Number of recommendations returned",
+            "title": "K",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "description": "Diagnostic metadata",
+            "title": "Meta",
+            "type": "object"
+          },
+          "mode": {
+            "description": "Serving mode: 'personalized' or 'popularity'",
+            "title": "Mode",
+            "type": "string"
+          },
+          "results": {
+            "description": "Ranked recommended items",
+            "items": {
+              "$ref": "#/components/schemas/ScoredItemResponse"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "content_type",
+          "mode",
+          "k",
+          "results"
+        ],
+        "title": "ColdStartResponse",
+        "type": "object"
+      },
+      "DatasetAttribution": {
+        "description": "Attribution citation and provenance information for a dataset.",
+        "properties": {
+          "citation": {
+            "description": "Official academic citation",
+            "title": "Citation",
+            "type": "string"
+          },
+          "license": {
+            "description": "Dataset license terms",
+            "title": "License",
+            "type": "string"
+          },
+          "name": {
+            "description": "Dataset name",
+            "title": "Name",
+            "type": "string"
+          },
+          "original_vs_derived": {
+            "description": "Explanation of original vs derived transformations",
+            "title": "Original Vs Derived",
+            "type": "string"
+          },
+          "source_url": {
+            "description": "Upstream download or project URL",
+            "title": "Source Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "citation",
+          "license",
+          "source_url",
+          "original_vs_derived"
+        ],
+        "title": "DatasetAttribution",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "description": "Response schema for /v1/health.",
+        "properties": {
+          "status": {
+            "description": "Overall health status: 'ok', 'degraded', or 'error'",
+            "title": "Status",
+            "type": "string"
+          },
+          "types": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HealthTypeStatus"
+            },
+            "description": "Status of each registered content type",
+            "title": "Types",
+            "type": "object"
+          },
+          "version": {
+            "default": "1.0.0",
+            "description": "API engine version",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "HealthTypeStatus": {
+        "description": "Per-content-type availability status.",
+        "properties": {
+          "available": {
+            "description": "Whether content type is ready for serving",
+            "title": "Available",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Failure reason if unavailable",
+            "title": "Reason"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Artifact schema version",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "title": "HealthTypeStatus",
+        "type": "object"
+      },
+      "HistoryItemInput": {
+        "description": "Single item interaction supplied in cold-start history.",
+        "properties": {
+          "item_id": {
+            "description": "Catalogue item identifier",
+            "maxLength": 100,
+            "title": "Item Id",
+            "type": "string"
+          },
+          "signal": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional interaction strength or rating [0, 5]",
+            "title": "Signal"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "title": "HistoryItemInput",
+        "type": "object"
+      },
+      "ItemDetail": {
+        "description": "Full detail view for a catalogue item.",
+        "properties": {
+          "categories": {
+            "description": "Associated categories or genres",
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cover or product image URL",
+            "title": "Image Url"
+          },
+          "item_id": {
+            "description": "Item unique identifier",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "description": "Type-specific metadata",
+            "title": "Meta",
+            "type": "object"
+          },
+          "popularity_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Catalog popularity rank",
+            "title": "Popularity Rank"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional subtitle or brand",
+            "title": "Subtitle"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Description or abstract text",
+            "title": "Text"
+          },
+          "title": {
+            "description": "Display title",
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Release year if known",
+            "title": "Year"
+          }
+        },
+        "required": [
+          "item_id",
+          "title"
+        ],
+        "title": "ItemDetail",
+        "type": "object"
+      },
+      "PopularResponse": {
+        "description": "Response schema for /v1/popular.",
+        "properties": {
+          "content_type": {
+            "description": "Content type identifier",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "k": {
+            "description": "Number of popular items returned",
+            "title": "K",
+            "type": "integer"
+          },
+          "results": {
+            "description": "Top popular items",
+            "items": {
+              "$ref": "#/components/schemas/ScoredItemResponse"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "content_type",
+          "k",
+          "results"
+        ],
+        "title": "PopularResponse",
+        "type": "object"
+      },
+      "RecentInteraction": {
+        "description": "Summary of a past user interaction.",
+        "properties": {
+          "item_id": {
+            "description": "Interacted item identifier",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "signal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rating or interaction strength",
+            "title": "Signal"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Interaction timestamp",
+            "title": "Timestamp"
+          },
+          "title": {
+            "description": "Item display title",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "title"
+        ],
+        "title": "RecentInteraction",
+        "type": "object"
+      },
+      "RecommendResponse": {
+        "description": "Response schema for /v1/recommend.",
+        "properties": {
+          "content_type": {
+            "description": "Content type identifier",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "k": {
+            "description": "Number of items requested",
+            "title": "K",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "description": "Diagnostic and serving metadata",
+            "title": "Meta",
+            "type": "object"
+          },
+          "mode": {
+            "description": "Serving mode: 'personalized' or 'popularity'",
+            "title": "Mode",
+            "type": "string"
+          },
+          "results": {
+            "description": "Ranked recommended items",
+            "items": {
+              "$ref": "#/components/schemas/ScoredItemResponse"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User identifier if known user",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "content_type",
+          "mode",
+          "k",
+          "results"
+        ],
+        "title": "RecommendResponse",
+        "type": "object"
+      },
+      "RecommendationReason": {
+        "description": "Faithful attribution reason for a recommended item.",
+        "properties": {
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Associated history item ID if applicable",
+            "title": "Item Id"
+          },
+          "kind": {
+            "description": "Attribution strategy: 'history_item', 'popular', or 'term_overlap'",
+            "title": "Kind",
+            "type": "string"
+          },
+          "similarity_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Attribution affinity or similarity score",
+            "title": "Similarity Score"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable explanation clause",
+            "title": "Text"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "RecommendationReason",
+        "type": "object"
+      },
+      "ScoredItemResponse": {
+        "description": "Recommended item with scoring, normalization, and attribution.",
+        "properties": {
+          "categories": {
+            "description": "Categories or genres",
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "display_score": {
+            "description": "Min-max normalized score within recommended list [0, 1]",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Display Score",
+            "type": "number"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Image URL",
+            "title": "Image Url"
+          },
+          "item_id": {
+            "description": "Catalogue item identifier",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "description": "Extra type-specific metadata",
+            "title": "Meta",
+            "type": "object"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecommendationReason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Attribution reason explaining why recommended"
+          },
+          "score": {
+            "description": "Raw model recommendation score",
+            "title": "Score",
+            "type": "number"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Brand, author, or subtitle",
+            "title": "Subtitle"
+          },
+          "title": {
+            "description": "Item title",
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Release year",
+            "title": "Year"
+          }
+        },
+        "required": [
+          "item_id",
+          "title",
+          "score",
+          "display_score"
+        ],
+        "title": "ScoredItemResponse",
+        "type": "object"
+      },
+      "SearchItem": {
+        "description": "Item result returned by search query.",
+        "properties": {
+          "categories": {
+            "description": "Associated categories",
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Thumbnail image URL",
+            "title": "Image Url"
+          },
+          "item_id": {
+            "description": "Item unique identifier",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "match_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Match rank: exact, prefix, word_start, or contains",
+            "title": "Match Type"
+          },
+          "popularity_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Popularity rank for tie-breaking",
+            "title": "Popularity Rank"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional subtitle or brand",
+            "title": "Subtitle"
+          },
+          "title": {
+            "description": "Item title",
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Release year",
+            "title": "Year"
+          }
+        },
+        "required": [
+          "item_id",
+          "title"
+        ],
+        "title": "SearchItem",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "description": "Response schema for /v1/items/search.",
+        "properties": {
+          "content_type": {
+            "description": "Content type searched",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "query": {
+            "description": "Normalized search term",
+            "title": "Query",
+            "type": "string"
+          },
+          "results": {
+            "description": "Ranked search results",
+            "items": {
+              "$ref": "#/components/schemas/SearchItem"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "total_matches": {
+            "description": "Total number of matches",
+            "title": "Total Matches",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "content_type",
+          "query",
+          "total_matches",
+          "results"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      },
+      "SimilarResponse": {
+        "description": "Response schema for /v1/similar.",
+        "properties": {
+          "content_type": {
+            "description": "Content type identifier",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "k": {
+            "description": "Number of similar items returned",
+            "title": "K",
+            "type": "integer"
+          },
+          "query_item_id": {
+            "description": "Query item identifier",
+            "title": "Query Item Id",
+            "type": "string"
+          },
+          "results": {
+            "description": "Top similar items",
+            "items": {
+              "$ref": "#/components/schemas/ScoredItemResponse"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "content_type",
+          "query_item_id",
+          "k",
+          "results"
+        ],
+        "title": "SimilarResponse",
+        "type": "object"
+      },
+      "TypeInfo": {
+        "description": "Summary description of a registered content type.",
+        "properties": {
+          "card_type": {
+            "description": "UI card template: 'media', 'product', or 'article'",
+            "title": "Card Type",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Human-readable title",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "description": "Content type identifier, e.g. 'movies'",
+            "title": "Id",
+            "type": "string"
+          },
+          "interaction_count": {
+            "default": 0,
+            "description": "Total interactions processed",
+            "title": "Interaction Count",
+            "type": "integer"
+          },
+          "item_count": {
+            "default": 0,
+            "description": "Total items in catalogue",
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "supports_cold_start": {
+            "description": "Whether model supports cold-start recommendation",
+            "title": "Supports Cold Start",
+            "type": "boolean"
+          },
+          "user_count": {
+            "default": 0,
+            "description": "Total unique users in training/evaluation",
+            "title": "User Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "card_type",
+          "supports_cold_start"
+        ],
+        "title": "TypeInfo",
+        "type": "object"
+      },
+      "TypesResponse": {
+        "description": "Response schema for /v1/types.",
+        "properties": {
+          "types": {
+            "description": "List of registered content types",
+            "items": {
+              "$ref": "#/components/schemas/TypeInfo"
+            },
+            "title": "Types",
+            "type": "array"
+          }
+        },
+        "required": [
+          "types"
+        ],
+        "title": "TypesResponse",
+        "type": "object"
+      },
+      "UserProfileResponse": {
+        "description": "Response schema for /v1/users/{user_id}/profile.",
+        "properties": {
+          "content_type": {
+            "description": "Content type identifier",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "first_activity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Earliest interaction timestamp",
+            "title": "First Activity"
+          },
+          "interaction_count": {
+            "description": "Total historical interactions",
+            "title": "Interaction Count",
+            "type": "integer"
+          },
+          "last_activity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Latest interaction timestamp",
+            "title": "Last Activity"
+          },
+          "persona": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Assigned behavioral persona label",
+            "title": "Persona"
+          },
+          "positive_count": {
+            "description": "Positive / high-signal interactions",
+            "title": "Positive Count",
+            "type": "integer"
+          },
+          "recent_items": {
+            "description": "Most recent interactions (up to 10)",
+            "items": {
+              "$ref": "#/components/schemas/RecentInteraction"
+            },
+            "title": "Recent Items",
+            "type": "array"
+          },
+          "top_categories": {
+            "description": "Ranked category preferences",
+            "items": {
+              "$ref": "#/components/schemas/CategoryShare"
+            },
+            "title": "Top Categories",
+            "type": "array"
+          },
+          "user_id": {
+            "description": "User unique identifier",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "content_type",
+          "interaction_count",
+          "positive_count"
+        ],
+        "title": "UserProfileResponse",
+        "type": "object"
+      },
+      "UserSummary": {
+        "description": "User summary for user selection lists.",
+        "properties": {
+          "interaction_count": {
+            "default": 0,
+            "description": "Total interaction count",
+            "title": "Interaction Count",
+            "type": "integer"
+          },
+          "is_demo": {
+            "default": false,
+            "description": "Whether selected as a curated demo user",
+            "title": "Is Demo",
+            "type": "boolean"
+          },
+          "persona": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Descriptive taste persona label",
+            "title": "Persona"
+          },
+          "top_categories": {
+            "description": "Top preferred categories",
+            "items": {
+              "type": "string"
+            },
+            "title": "Top Categories",
+            "type": "array"
+          },
+          "user_id": {
+            "description": "User unique identifier",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
+        "title": "UserSummary",
+        "type": "object"
+      },
+      "UsersResponse": {
+        "description": "Response schema for /v1/types/{type}/users.",
+        "properties": {
+          "content_type": {
+            "description": "Content type identifier",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "total": {
+            "description": "Total users matching query",
+            "title": "Total",
+            "type": "integer"
+          },
+          "users": {
+            "description": "List of user profiles",
+            "items": {
+              "$ref": "#/components/schemas/UserSummary"
+            },
+            "title": "Users",
+            "type": "array"
+          }
+        },
+        "required": [
+          "content_type",
+          "total",
+          "users"
+        ],
+        "title": "UsersResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Discovery Engine",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/about": {
+      "get": {
+        "description": "Attribution, dataset citations, and original vs derived transformations.",
+        "operationId": "get_about_v1_about_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AboutResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get About",
+        "tags": [
+          "metadata"
+        ]
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "description": "System health check: reports overall and per-type serving status.",
+        "operationId": "get_health_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Health",
+        "tags": [
+          "metadata"
+        ]
+      }
+    },
+    "/v1/items/search": {
+      "get": {
+        "description": "Execute normalized text search with exact > prefix > word-start > contains ranking.",
+        "operationId": "search_items_v1_items_search_get",
+        "parameters": [
+          {
+            "description": "Content type identifier",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "description": "Content type identifier",
+              "maxLength": 50,
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Normalized search term",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Normalized search term",
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Max search results",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Max search results",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Items",
+        "tags": [
+          "metadata"
+        ]
+      }
+    },
+    "/v1/items/{item_id}": {
+      "get": {
+        "description": "Retrieve complete metadata and details for a single catalogue item.",
+        "operationId": "get_item_detail_v1_items__item_id__get",
+        "parameters": [
+          {
+            "description": "Item unique identifier",
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "description": "Item unique identifier",
+              "maxLength": 100,
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Content type identifier",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "description": "Content type identifier",
+              "maxLength": 50,
+              "title": "Type",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Item Detail",
+        "tags": [
+          "metadata"
+        ]
+      }
+    },
+    "/v1/metrics": {
+      "get": {
+        "description": "Retrieve verified evaluation metrics, cold-start degradation curves, and provenance.",
+        "operationId": "get_metrics_v1_metrics_get",
+        "parameters": [
+          {
+            "description": "Content type identifier",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "description": "Content type identifier",
+              "maxLength": 50,
+              "title": "Type",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Metrics V1 Metrics Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Metrics",
+        "tags": [
+          "metadata"
+        ]
+      }
+    },
+    "/v1/popular": {
+      "get": {
+        "description": "Return top-k overall popular items for content type.",
+        "operationId": "get_popular_v1_popular_get",
+        "parameters": [
+          {
+            "description": "Content type identifier",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "description": "Content type identifier",
+              "maxLength": 50,
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of popular items requested [1, 100]",
+            "in": "query",
+            "name": "k",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "Number of popular items requested [1, 100]",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "K",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PopularResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Popular",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    },
+    "/v1/recommend": {
+      "get": {
+        "description": "Serve personalized recommendations from precomputed topn.parquet when possible, or compute live.",
+        "operationId": "get_recommendations_v1_recommend_get",
+        "parameters": [
+          {
+            "description": "Content type identifier",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "description": "Content type identifier",
+              "maxLength": 50,
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "User unique identifier",
+            "in": "query",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "description": "User unique identifier",
+              "maxLength": 100,
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of recommendations requested",
+            "in": "query",
+            "name": "k",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "Number of recommendations requested",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "K",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Item IDs to explicitly exclude",
+            "in": "query",
+            "name": "exclude",
+            "required": false,
+            "schema": {
+              "description": "Item IDs to explicitly exclude",
+              "items": {
+                "type": "string"
+              },
+              "title": "Exclude",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Recommendations",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    },
+    "/v1/recommend/cold-start": {
+      "post": {
+        "description": "Generate recommendations from hypothetical user history (cold-start).",
+        "operationId": "recommend_cold_start_v1_recommend_cold_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ColdStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColdStartResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recommend Cold Start",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    },
+    "/v1/similar": {
+      "get": {
+        "description": "Return top-k items similar to query item.",
+        "operationId": "get_similar_v1_similar_get",
+        "parameters": [
+          {
+            "description": "Content type identifier",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "description": "Content type identifier",
+              "maxLength": 50,
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Catalogue item identifier to find similar items for",
+            "in": "query",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "description": "Catalogue item identifier to find similar items for",
+              "maxLength": 100,
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of similar items requested [1, 100]",
+            "in": "query",
+            "name": "k",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "Number of similar items requested [1, 100]",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "K",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Similar",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    },
+    "/v1/types": {
+      "get": {
+        "description": "List registered content types with dataset statistics and UI configuration.",
+        "operationId": "get_types_v1_types_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Types",
+        "tags": [
+          "metadata"
+        ]
+      }
+    },
+    "/v1/types/{type}/users": {
+      "get": {
+        "description": "Retrieve users for exploration: diverse demo users appear first, followed by sampled users.",
+        "operationId": "get_users_for_type_v1_types__type__users_get",
+        "parameters": [
+          {
+            "description": "Content type identifier",
+            "in": "path",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "description": "Content type identifier",
+              "maxLength": 50,
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Max users to return",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Max users to return",
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Optional persona filter",
+            "in": "query",
+            "name": "persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 50,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional persona filter",
+              "title": "Persona"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsersResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Users For Type",
+        "tags": [
+          "metadata"
+        ]
+      }
+    },
+    "/v1/users/{user_id}/profile": {
+      "get": {
+        "description": "Retrieve user taste profile: interaction counts, category preferences, and recent history.",
+        "operationId": "get_user_profile_v1_users__user_id__profile_get",
+        "parameters": [
+          {
+            "description": "User unique identifier",
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "description": "User unique identifier",
+              "maxLength": 100,
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Content type identifier",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "description": "Content type identifier",
+              "maxLength": 50,
+              "title": "Type",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get User Profile",
+        "tags": [
+          "users"
+        ]
+      }
+    }
+  }
+}
