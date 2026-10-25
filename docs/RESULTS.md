@@ -10,7 +10,7 @@
 |---|---|---|---|---|---|
 | **Movies** | `1m` | `58be077` | `5611260f` | `42` | Chronological per-user split (80/20) |
 | **Products** | `instruments` | `2c140c1` | `94853c7c` | `42` | Chronological per-user split (budget-capped) |
-| **Articles** | `SYNTHETIC FIXTURE (not MIND)` | `90b281a` | `b9ac2896` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
+| **Articles** | `SYNTHETIC DEMO (not MIND)` | `90b281a` | `b9ac2896` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
 
 ---
 
@@ -20,7 +20,7 @@ Discovery Engine unifies three fundamentally disparate recommendation regimes un
 
 1. **Movies (Collaborative Filtering)**: Evaluated on 1m (999,611 interactions, 1,918 test users). Coverage ratio SAR/Popularity is 5.7x. NDCG@10: 0.0592 [0.0541, 0.0644] vs Popularity 0.0546 [0.0492, 0.0606] (No significant difference (CIs overlap)). Recall@10: 0.0645 [0.0577, 0.0716] vs Popularity 0.0445 [0.0389, 0.0494] (Model better (CIs separate)).
 2. **Products (E-Commerce)**: Evaluated on instruments (10,261 interactions, 1,222 test users). HitRate@10: 0.1309 [0.1105, 0.1514] vs Popularity 0.0802 [0.0646, 0.0949] (Model better (CIs separate)). NDCG@10: 0.0687 [0.0569, 0.0797] vs Popularity 0.0471 [0.0378, 0.0571] (No significant difference (CIs overlap)).
-3. **Articles (Content & Recency)**: Evaluated on SYNTHETIC FIXTURE (not MIND) (9 impressions). Impression AUC: 0.9722 [0.9167, 1.0000] vs Popularity 0.5278 [0.2778, 0.7500] (Model better (CIs separate)). Impression MRR: 1.0000 [1.0000, 1.0000] vs Popularity 0.6296 [0.4444, 0.8148] (Model better (CIs separate)).
+3. **Articles (Content & Recency)**: Evaluated on SYNTHETIC DEMO (not MIND) (9 impressions). Impression AUC: 0.9722 [0.9167, 1.0000] vs Popularity 0.5278 [0.2778, 0.7500] (Model better (CIs separate)). Impression MRR: 1.0000 [1.0000, 1.0000] vs Popularity 0.6296 [0.4444, 0.8148] (Model better (CIs separate)).
 
 ![Cross-Domain Recommendation Performance](figures/ranking_comparison.png)
 
@@ -85,7 +85,7 @@ Evaluated on sparse verified purchase ratings under budget-capped SAR similarity
 ## 3. Articles Pipeline (MIND + TF-IDF Content Model)
 
 > [!WARNING]
-> **SYNTHETIC FIXTURE (not MIND):** These evaluation artifacts were generated using synthetic offline fixture data (`backend/tests/fixtures/mind/`) because real MIND dataset files were unavailable during automated download. **These results are not evidence of real-world quality.** Real benchmark evaluation will be conducted once MIND dataset files are placed in `data/raw/mind/`.
+> **SYNTHETIC DEMO (not MIND):** These evaluation artifacts were generated using synthetic offline fixture data (`backend/tests/fixtures/mind/`) because real MIND dataset files were unavailable during automated download. **These results are not evidence of real-world quality.** Real benchmark evaluation will be conducted once MIND dataset files are placed in `data/raw/mind/`.
 
 Evaluated using a rigorous **Dual-Protocol Architecture** tailored for news consumption:
 
@@ -188,7 +188,7 @@ if and only if the model's lower confidence bound strictly exceeds popularity's 
 2. **Products (instruments, N=1,222 test users):**
    - **Statistically Significant Advantage (CIs separate):** RECALL@10 (0.1274 [0.1095, 0.1455] vs Pop 0.0786 [0.0651, 0.0948]), HIT_RATE@10 (0.1309 [0.1105, 0.1514] vs Pop 0.0802 [0.0646, 0.0949]), PRECISION@10 (0.0132 [0.0114, 0.0151] vs Pop 0.0081 [0.0066, 0.0097]).
    - **No Significant Difference (CIs overlap):** NDCG@10 (0.0687 [0.0569, 0.0797] vs Pop 0.0471 [0.0378, 0.0571]).
-3. **Articles (SYNTHETIC FIXTURE (not MIND), N=9 impressions):**
+3. **Articles (SYNTHETIC DEMO (not MIND), N=9 impressions):**
    - **Impression Ranking Statistically Significant Advantage (CIs separate):** AUC (0.9722 [0.9167, 1.0000] vs Pop 0.5278 [0.2778, 0.7500]), MRR (1.0000 [1.0000, 1.0000] vs Pop 0.6296 [0.4444, 0.8148]), NDCG@5 (1.0000 [1.0000, 1.0000] vs Pop 0.7249 [0.5873, 0.8624]), NDCG@10 (1.0000 [1.0000, 1.0000] vs Pop 0.7249 [0.5873, 0.8624]).
 
 ### Known Limitations & Failure Modes

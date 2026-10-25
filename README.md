@@ -45,7 +45,10 @@ discovery-engine/
 |------|---------|-------|--------|
 | Movies | MovieLens | SAR | Ratings (≥4 positive) |
 | Products | Amazon Reviews | SAR | Ratings/reviews |
-| Articles | MIND | TF-IDF content model | Clicks |
+| Articles | SYNTHETIC DEMO (MIND deferred) | TF-IDF content model | Clicks |
+
+> [!NOTE]
+> **Articles Pipeline (SYNTHETIC DEMO):** Articles is currently executed as a **SYNTHETIC DEMO** using a local offline fixture (`backend/tests/fixtures/mind/`) because the MIND dataset requires manual download. Its evaluation metrics are for pipeline validation and architectural demonstration only, not real-world empirical evidence. Real-world benchmark evidence in this project comes strictly from **Movies (MovieLens 1M)** and **Products (Amazon Video Games)**.
 
 ## Dataset Citations
 

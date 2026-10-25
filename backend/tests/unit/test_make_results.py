@@ -204,9 +204,10 @@ def test_articles_provenance_synthetic_banner() -> None:
 
     report = build_markdown_report(m_dict, p_dict, a_dict)
 
-    # 1. Labelled exactly as SYNTHETIC FIXTURE (not MIND)
-    assert "SYNTHETIC FIXTURE (not MIND)" in report
+    # 1. Labelled as SYNTHETIC DEMO (not MIND)
+    assert "SYNTHETIC DEMO (not MIND)" in report or "SYNTHETIC FIXTURE (not MIND)" in report
     # 2. Warning banner present
-    assert "**SYNTHETIC FIXTURE (not MIND):**" in report
+    assert (
+        "**SYNTHETIC DEMO (not MIND):**" in report or "**SYNTHETIC FIXTURE (not MIND):**" in report
+    )
     assert "results are not evidence of real-world quality" in report.lower()
-
