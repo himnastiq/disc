@@ -169,7 +169,7 @@ class TfidfProfileModel(RecommenderModel):
         params = self.spec.model.params
         max_features = int(params.get("max_features", 10000))
         min_df_cfg = params.get("min_df", 2)
-        min_df = 1 if isinstance(min_df_cfg, int) and min_df_cfg > len(train_texts) else min_df_cfg
+        min_df = 1 if isinstance(min_df_cfg, int) and min_df_cfg >= len(train_texts) else min_df_cfg
 
         max_df_cfg = params.get("max_df", 0.95)
         if len(train_texts) <= 2:
@@ -184,7 +184,17 @@ class TfidfProfileModel(RecommenderModel):
             stop_words="english",
             norm="l2",
         )
-        self.vectorizer.fit(train_texts)
+        try:
+            self.vectorizer.fit(train_texts)
+        except ValueError:
+            # Defensive fallback if pruning removes all features on small/disjoint/multilingual corpora
+            self.vectorizer = TfidfVectorizer(
+                max_features=max_features,
+                min_df=1,
+                max_df=1.0,
+                norm="l2",
+            )
+            self.vectorizer.fit(train_texts)
 
         # 4. Transform all catalogue items using the fitted training vocabulary
         all_texts = [

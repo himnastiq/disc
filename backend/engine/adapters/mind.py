@@ -82,6 +82,12 @@ def parse_news_line(line: str) -> dict[str, Any] | None:
     abstract = parts[4].strip() if len(parts) > 4 else ""
     url = parts[5].strip() if len(parts) > 5 else None
 
+    # Handle shifted columns where abstract was omitted and url was placed at index 4
+    if abstract.startswith("http://") or abstract.startswith("https://"):
+        if url is None:
+            url = abstract
+        abstract = ""
+
     # Categories list: [category, subcategory] excluding empty strings
     cats = [c for c in [category, subcategory] if c and c.strip()]
     if not cats:
@@ -184,14 +190,13 @@ class MindArticlesAdapter(DatasetAdapter):
         """Find news.tsv and behaviors.tsv files under raw_dir."""
         result: dict[str, list[Path]] = {"news": [], "behaviors": []}
 
-        # Check candidate locations
-        candidate_news = list(raw_dir.rglob("news*.tsv")) + list(raw_dir.rglob("*news*.tsv"))
-        candidate_behaviors = list(raw_dir.rglob("behaviors*.tsv")) + list(
+        found_news = set(raw_dir.rglob("news*.tsv")) | set(raw_dir.rglob("*news*.tsv"))
+        found_behaviors = set(raw_dir.rglob("behaviors*.tsv")) | set(
             raw_dir.rglob("*behaviors*.tsv")
         )
 
-        result["news"] = [p for p in candidate_news if p.is_file()]
-        result["behaviors"] = [p for p in candidate_behaviors if p.is_file()]
+        result["news"] = sorted(p for p in found_news if p.is_file())
+        result["behaviors"] = sorted(p for p in found_behaviors if p.is_file())
         return result
 
     def load_raw(self, raw_dir: Path) -> dict[str, Any]:

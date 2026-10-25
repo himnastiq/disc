@@ -142,3 +142,75 @@ def test_empty_dataframe_metrics_graceful() -> None:
     assert novelty(empty_df, empty_df, k=5) == 0.0
     assert intra_list_diversity(empty_df, {}, k=5) == 0.0
     assert personalisation_score(empty_df, k=5) == 0.0
+
+
+def test_ndcg_unfiltered_true_users_invariant() -> None:
+    """Verify NDCG@K is invariant to presence of non-evaluated users in true_df (FIX-16)."""
+    # 5 evaluated users with predictions (including rank column)
+    pred_rows = []
+    for u in range(1, 6):
+        uid = f"u{u}"
+        for rank, i in enumerate(range(1, 11), start=1):
+            pred_rows.append(
+                {"user_id": uid, "item_id": f"i{i}", "score": 10.0 - rank, "rank": rank}
+            )
+    preds_df = pd.DataFrame(pred_rows)
+
+    # Ground truth for evaluated users: u1 has hit on i1 (rank 1), u2 has hit on i2 (rank 2), others have no hits
+    matched_true = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i1", "signal": 5.0},
+            {"user_id": "u2", "item_id": "i2", "signal": 4.0},
+            {"user_id": "u3", "item_id": "i99", "signal": 5.0},
+            {"user_id": "u4", "item_id": "i98", "signal": 5.0},
+            {"user_id": "u5", "item_id": "i97", "signal": 5.0},
+        ]
+    )
+
+    # True with 500 extra users who were never evaluated in preds_df
+    extra_true = pd.DataFrame(
+        [
+            {"user_id": f"extra_u{i}", "item_id": f"extra_item_{i}", "signal": 5.0}
+            for i in range(500)
+        ]
+    )
+    full_true = pd.concat([matched_true, extra_true], ignore_index=True)
+
+    ndcg_matched = ndcg(matched_true, preds_df, k=10)
+    ndcg_full = ndcg(full_true, preds_df, k=10)
+
+    # Invariant: extra non-evaluated users must not dilute NDCG
+    assert ndcg_matched > 0.0
+    assert ndcg_full == pytest.approx(ndcg_matched, abs=1e-6)
+
+
+def test_ndcg_matches_plain_numpy_independent_formula() -> None:
+    """Verify NDCG matches plain numpy calculation using standard DCG/IDCG formula (FIX-16)."""
+    import math
+
+    # u1: hit at rank 1 (i1) out of 2 relevant -> DCG = 1/log2(2) = 1.0; IDCG = 1/log2(2) + 1/log2(3) = 1.63092975
+    # u2: hit at rank 3 (i3) out of 1 relevant -> DCG = 1/log2(4) = 0.5; IDCG = 1/log2(2) = 1.0
+    preds_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i1", "score": 3.0, "rank": 1},
+            {"user_id": "u1", "item_id": "i2", "score": 2.0, "rank": 2},
+            {"user_id": "u1", "item_id": "i9", "score": 1.0, "rank": 3},
+            {"user_id": "u2", "item_id": "i8", "score": 3.0, "rank": 1},
+            {"user_id": "u2", "item_id": "i7", "score": 2.0, "rank": 2},
+            {"user_id": "u2", "item_id": "i3", "score": 1.0, "rank": 3},
+        ]
+    )
+    true_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i1", "signal": 5.0},
+            {"user_id": "u1", "item_id": "i5", "signal": 4.0},
+            {"user_id": "u2", "item_id": "i3", "signal": 5.0},
+        ]
+    )
+
+    expected_u1 = (1.0 / math.log2(2)) / (1.0 / math.log2(2) + 1.0 / math.log2(3))
+    expected_u2 = (1.0 / math.log2(4)) / (1.0 / math.log2(2))
+    expected_mean = (expected_u1 + expected_u2) / 2.0
+
+    calculated = ndcg(true_df, preds_df, k=10)
+    assert calculated == pytest.approx(expected_mean, rel=1e-4)
