@@ -147,20 +147,21 @@ Measured using `tools/measure_sparsification.py` on identical chronological trai
 | **100** | 0.0858 | **0.0962** | 3.92 MB | 341,500 | 765.6 MB | 102.7 MB | 16.85 s |
 | **Full** | 0.0868 | 0.0910 | 112.89 MB | 9,863,072 | 765.6 MB | 211.9 MB | 21.62 s |
 
-**Key Findings:**
-1. **Regularization through Pruning:** On MovieLens 1M, $K=50$ achieves the highest validation ranking quality (NDCG@10 = 0.0897 vs 0.0868 for the full matrix, and Recall@10 = 0.0946 vs 0.0910). Pruning low-weight long-tail similarities eliminates noisy, spurious co-occurrences.
-2. **Massive Memory Savings:** For MovieLens 1M, sparsification with $K=50$ reduces the item similarity matrix footprint from 112.89 MB down to 1.97 MB — a **98.3% (57x) memory reduction**. Peak serving memory is cut in half (from 211.9 MB to 100.6 MB).
-3. **Serving Throughput:** Scoring users via sparse vector-matrix multiplication with $K=50$ is nearly **2x faster** than full-matrix dot products (11.30 s vs 21.62 s for 300 users).
-4. **Item Budget Cap Rationale:** While MovieLens datasets have a few thousand items, catalog sizes in e-commerce or news can reach hundreds of thousands. Capping `max_items_in_similarity` (defaulting to 50,000 top items by training popularity) guarantees that similarity storage remains bounded by $O(M_{\text{max}} \cdot K)$ non-zeros regardless of total long-tail item catalog size.
+**Key Findings & Limitations (FIX-21):**
+1. **Regularization through Pruning on 1M:** On MovieLens 1M, $K=50$ achieves competitive validation ranking quality (NDCG@10 = 0.0897 vs 0.0868 for the full matrix, and Recall@10 = 0.0946 vs 0.0910). Pruning low-weight long-tail similarities eliminates noisy, spurious co-occurrences.
+2. **K=50 is Not Better on 100K:** On smaller datasets such as MovieLens 100K, $K=50$ is *not* superior in ranking quality to $K=20$ or Full: $K=20$ achieved NDCG@10 of 0.1205 and Full achieved Recall@10 of 0.1547, whereas $K=50$ achieved NDCG 0.1140 and Recall 0.1378.
+3. **Serving Latency is Noisy:** Latency differences on small sample batches (e.g. 7.34 s vs 9.02 s for 300 users) are modest and heavily subject to CPU and OS scheduling noise. Claims of clean "2x speedup" are overstated for small matrices.
+4. **Massive Memory Savings Justification:** The true and primary justification for $K=50$ sparsification is **computational tractability and memory scaling**: for MovieLens 1M, sparsification reduces similarity storage from 112.89 MB down to 1.97 MB (a **98.3% / 57x memory reduction**), cutting peak serving memory in half (from 211.9 MB to 100.6 MB) and guaranteeing bounded memory on large item sets.
+5. **Item Budget Cap Rationale:** Capping `max_items_in_similarity` guarantees that similarity storage remains bounded by $O(M_{\text{max}} \cdot K)$ non-zeros regardless of total long-tail item catalog size.
 
 **Decision:**
-- Select $K = 50$ as the primary operating setting for SAR serving, backed by superior NDCG@10 on 1M, a 57x smaller similarity footprint, and 2x lower serving latency.
+- Select $K = 50$ as the primary operating setting for SAR serving, justified by a 57x smaller similarity footprint and bounded memory on mid-to-large catalogs, while recognizing that $K=50$ does not universally dominate ranking quality on smaller datasets.
 - Retain `top_neighbors_per_item` as an explicit tuned parameter in validation hyperparameter sweeps (P3.8), exploring $K \in \{20, 50, 100\}$.
 - Maintain the item budget cap (`max_items_in_similarity: 50000`) to guarantee an upper memory bound on large catalogs.
 
 **Consequences:** High-quality, fast, and lightweight serving artifacts without memory explosion on larger datasets.
 
-**Related tasks:** P3.5, P3.6, P3.8, FIX-14, FIX-15
+**Related tasks:** P3.5, P3.6, P3.8, FIX-14, FIX-15, FIX-21
 
 ## D-011: MovieLens 1M SAR evaluation and baseline comparison (2026-10-25)
 
@@ -171,26 +172,23 @@ Measured using `tools/measure_sparsification.py` on identical chronological trai
 - **Split:** Chronological per-user split (80% train, 10% valid, 10% test). R2 leakage checks passed with 0 test/valid timestamps preceding train max.
 - **Validation-only Tuning (P3.8):** 10 hyperparameter trials evaluated strictly on the validation split. Best configuration selected by validation NDCG@10 (0.0869): Jaccard similarity, time-decay enabled (half-life 30 days), positive threshold 4.0, top-$K$ neighbor sparsification 50. Test split was strictly unread during selection.
 
-**Final Test Split Results ($N=200$ test users, candidate protocol excluding seen train items):**
-| Metric | Random | Popularity | SAR (Tuned) | SAR vs Popularity |
+**Final Test Split Results ($N=1,918$ evaluated test users out of 2,000 sampled common users, 500-resample 95% bootstrap CIs):**
+| Metric | Random | Popularity (95% CI) | SAR Tuned (95% CI) | CIs Separate? |
 |---|---|---|---|---|
-| **HitRate@10** | 0.0260 | 0.2917 | **0.3177** | **+8.9%** |
-| **NDCG@10** | 0.0038 | 0.0722 | **0.0725** | **+0.4%** |
-| **Recall@10** | 0.0028 | 0.0505 | **0.0694** | **+37.4%** |
-| **Precision@10** | 0.0026 | 0.0568 | 0.0516 | -9.2% |
-| **Coverage@10** | 0.3984 | 0.0221 | **0.0780** | **+253% (3.5x)** |
-| **Novelty@10** | 13.89 | 8.49 | **9.13** | **+7.5%** |
-| **Diversity@10** | 0.8259 | 0.7647 | 0.7044 | -7.9% |
-| **Personalisation@10**| 0.9985 | 0.6931 | **0.9323** | **+34.5%** |
-| **HitRate@20** | 0.0417 | 0.4010 | **0.4583** | **+14.3%** |
-| **NDCG@20** | 0.0042 | 0.0796 | **0.0887** | **+11.4%** |
-| **Recall@20** | 0.0041 | 0.0875 | **0.1231** | **+40.7%** |
+| **Recall@10** | 0.0033 | 0.04452 [0.03894, 0.04943] | **0.06451 [0.05770, 0.07156]** | **Yes (SAR > Pop, p < 0.05)** |
+| **NDCG@10** | 0.0042 | 0.05464 [0.04923, 0.06063] | 0.05922 [0.05405, 0.06441] | No (Overlap) |
+| **HitRate@10** | 0.0329 | 0.24870 [0.22888, 0.26774] | 0.28259 [0.26250, 0.30111] | No (Overlap) |
+| **Precision@10**| 0.0034 | 0.04181 [0.03803, 0.04594] | 0.04135 [0.03806, 0.04471] | No (Overlap) |
+| **Coverage@10** | 0.9948 | 0.0288 | **0.1638** | **+469% (5.7x)** |
+| **Novelty@10** | 13.97 | 8.48 | **9.12** | **+7.5%** |
+| **Diversity@10** | 0.8239 | 0.7662 | 0.6983 | -8.9% |
+| **Personalisation@10**| 0.9987 | 0.6712 | **0.9366** | **+39.5%** |
 
-**Sanity Checks and Audit Findings (R4 & FIX-16 Audit):**
-1. **NDCG Metric Validity Audit (FIX-16):** An independent plain-NumPy audit on 5 real MovieLens test users verified that binary NDCG@10 (0.1568) and graded NDCG@10 (0.1669) matched `engine.evaluation.metrics.ndcg` exactly. The prior ~36x gap between validation NDCG (~0.087) and test NDCG (~0.0024) was caused by an outer-merge bug in `ndcg_at_k`: `df_dcg` outer-merged against the full ground truth dataset (~5,785 users) rather than the evaluated sample of 200 users, computing zero DCG for the 5,585 un-evaluated users and averaging over all 5,785 users in `.mean()`. Following the fix (restricting `rating_true` to `common_users` and safely dropping any `"rank"` column from predictions), test NDCG@10 is 0.0725 for SAR, 0.0722 for Popularity, and 0.0038 for Random, in full harmony with validation split performance (0.0869).
-2. **Sanity Ordering Holds:** SAR beats Popularity across NDCG, HitRate, and Recall at K=10 and K=20 (`model_beats_popularity: true`); Popularity soundly beats Random across all ranking metrics (`popularity_beats_random: true`).
-3. **Personalisation & Diversity:** Popularity offers static recommendations with low personalization (0.6931) and narrow coverage (2.2% of catalogue). In contrast, SAR achieves 0.9323 personalization and explores 3.5x more catalogue items (7.8% at K=10, 11.1% at K=20) while sustaining substantially higher recall (+37.4% at K=10, +40.7% at K=20).
-4. **Cold-Start Degradation Curve (P3.10):** Measured across history sizes $\{0, 1, 2, 3, 5, 10, 20\}$ likes. Recall@10 increases monotonically from 0.0193 at 0 likes (pure popular fallback) to 0.0490 at 20 likes (+154% gain), and NDCG@10 increases from 0.0172 to 0.0381 (+122% gain), proving that SAR adapts dynamically to incremental user signals.
+**Sanity Checks and Audit Findings (R4, FIX-16, FIX-17, FIX-18, FIX-21):**
+1. **NDCG Metric Validity Audit (FIX-16):** An independent plain-NumPy audit on 5 real MovieLens test users verified that binary NDCG@10 (0.1568) and graded NDCG@10 (0.1669) matched `engine.evaluation.metrics.ndcg` exactly. The prior ~36x gap between validation NDCG (~0.087) and test NDCG (~0.0024) was caused by an outer-merge bug in `ndcg_at_k`: `df_dcg` outer-merged against the full ground truth dataset (~5,785 users) rather than the evaluated sample of 200 users, computing zero DCG for the 5,585 un-evaluated users and averaging over all 5,785 users in `.mean()`. Following the fix (restricting `rating_true` to `common_users` and safely dropping any `"rank"` column from predictions), test NDCG@10 is 0.0592 for SAR and 0.0546 for Popularity on the 2,000-user sample.
+2. **Corrected Baseline Comparison & Statistical Honesty (FIX-17, FIX-21):** With $N=1,918$ evaluated test users and 500 bootstrap resamples, SAR strictly separates from Popularity on **Recall@10** (lower bound 0.05770 > upper bound 0.04943). However, confidence intervals overlap on **NDCG@10** and **HitRate@10**. Prior claims that SAR 'decisively beats' Popularity across all ranking metrics were overclaims and are retracted. Popularity is a formidable baseline on MovieLens; SAR's genuine benefits are statistically separated Recall (+44.9%), vastly higher personalization (0.9366 vs 0.6712), and 5.7x wider catalog exploration (16.4% vs 2.9% coverage).
+3. **Personalisation & Diversity:** Popularity offers static recommendations with low personalization (0.6712) and narrow coverage (2.9% of catalogue). In contrast, SAR achieves 0.9366 personalization and explores 5.7x more catalogue items (16.4% at K=10).
+4. **Cold-Start Degradation Curve (P3.10 & FIX-18):** At 0 likes, when seen training items are excluded per the evaluation protocol (`allow_repeat: false`), SAR recommendation is mathematically and empirically identical to the Popularity baseline on the same users (Recall@10 = 0.0465, HitRate@10 = 0.2600, NDCG@10 = 0.0642 on $N=50$ users). As history increases from 0 to 20 likes, Recall@10 increases from 0.0465 to 0.0600 (+29.0%) and NDCG@10 increases from 0.0642 to 0.0786 (+22.4%), demonstrating dynamic adaptation.
 5. **Shuffled-Label Sanity Verification (FIX-19):** Evaluated on the exact same N=500 real MovieLens test users across Real SAR, Shuffled SAR (trained on permuted user-item training interactions), and Random baseline:
    - **NDCG@10:** Real = 0.05585, Shuffled = 0.01740, Random = 0.00307 (3.2x collapse towards Random)
    - **HitRate@10:** Real = 0.29498, Shuffled = 0.11506, Random = 0.02929 (2.6x collapse towards Random)

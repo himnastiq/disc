@@ -471,7 +471,7 @@ Each item must keep the API free of deep-learning imports (training offline, art
   - FIX-14: Created `tools/measure_sparsification.py` benchmarking $K \in \{20, 50, 100, \text{full}\}$ on ML-100K and ML-1M; documented empirical findings and item budget cap evidence in `docs/DECISIONS.md` under `D-010`.
   - FIX-15: Implemented chunked row processing (chunk size 1,000) in `sparsify_similarity` to bound peak memory to sparse output size; added bit-for-bit equality unit test in `test_sar.py`.
   - P3.8: Built `backend/engine/tuning.py` (`tune_sar_on_validation`) with hyperparameter grid search strictly evaluated on the validation split; logged trials with `"split_used": "validation"` to `artifacts/movies/tuning.json`; tested structural isolation of test split and shuffled-label degradation sanity.
-  - P3.9: Executed full pipeline on MovieLens 1M (`python -m engine.train --type movies`); evaluated SAR against Popularity and Random baselines under identical candidate protocol (excluding train items); confirmed SAR decisively beats Popularity at $K=10$ (NDCG 0.00241 vs 0.00239, Recall 0.0694 vs 0.0505, HitRate 0.3177 vs 0.2917, Personalisation 0.9323 vs 0.6931); recorded findings in `docs/DECISIONS.md` under `D-011`.
+  - P3.9: Executed full pipeline on MovieLens 1M (`python -m engine.train --type movies`); evaluated SAR against Popularity and Random baselines under identical candidate protocol (excluding train items); SAR strictly separates from Popularity on Recall@10 (0.0645 vs 0.0445, p < 0.05) with 5.7x wider coverage and higher personalisation (0.9366 vs 0.6712), while NDCG@10 and HitRate@10 CIs overlap; prior claim of 'decisively beats' corrected in D-011 and Session Log (FIX-21); recorded findings in `docs/DECISIONS.md` under `D-011`.
   - P3.10: Validated cold-start degradation curve in `metrics.json` across history sizes $\{0, 1, 2, 3, 5, 10, 20\}$ likes; created `backend/tests/unit/test_cold_start_curve.py`.
   - P3.11: Implemented enriched user statistics, category preferences, timestamps, and transparent persona labels (`heavy`, `niche`, `casual`, `mainstream`) in `compute_user_stats_and_personas`; created `backend/engine/demo_users.py` and `tools/select_demo_users.py` selecting 8 diverse demo users with verified pairwise Jaccard < 0.5; generated `demo_users.json` and `users.parquet`.
   - P3.12: Created golden-file regression test `backend/tests/integration/test_movies_golden.py` using `backend/tests/fixtures/golden_movies_100k.json`, validating top-5 recommendations and scores for fixed users ('1', '2', '3') and key metrics within numerical tolerance.
@@ -514,7 +514,7 @@ Each item must keep the API free of deep-learning imports (training offline, art
   - R1 (Data validity): Real products data report valid (10,261 interactions, 1,429 users, 900 items, 0.992022 sparsity) ✓
   - R2 (No leakage): Chronological split verified on real Amazon Instruments data; temporal boundaries strictly preserved ✓
   - R3 (Model invariants): Monotonic score order, no duplicate items, seen items strictly excluded, string IDs preserved ✓
-  - R4 (Evaluation validity): Identical candidate protocol; SAR decisively beats Popularity and Random ✓
+  - R4 (Evaluation validity): Identical candidate protocol; SAR significantly improves Recall and personalization over Popularity, and Popularity soundly beats Random ✓
   - R5 (Cold start): Degrades predictably from 0 to 5 likes; string ASIN histories normalized and scored ✓
   - R6 (Reproducibility): Cryptographic SHA-256 manifest verified on disk ✓
   - Core Unchanged: 0 core engine files modified across Phase 4 ✓
@@ -815,6 +815,22 @@ HIT_RATE@10: SAR=0.08879 [0.07549, 0.10305] | POP=0.03824 [0.02916, 0.04796] | R
 ```
 - **Updates Applied:**
   - `docs/DECISIONS.md`: updated D-013 with real measured peak memory (1.55 GB training, 56.4 MB serving), $O(N^2)$ scaling analysis, and Video Games headline evaluation showing all CIs strictly separate.
+
+### Session 13: FIX-21 Correct overclaims in D-010, D-011, and Session 7 log
+- **Requirement:** Correct overclaims in D-010 ($K=50$ is not better on 100K; latency is noisy), D-011 and Session 7 log ("decisively beats").
+- **Corrections Applied:**
+  1. `docs/DECISIONS.md` under `D-010`:
+     - Explicitly stated that on MovieLens 100K, $K=50$ is not better than Full or $K=20$ (NDCG 0.1140 vs 0.1205/0.1201; Recall 0.1378 vs 0.1478/0.1547).
+     - Clarified that serving latency differences on small matrices are modest (7.34s vs 9.02s over 300 users) and subject to system noise.
+     - Documented that $K=50$ sparsification is justified by bounded memory and scaling on mid-to-large catalogs (57x footprint reduction on 1M), not universal ranking superiority.
+  2. `docs/DECISIONS.md` under `D-011`:
+     - Replaced the prior claim that SAR "decisively beats" Popularity with honest reporting across $N=1,918$ test users with 500 bootstrap resamples.
+     - Confirmed that SAR strictly separates from Popularity on Recall@10 (0.06451 [0.05770, 0.07156] vs 0.04452 [0.03894, 0.04943], p < 0.05), but confidence intervals overlap on NDCG@10 (0.05922 [0.05405, 0.06441] vs 0.05464 [0.04923, 0.06063]) and HitRate@10 (0.28259 [0.26250, 0.30111] vs 0.24870 [0.22888, 0.26774]).
+     - Emphasized SAR's true differentiators: +44.9% higher recall, 0.9366 vs 0.6712 personalization, and 5.7x greater catalog exploration (16.4% vs 2.9% coverage).
+  3. `IMPLEMENTATION_PLAN.md` (Session 6 and Session 7):
+     - Corrected Session 6 P3.9 log entry from "confirmed SAR decisively beats Popularity" to accurate CI description.
+     - Corrected Session 7 Phase 4 Gate result from "SAR decisively beats Popularity" to "SAR significantly improves Recall and personalization over Popularity, and Popularity soundly beats Random".
+
 
 
 
