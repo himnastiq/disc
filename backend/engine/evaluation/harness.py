@@ -97,6 +97,7 @@ class EvaluationHarness:
         output_path: Path | None = None,
         max_test_users: int = 200,
         cold_start_sample_users: int = 50,
+        split_data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] | None = None,
     ) -> dict[str, Any]:
         """Execute evaluation end-to-end and generate metrics dictionary.
 
@@ -106,6 +107,7 @@ class EvaluationHarness:
             output_path: Optional path to write output metrics.json.
             max_test_users: Maximum number of test users to evaluate for top-k.
             cold_start_sample_users: Sample size of users for cold-start history curves.
+            split_data: Optional pre-computed (train_df, valid_df, test_df) tuple.
 
         Returns:
             dict[str, Any]: Canonical metrics payload conforming to architecture spec.
@@ -117,17 +119,20 @@ class EvaluationHarness:
             positive_threshold=self.spec.signal.positive_threshold,
         )
 
-        # 1. Run configured split
-        split_ratio = self.spec.split.ratio
-        test_ratio = (1.0 - split_ratio) / 2.0
-        ratios = (split_ratio, test_ratio, test_ratio)
+        # 1. Run configured split or use pre-split data
+        if split_data is not None:
+            train_df, _valid_df, test_df = split_data
+        else:
+            split_ratio = self.spec.split.ratio
+            test_ratio = (1.0 - split_ratio) / 2.0
+            ratios = (split_ratio, test_ratio, test_ratio)
 
-        train_df, _valid_df, test_df = split_interactions(
-            interactions,
-            strategy=self.spec.split.strategy,
-            ratios=ratios,
-            run_leakage_check=True,
-        )
+            train_df, _valid_df, test_df = split_interactions(
+                interactions,
+                strategy=self.spec.split.strategy,
+                ratios=ratios,
+                run_leakage_check=True,
+            )
 
         # 2. Fit models on training split
         for model in self.models:

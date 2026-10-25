@@ -18,9 +18,12 @@ from engine.adapters import toy as _toy_adapter  # noqa: F401
 from engine.artifacts import save_artifacts
 from engine.config import load_config
 from engine.evaluation.harness import EvaluationHarness
+from engine.evaluation.splits import split_interactions
 from engine.logging_utils import configure_logging, get_logger, log_event
 from engine.models import sar as _sar_model  # noqa: F401
+from engine.models.baselines import PopularityModel, RandomModel
 from engine.registry import build_model, get_adapter
+from engine.tuning import tune_sar_on_validation
 
 if TYPE_CHECKING:
     from engine.models.base import RecommenderModel
@@ -153,32 +156,79 @@ def run_pipeline(
         sparsity=report.sparsity,
     )
 
-    # 3. Build primary model and baselines
-    model = build_model(spec)
+    # 3. Split interactions into train, valid, test
+    split_ratio = spec.split.ratio
+    test_ratio = (1.0 - split_ratio) / 2.0
+    ratios = (split_ratio, test_ratio, test_ratio)
+    train_df, valid_df, test_df = split_interactions(
+        interactions,
+        strategy=spec.split.strategy,
+        ratios=ratios,
+        run_leakage_check=True,
+    )
+
+    extra_files: dict[str, Any] = {"data_report.json": report.model_dump()}
+
+    # 4. Hyperparameter search on validation split (SAR models)
+    if spec.model.name == "sar":
+        tuning_path = target_artifacts_dir / "tuning.json"
+        log_event(logger, "tuning_begin", content_type=content_type)
+        tuning_results = tune_sar_on_validation(
+            spec=spec,
+            train_df=train_df,
+            valid_df=valid_df,
+            items=items,
+            max_eval_users=50 if fast else 200,
+            output_path=tuning_path,
+        )
+        best_p = tuning_results["best_params"]
+        spec.model.params["similarity_type"] = best_p["similarity_type"]
+        spec.model.params["timedecay_formula"] = best_p["timedecay_formula"]
+        if best_p.get("time_decay_coefficient") is not None:
+            spec.model.params["time_decay_coefficient"] = best_p["time_decay_coefficient"]
+        spec.signal.positive_threshold = float(best_p["positive_threshold"])
+        spec.serving.top_neighbors_per_item = int(best_p["top_neighbors_per_item"])
+        extra_files["tuning.json"] = tuning_results
+
+    # 5. Build primary model and evaluate against baselines
+    primary_model = build_model(spec)
     log_event(logger, "model_built", model_name=spec.model.name)
 
-    # 4. Run evaluation harness
-    harness = EvaluationHarness(spec, models=[model])
+    eval_models = [PopularityModel(spec), RandomModel(spec)]
+    if spec.model.name not in ("popularity", "random"):
+        eval_models.append(primary_model)
+    else:
+        eval_models = (
+            [primary_model, RandomModel(spec)]
+            if spec.model.name == "popularity"
+            else [PopularityModel(spec), primary_model]
+        )
+
+    # 6. Run evaluation harness across baselines and primary model
+    harness = EvaluationHarness(spec, models=eval_models)
     max_test = 50 if fast else 200
     metrics = harness.run(
         interactions=interactions,
         items=items,
         max_test_users=max_test,
         cold_start_sample_users=20 if fast else 50,
+        split_data=(train_df, valid_df, test_df),
     )
 
-    # 5. Precompute personas and demo users
+    # 7. Precompute personas and demo users
     users_df, demo_users = compute_user_stats_and_personas(interactions)
 
-    # 6. Precompute top-N recommendations
+    # 8. Precompute top-N recommendations using primary model
     known_users = list(users_df["user_id"])
-    topn_df = precompute_topn_for_users(model, users=known_users[: 100 if fast else 500], k=50)
+    topn_df = precompute_topn_for_users(
+        primary_model, users=known_users[: 100 if fast else 500], k=50
+    )
 
-    # 7. Save model parameters to model/ subfolder
+    # 9. Save model parameters to model/ subfolder
     model_dir = target_artifacts_dir / "model"
-    model.save(model_dir)
+    primary_model.save(model_dir)
 
-    # 8. Save artifacts and generate cryptographic manifest
+    # 10. Save artifacts and generate cryptographic manifest
     manifest_p = save_artifacts(
         artifact_dir=target_artifacts_dir,
         spec=spec,
@@ -188,7 +238,7 @@ def run_pipeline(
         metrics=metrics,
         demo_users=demo_users,
         topn=topn_df,
-        extra_files={"data_report.json": report.model_dump()},
+        extra_files=extra_files,
     )
 
     log_event(logger, "artifacts_saved", manifest_path=str(manifest_p))
