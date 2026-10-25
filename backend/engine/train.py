@@ -83,7 +83,14 @@ def compute_user_stats_and_personas(
             }
         )
 
-    return pd.DataFrame(user_rows)
+    users_df = pd.DataFrame(user_rows)
+    try:
+        users_df = users_df.sort_values("user_id", key=lambda s: s.astype(int)).reset_index(
+            drop=True
+        )
+    except (ValueError, TypeError):
+        users_df = users_df.sort_values("user_id").reset_index(drop=True)
+    return users_df
 
 
 def precompute_topn_for_users(

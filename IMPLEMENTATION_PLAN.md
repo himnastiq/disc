@@ -36,7 +36,7 @@
 | 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
-| 3 | Movies pipeline (MovieLens + SAR) | 11 | 0 | 0 | 13 | 84% |
+| 3 | Movies pipeline (MovieLens + SAR) | 12 | 0 | 0 | 13 | 92% |
 | 4 | Products pipeline (Amazon + SAR) | 0 | 0 | 0 | 8 | 0% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **44** | | | **129** | **34%** |
+| | **Overall** | **45** | | | **129** | **34%** |
 
-`[######--------------] 34%  (44/129 tasks)`
+`[######--------------] 34%  (45/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -177,7 +177,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P3.9** Train the final model (`make train TYPE=movies`), evaluate against Random and Popularity, write `metrics.json`. Apply R4: report sanity ordering and extra metrics (coverage, novelty, diversity, personalisation). If the model does not beat popularity, investigate and document honestly. *Acceptance:* metrics file valid; findings recorded in `docs/DECISIONS.md`.
 - [x] **P3.10** Cold-start curve for sizes in config (0 to 20 likes) using the harness. Report the curve and any non-monotonic points. *Acceptance:* curve stored in `metrics.json`.
 - [x] **P3.11** Precompute `topn.parquet` (top-50 per known user), `users.parquet` (interaction counts, top categories, first/last timestamps, persona label such as heavy/light/niche/mainstream computed from data), and `items.parquet`. Run `tools/select_demo_users.py` to choose about 8 demo users with diverse tastes (seeded), saved to `demo_users.json` with persona labels. *Acceptance:* demo users produce visibly different top-10 lists (pairwise Jaccard below the configured threshold).
-- [ ] **P3.12** Golden-file regression test on the 100K `--fast` pipeline: top-5 for 3 fixed users and key metrics compared with stored values within tolerance. *Acceptance:* test in CI.
+- [x] **P3.12** Golden-file regression test on the 100K `--fast` pipeline: top-5 for 3 fixed users and key metrics compared with stored values within tolerance. *Acceptance:* test in CI.
 - [ ] **P3.13** Phase 3 Gate and "break your own work" ritual (include: popularity computed from train only; no test items in similarity; reasons only reference history items; seen items never recommended).
 
 ---
