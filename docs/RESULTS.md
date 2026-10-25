@@ -10,7 +10,7 @@
 |---|---|---|---|---|---|
 | **Movies** | `1m` | `58be077` | `5611260f` | `42` | Chronological per-user split (80/20) |
 | **Products** | `instruments` | `2c140c1` | `94853c7c` | `42` | Chronological per-user split (budget-capped) |
-| **Articles** | `small` | `69c0763` | `b9ac2896` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
+| **Articles** | `small` | `90b281a` | `b9ac2896` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
 
 ---
 
@@ -90,7 +90,7 @@ Ranks candidates within each impression log (1 positive click amongst negative i
 
 | Model | AUC | MRR | nDCG@5 | nDCG@10 | Invariant Verdict |
 |---|---|---|---|---|---|
-| **Random** | `0.4444` | `0.5370` | `0.6643` | `0.6643` | Baseline |
+| **Random** | `0.2778` | `0.5185` | `0.6313` | `0.6313` | Baseline |
 | **Popularity** | `0.5278` | `0.6296` | `0.7249` | `0.7249` | Popularity beats Random ✓ |
 | **TF-IDF Profile** | **`0.9722`** | **`1.0000`** | **`1.0000`** | **`1.0000`** | **TF-IDF decisively beats Popularity (+84.2% AUC, +58.8% MRR) ✓** |
 

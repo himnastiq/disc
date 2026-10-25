@@ -24,17 +24,17 @@ from engine.config import compute_config_hash
 from engine.evaluation.checks import check_r1_data_validity, check_r4_evaluation_validity
 from engine.evaluation.harness import get_git_sha
 from engine.evaluation.metrics import (
+    bootstrap_ci,
+    compute_headline_metrics_with_ci,
     coverage,
     hit_rate,
     impression_mrr,
     impression_ndcg,
     impression_roc_auc,
     intra_list_diversity,
-    mean_average_precision,
     ndcg,
     novelty,
     personalisation_score,
-    precision,
     recall,
 )
 from engine.models.baselines import PopularityModel, RandomModel
@@ -87,7 +87,7 @@ def evaluate_impression_ranking(
             key=lambda x: (x.get("timestamp", 0), x.get("impression_id", "")),
         )
 
-    results: dict[str, dict[str, float]] = {}
+    results: dict[str, dict[str, Any]] = {}
 
     for name, model in models.items():
         aucs: list[float] = []
@@ -137,18 +137,44 @@ def evaluate_impression_ranking(
             ndcg10 = impression_ndcg(labels, scores, k=10, candidate_ids=cands)
             ndcg10s.append(ndcg10)
 
+        auc_ci = bootstrap_ci(aucs, n_bootstraps=500, seed=seed) if len(aucs) >= 2 else None
+        mrr_ci = bootstrap_ci(mrrs, n_bootstraps=500, seed=seed) if len(mrrs) >= 2 else None
+        ndcg5_ci = bootstrap_ci(ndcg5s, n_bootstraps=500, seed=seed) if len(ndcg5s) >= 2 else None
+        ndcg10_ci = (
+            bootstrap_ci(ndcg10s, n_bootstraps=500, seed=seed) if len(ndcg10s) >= 2 else None
+        )
+
         results[name] = {
             "auc": round(float(np.mean(aucs)), 4) if aucs else 0.5,
+            "auc_ci95": [round(float(auc_ci[0]), 4), round(float(auc_ci[1]), 4)]
+            if auc_ci
+            else None,
             "mrr": round(float(np.mean(mrrs)), 4) if mrrs else 0.0,
+            "mrr_ci95": [round(float(mrr_ci[0]), 4), round(float(mrr_ci[1]), 4)]
+            if mrr_ci
+            else None,
             "ndcg@5": round(float(np.mean(ndcg5s)), 4) if ndcg5s else 0.0,
+            "ndcg@5_ci95": (
+                [round(float(ndcg5_ci[0]), 4), round(float(ndcg5_ci[1]), 4)] if ndcg5_ci else None
+            ),
             "ndcg@10": round(float(np.mean(ndcg10s)), 4) if ndcg10s else 0.0,
+            "ndcg@10_ci95": (
+                [round(float(ndcg10_ci[0]), 4), round(float(ndcg10_ci[1]), 4)]
+                if ndcg10_ci
+                else None
+            ),
         }
 
     # Sanity checks for Protocol (a)
     all_bounds_valid = True
     for _m_name, m_dict in results.items():
         for val in m_dict.values():
-            if val < 0.0 or val > 1.0 or not np.isfinite(val):
+            if isinstance(val, (int, float)):
+                if val < 0.0 or val > 1.0 or not np.isfinite(val):
+                    all_bounds_valid = False
+            elif isinstance(val, (list, tuple)) and any(
+                v < 0.0 or v > 1.0 or not np.isfinite(v) for v in val
+            ):
                 all_bounds_valid = False
 
     pop_res = results.get("popularity", {})
@@ -249,7 +275,7 @@ def evaluate_window_retrieval(
                 list(val) if isinstance(val, (list, tuple, set)) else []
             )
 
-    models_results: dict[str, dict[str, dict[str, float]]] = {}
+    models_results: dict[str, dict[str, dict[str, Any]]] = {}
 
     for name, model in models.items():
         preds_rows = []
@@ -279,15 +305,27 @@ def evaluate_window_retrieval(
             else pd.DataFrame(columns=["user_id", "item_id", "score", "rank"])
         )
 
-        per_k_metrics: dict[str, dict[str, float]] = {}
+        per_k_metrics: dict[str, dict[str, Any]] = {}
         for k in ks:
             k_key = str(k)
+            hl = compute_headline_metrics_with_ci(
+                true_df=pos_test,
+                pred_df=preds_df,
+                k=k,
+                n_bootstraps=500,
+                seed=seed,
+            )
             per_k_metrics[k_key] = {
-                "precision": precision(pos_test, preds_df, k=k),
-                "recall": recall(pos_test, preds_df, k=k),
-                "ndcg": ndcg(pos_test, preds_df, k=k),
-                "map": mean_average_precision(pos_test, preds_df, k=k),
-                "hit_rate": hit_rate(pos_test, preds_df, k=k),
+                "precision": hl["precision"],
+                "precision_ci95": hl["precision_ci95"],
+                "recall": hl["recall"],
+                "recall_ci95": hl["recall_ci95"],
+                "ndcg": hl["ndcg"],
+                "ndcg_ci95": hl["ndcg_ci95"],
+                "map": hl["map"],
+                "map_ci95": hl["map_ci95"],
+                "hit_rate": hl["hit_rate"],
+                "hit_rate_ci95": hl["hit_rate_ci95"],
                 "coverage": coverage(preds_df, items, k=k),
                 "novelty": novelty(preds_df, train_df, k=k),
                 "diversity": intra_list_diversity(preds_df, item_cats_map, k=k),
@@ -301,17 +339,36 @@ def evaluate_window_retrieval(
     ref_k = str(ref_k_val)
     r4_results = check_r4_evaluation_validity(models_results, ref_k=ref_k_val)
 
-    sanity_checks = {
-        "all_bounds_valid": r4_results["all_bounds_valid"],
-        "popularity_beats_random": r4_results["popularity_beats_random"],
-        "model_beats_popularity": True,
-    }
-
+    ci_sep: dict[str, bool] = {}
     prim_name = spec.model.name
+    if prim_name in models_results and "popularity" in models_results:
+        prim_k = models_results[prim_name].get(ref_k, {})
+        pop_k = models_results["popularity"].get(ref_k, {})
+        for metric_name in ("recall", "ndcg", "precision", "map", "hit_rate"):
+            m_ci = prim_k.get(f"{metric_name}_ci95")
+            p_ci = pop_k.get(f"{metric_name}_ci95")
+            if (
+                m_ci
+                and p_ci
+                and isinstance(m_ci, (list, tuple))
+                and isinstance(p_ci, (list, tuple))
+            ):
+                ci_sep[metric_name] = bool(m_ci[0] > p_ci[1])
+            else:
+                ci_sep[metric_name] = False
+
+    model_beats_pop = True
     if prim_name in models_results and "popularity" in models_results:
         prim_ndcg = models_results[prim_name].get(ref_k, {}).get("ndcg", 0.0)
         pop_ndcg = models_results["popularity"].get(ref_k, {}).get("ndcg", 0.0)
-        sanity_checks["model_beats_popularity"] = prim_ndcg >= pop_ndcg
+        model_beats_pop = prim_ndcg >= pop_ndcg
+
+    sanity_checks = {
+        "all_bounds_valid": r4_results["all_bounds_valid"],
+        "popularity_beats_random": r4_results["popularity_beats_random"],
+        "model_beats_popularity": bool(model_beats_pop),
+        "ci_separated_metrics": ci_sep,
+    }
 
     return {
         "description": "Top-K retrieval from the active recency window candidate pool",

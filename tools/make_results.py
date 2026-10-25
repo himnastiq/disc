@@ -48,6 +48,46 @@ def format_pct_gain(val: float, baseline: float) -> str:
     return f"{prefix}{gain:.1f}%"
 
 
+def format_metric_with_ci(
+    metric_dict: dict[str, Any], key: str, bold_val: bool = False
+) -> str:
+    """Format metric value with 95% bootstrap confidence interval if available."""
+    val = metric_dict.get(key, 0.0)
+    val_str = f"**{val:.4f}**" if bold_val else f"{val:.4f}"
+    ci = metric_dict.get(f"{key}_ci95")
+    if ci and isinstance(ci, (list, tuple)) and len(ci) == 2:
+        return f"{val_str} [{ci[0]:.4f}, {ci[1]:.4f}]"
+    return val_str
+
+
+def format_ci_verdict(
+    model_dict: dict[str, Any], pop_dict: dict[str, Any], key: str
+) -> str:
+    """Assess whether model's advantage over popularity is outside the 95% confidence interval."""
+    m_val = model_dict.get(key, 0.0)
+    p_val = pop_dict.get(key, 0.0)
+    m_ci = model_dict.get(f"{key}_ci95")
+    p_ci = pop_dict.get(f"{key}_ci95")
+    if (
+        m_ci
+        and p_ci
+        and isinstance(m_ci, (list, tuple))
+        and isinstance(p_ci, (list, tuple))
+    ):
+        if m_ci[0] > p_ci[1]:
+            return "Yes (Model > Pop, p < 0.05) ✓"
+        elif p_ci[0] > m_ci[1]:
+            return "No (Pop > Model, p < 0.05)"
+        else:
+            return "CIs Overlap"
+    if m_val > p_val:
+        return "Model > Pop ✓"
+    elif m_val == p_val:
+        return "Tied"
+    else:
+        return "Pop > Model"
+
+
 def generate_figures(
     movies_metrics: dict[str, Any],
     products_metrics: dict[str, Any],

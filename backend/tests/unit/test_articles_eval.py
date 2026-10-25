@@ -146,6 +146,11 @@ def test_evaluate_window_retrieval_candidate_pool_invariance() -> None:
             for metric_name, val in m_metrics.items():
                 if metric_name == "novelty":
                     assert val >= 0.0, f"Novelty for {m_name} at K={k_str} must be >= 0: {val}"
+                elif isinstance(val, (list, tuple)):
+                    for v in val:
+                        assert 0.0 <= v <= 1.0, (
+                            f"Bound {v} in {metric_name} for {m_name} at K={k_str} out of bounds"
+                        )
                 else:
                     assert 0.0 <= val <= 1.0, (
                         f"Metric {metric_name} for {m_name} at K={k_str} out of bounds: {val}"
