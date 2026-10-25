@@ -40,15 +40,15 @@
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 10 | 0 | 1 | 12 | 83% |
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
-| 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
+| 7 | FastAPI backend | 1 | 0 | 0 | 13 | 7% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **72** | | | **129** | **55%** |
+| | **Overall** | **73** | | | **129** | **56%** |
 
-`[###########---------] 55%  (72/129 tasks)`
+`[###########---------] 56%  (73/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -239,7 +239,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 **Goal:** a robust, typed, tested API serving all three content types from artifacts, with no deep-learning imports.
 **Gates:** R3, R7, R8, R11, R6.
 
-- [ ] **P7.1** App skeleton in `backend/api/`: `main.py` with a lifespan handler that loads every type found in the registry via `engine.artifacts`; types that fail to load are marked `unavailable` with a logged reason (the app still starts). Config from environment: `ARTIFACT_DIR`, `RECOMMENDER_API_KEY` (optional), `CORS_ORIGINS`, `LOG_LEVEL`. Set `OPENBLAS_NUM_THREADS=1` before numpy import. *Acceptance:* startup test with one corrupt artifact dir passes.
+- [x] **P7.1** App skeleton in `backend/api/`: `main.py` with a lifespan handler that loads every type found in the registry via `engine.artifacts`; types that fail to load are marked `unavailable` with a logged reason (the app still starts). Config from environment: `ARTIFACT_DIR`, `RECOMMENDER_API_KEY` (optional), `CORS_ORIGINS`, `LOG_LEVEL`. Set `OPENBLAS_NUM_THREADS=1` before numpy import. *Acceptance:* startup test with one corrupt artifact dir passes.
 - [ ] **P7.2** `schemas.py` (pydantic response and request models), `errors.py` (single error format, handlers for validation errors, `UnknownType` (404 `unknown_type`), `UnknownUser` (404 `unknown_user`), `UnknownItem`, `ColdStartUnsupported` (409 `cold_start_unsupported`), and a catch-all 500 that returns a generic message without a stack trace). *Acceptance:* every error path returns the standard shape.
 - [ ] **P7.3** Read-only metadata endpoints: `GET /v1/health` (status, per-type availability, artifact versions), `GET /v1/types` (display name, card type, supports cold start, counts), `GET /v1/types/{type}/users?limit=&persona=` (demo users first, then sampled users), `GET /v1/items/{item_id}?type=`, `GET /v1/items/search?type=&q=&limit=` (normalised text search: lowercase, strip accents and punctuation, article handling, ranking exact > prefix > word-start > contains, ties by popularity), `GET /v1/about` (attribution, dataset citations, original-versus-derived summary read from docs or constants), `GET /v1/metrics?type=` (serves `metrics.json` unchanged). *Acceptance:* contract tests for each endpoint for each type.
 - [ ] **P7.4** `GET /v1/users/{user_id}/profile?type=`: interaction count, positive count, top categories with shares, recent items (last 10 with titles and timestamps), first and last activity, persona label. *Acceptance:* values match a direct pandas computation in tests.
