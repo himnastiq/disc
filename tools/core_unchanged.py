@@ -50,6 +50,8 @@ ALLOWED_PATTERNS = [
     "backend/scripts/**/*",
     "scripts/*",
     "scripts/**/*",
+    "backend/discovery/*",
+    "backend/discovery/**/*",
     "IMPLEMENTATION_PLAN.md",
     "Makefile",
     "pyproject.toml",
