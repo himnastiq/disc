@@ -18,14 +18,13 @@ import pandas as pd
 from engine.config import compute_config_hash
 from engine.evaluation.checks import check_r1_data_validity, check_r4_evaluation_validity
 from engine.evaluation.metrics import (
+    compute_headline_metrics_with_ci,
     coverage,
     hit_rate,
     intra_list_diversity,
-    mean_average_precision,
     ndcg,
     novelty,
     personalisation_score,
-    precision,
     recall,
 )
 from engine.evaluation.splits import split_interactions
@@ -95,7 +94,7 @@ class EvaluationHarness:
         interactions: pd.DataFrame,
         items: pd.DataFrame,
         output_path: Path | None = None,
-        max_test_users: int = 200,
+        max_test_users: int = 2000,
         cold_start_sample_users: int = 50,
         split_data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] | None = None,
     ) -> dict[str, Any]:
@@ -194,15 +193,28 @@ class EvaluationHarness:
                 else pd.DataFrame(columns=["user_id", "item_id", "score", "rank"])
             )
 
-            per_k_metrics: dict[str, dict[str, float]] = {}
+            per_k_metrics: dict[str, dict[str, Any]] = {}
             for k in k_values:
                 k_key = str(k)
+                hl_m = compute_headline_metrics_with_ci(
+                    positive_test,
+                    preds_df,
+                    k=k,
+                    n_bootstraps=500,
+                    ci=0.95,
+                    seed=(self.spec.split.seed or 42) + k,
+                )
                 per_k_metrics[k_key] = {
-                    "precision": precision(positive_test, preds_df, k=k),
-                    "recall": recall(positive_test, preds_df, k=k),
-                    "ndcg": ndcg(positive_test, preds_df, k=k),
-                    "map": mean_average_precision(positive_test, preds_df, k=k),
-                    "hit_rate": hit_rate(positive_test, preds_df, k=k),
+                    "precision": hl_m["precision"],
+                    "precision_ci95": hl_m["precision_ci95"],
+                    "recall": hl_m["recall"],
+                    "recall_ci95": hl_m["recall_ci95"],
+                    "ndcg": hl_m["ndcg"],
+                    "ndcg_ci95": hl_m["ndcg_ci95"],
+                    "map": hl_m["map"],
+                    "map_ci95": hl_m["map_ci95"],
+                    "hit_rate": hl_m["hit_rate"],
+                    "hit_rate_ci95": hl_m["hit_rate_ci95"],
                     "coverage": coverage(preds_df, items, k=k),
                     "novelty": novelty(preds_df, train_df, k=k),
                     "diversity": intra_list_diversity(preds_df, item_cats_map, k=k),
@@ -275,7 +287,7 @@ class EvaluationHarness:
         ref_k = str(ref_k_val)
         r4_results = check_r4_evaluation_validity(models_results, ref_k=ref_k_val)
 
-        sanity_checks = {
+        sanity_checks: dict[str, Any] = {
             "all_bounds_valid": r4_results["all_bounds_valid"],
             "popularity_beats_random": r4_results["popularity_beats_random"],
             "leakage_check_passed": True,
@@ -283,11 +295,23 @@ class EvaluationHarness:
 
         primary_name = self.spec.model.name
         if primary_name in models_results and "popularity" in models_results:
-            prim_ndcg = models_results[primary_name].get(ref_k, {}).get("ndcg", 0.0)
-            pop_ndcg = models_results["popularity"].get(ref_k, {}).get("ndcg", 0.0)
-            sanity_checks["model_beats_popularity"] = prim_ndcg >= pop_ndcg
+            prim_k = models_results[primary_name].get(ref_k, {})
+            pop_k = models_results["popularity"].get(ref_k, {})
+            ci_separated_metrics: dict[str, bool] = {}
+            for m in ["recall", "ndcg", "precision", "map", "hit_rate"]:
+                if f"{m}_ci95" in prim_k and f"{m}_ci95" in pop_k:
+                    prim_lo = prim_k[f"{m}_ci95"][0]
+                    pop_hi = pop_k[f"{m}_ci95"][1]
+                    ci_separated_metrics[m] = bool(prim_lo > pop_hi)
+                else:
+                    ci_separated_metrics[m] = False
+            sanity_checks["ci_separated_metrics"] = ci_separated_metrics
+            sanity_checks["model_beats_popularity"] = any(ci_separated_metrics.values())
 
         # 7. Construct final metrics payload
+        actual_eval_users = len(
+            set(positive_test["user_id"].astype(str)).intersection(set(test_users))
+        )
         metrics_payload: dict[str, Any] = {
             "protocol": {
                 "split_strategy": self.spec.split.strategy,
@@ -296,7 +320,10 @@ class EvaluationHarness:
                 "positive_threshold": self.spec.signal.positive_threshold,
                 "total_interactions": len(interactions),
                 "total_items": len(items),
-                "evaluated_test_users": len(test_users),
+                "evaluated_test_users": actual_eval_users,
+                "total_test_users": len(test_users),
+                "bootstrap_resamples": 500,
+                "bootstrap_ci": 0.95,
             },
             "seeds": {
                 "split_seed": self.spec.split.seed,

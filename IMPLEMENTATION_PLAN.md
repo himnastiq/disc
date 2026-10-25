@@ -652,6 +652,81 @@ backend\tests\unit\test_ndcg_matches_plain_numpy_independent_formula PASSED [100
 - **Environment:** Windows 11 (x64), Python 3.11.7, pytest 9.1.1 (250 tests passing, 0 failed, 0 skipped), ruff clean, mypy strict clean (40 source files).
 - **Next steps:** Phase 6: Cross-type hardening and evidence (P6.1 — `tools/make_results.py` generating `docs/RESULTS.md` and comparison figures from `artifacts/{movies,products,articles}/metrics.json`).
 
+### Session 9: FIX-17 Sample sizes, 2000+ test users, bootstrap 95% CIs, and conditional popularity beating
+- **Audit & Requirements:**
+  - Evaluated sample sizes: Evaluated on 2,000 test users for MovieLens (1,918 with positive ratings >= 4.0 in test split) and ALL 1,222 common test users for Products (Musical Instruments).
+  - Added bootstrap 95% confidence intervals with 500 resamples (`bootstrap_ci` and `compute_headline_metrics_with_ci` in `backend/engine/evaluation/metrics.py`).
+  - Added strict CI separation criteria in `EvaluationHarness` and `sanity_checks`: only claim `model_beats_popularity: true` when primary model lower CI strictly exceeds Popularity upper CI.
+  - Updated `check_r4_evaluation_validity` in `backend/engine/evaluation/checks.py` to validate list/tuple CI interval bounds safely.
+- **Unit & Regression Tests Output (`pytest tests/unit/test_metrics.py`):**
+```
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.7.0
+rootdir: E:\discover\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, hypothesis-6.170.9, platformdirs-4.13.5, cov-7.1.0
+collected 11 items
+
+tests\unit\test_metrics.py ...........                                   [100%]
+
+============================= 11 passed in 2.58s ==============================
+```
+- **MovieLens Pipeline on 2,000 Users Output (`python -m engine.train --type movies`):**
+```
+============================================================
+  Discovery Engine: Training Complete [MOVIES]
+============================================================
+  Total Interactions : 999,611
+  Unique Users        : 6,040
+  Catalogue Items     : 3,416
+  Matrix Sparsity     : 95.16%
+  Artifact Directory  : E:\discover\artifacts\movies
+
+  Metrics Summary (at K=5):
+  --------------------------------------------------------
+  popularity   | NDCG: 0.0545 | HitRate: 0.1736 | Recall: 0.0264 | Coverage: 0.0196 | Div: 0.7332 | Pers: 0.7043
+  random       | NDCG: 0.0042 | HitRate: 0.0198 | Recall: 0.0021 | Coverage: 0.9240 | Div: 0.8220 | Pers: 0.9993
+  sar          | NDCG: 0.0517 | HitRate: 0.1804 | Recall: 0.0367 | Coverage: 0.1213 | Div: 0.6610 | Pers: 0.9585
+============================================================
+```
+- **MovieLens Headline Metrics at K=10 (N=1,918 evaluated test users, 500 resamples):**
+  - SAR Recall@10: 0.06451 [95% CI: 0.05770, 0.07156] vs Pop Recall@10: 0.04452 [95% CI: 0.03894, 0.04943] -> **CIs Separate (SAR > Pop, p < 0.05)**
+  - SAR NDCG@10: 0.05922 [95% CI: 0.05405, 0.06441] vs Pop NDCG@10: 0.05464 [95% CI: 0.04923, 0.06063] -> **CIs Overlap**
+  - SAR HitRate@10: 0.28259 [95% CI: 0.26250, 0.30111] vs Pop HitRate@10: 0.24870 [95% CI: 0.22888, 0.26774] -> **CIs Overlap**
+- **Products Pipeline on ALL Test Users Output (`python -m engine.train --type products --fast`):**
+```
+============================================================
+  Discovery Engine: Training Complete [PRODUCTS]
+============================================================
+  Total Interactions : 10,261
+  Unique Users        : 1,429
+  Catalogue Items     : 900
+  Matrix Sparsity     : 99.20%
+  Artifact Directory  : E:\discover\artifacts\products
+
+  Metrics Summary (at K=5):
+  --------------------------------------------------------
+  popularity   | NDCG: 0.0404 | HitRate: 0.0589 | Recall: 0.0585 | Coverage: 0.0122 | Div: 0.4276 | Pers: 0.2133
+  random       | NDCG: 0.0028 | HitRate: 0.0049 | Recall: 0.0049 | Coverage: 1.0000 | Div: 0.7629 | Pers: 0.9969
+  sar          | NDCG: 0.0562 | HitRate: 0.0908 | Recall: 0.0891 | Coverage: 0.3633 | Div: 0.5526 | Pers: 0.8401
+============================================================
+```
+- **Gate Tests Verification Output (`pytest tests/integration/test_movies_gate.py tests/integration/test_products_gate.py`):**
+```
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.7.0
+rootdir: E:\discover\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, hypothesis-6.170.9, platformdirs-4.13.5, cov-7.1.0
+collected 12 items
+
+tests\integration\test_movies_gate.py .....                              [ 41%]
+tests\integration\test_products_gate.py .......                          [100%]
+
+============================= 12 passed in 6.02s ==============================
+```
+
+
 
 
 

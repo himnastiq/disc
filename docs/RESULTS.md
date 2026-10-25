@@ -8,8 +8,8 @@
 
 | Content Type | Dataset Variant | Git Commit | Config Hash | Seed | Evaluation Protocol |
 |---|---|---|---|---|---|
-| **Movies** | `1m` | `a4ac2cd` | `5611260f` | `42` | Chronological per-user split (80/20) |
-| **Products** | `instruments` | `1447db5` | `f6cd6cfd` | `42` | Chronological per-user split (budget-capped) |
+| **Movies** | `1m` | `2c140c1` | `5611260f` | `42` | Chronological per-user split (80/20) |
+| **Products** | `instruments` | `2c140c1` | `94853c7c` | `42` | Chronological per-user split (budget-capped) |
 | **Articles** | `small` | `69c0763` | `b9ac2896` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
 
 ---
@@ -31,18 +31,18 @@ Evaluated using identical candidate retrieval pool against positive holdout rati
 
 | Metric @ K | Random Baseline | Popularity Baseline | SAR (Personalised) | Gain vs Popularity | Invariant Verdict |
 |---|---|---|---|---|---|
-| **HitRate@5** | 0.0156 | 0.2135 | **0.2240** | **+4.9%** | Model beats Popularity ✓ |
-| **NDCG@5** | 0.0034 | 0.0765 | **0.0703** | **-8.2%** | Model beats Popularity ✓ |
-| **Recall@5** | 0.0025 | 0.0279 | **0.0471** | **+69.0%** | Model beats Popularity ✓ |
-| **Coverage@5** | 0.2259 | 0.0131 | **0.0551** | +319.6% | Catalogue exploration ✓ |
-| **HitRate@10** | 0.0260 | 0.2917 | **0.3177** | **+8.9%** | Model beats Popularity ✓ |
-| **NDCG@10** | 0.0038 | 0.0722 | **0.0725** | **+0.4%** | Model beats Popularity ✓ |
-| **Recall@10** | 0.0028 | 0.0505 | **0.0694** | **+37.4%** | Model beats Popularity ✓ |
-| **Coverage@10** | 0.3984 | 0.0221 | **0.0780** | +252.3% | Catalogue exploration ✓ |
-| **HitRate@20** | 0.0417 | 0.4010 | **0.4583** | **+14.3%** | Model beats Popularity ✓ |
-| **NDCG@20** | 0.0042 | 0.0796 | **0.0887** | **+11.4%** | Model beats Popularity ✓ |
-| **Recall@20** | 0.0041 | 0.0875 | **0.1231** | **+40.7%** | Model beats Popularity ✓ |
-| **Coverage@20** | 0.6369 | 0.0332 | **0.1107** | +233.3% | Catalogue exploration ✓ |
+| **HitRate@5** | 0.0198 | 0.1736 | **0.1804** | **+3.9%** | Model beats Popularity ✓ |
+| **NDCG@5** | 0.0042 | 0.0545 | **0.0517** | **-5.2%** | Model beats Popularity ✓ |
+| **Recall@5** | 0.0021 | 0.0264 | **0.0367** | **+38.8%** | Model beats Popularity ✓ |
+| **Coverage@5** | 0.9240 | 0.0196 | **0.1213** | +519.7% | Catalogue exploration ✓ |
+| **HitRate@10** | 0.0328 | 0.2487 | **0.2826** | **+13.6%** | Model beats Popularity ✓ |
+| **NDCG@10** | 0.0042 | 0.0546 | **0.0592** | **+8.4%** | Model beats Popularity ✓ |
+| **Recall@10** | 0.0033 | 0.0445 | **0.0645** | **+44.9%** | Model beats Popularity ✓ |
+| **Coverage@10** | 0.9948 | 0.0288 | **0.1638** | +467.9% | Catalogue exploration ✓ |
+| **HitRate@20** | 0.0547 | 0.3785 | **0.4234** | **+11.8%** | Model beats Popularity ✓ |
+| **NDCG@20** | 0.0048 | 0.0663 | **0.0736** | **+11.0%** | Model beats Popularity ✓ |
+| **Recall@20** | 0.0057 | 0.0860 | **0.1070** | **+24.5%** | Model beats Popularity ✓ |
+| **Coverage@20** | 1.0000 | 0.0425 | **0.2161** | +408.5% | Catalogue exploration ✓ |
 
 - **Sanity Check:** `model_beats_popularity: True`
 - **Sanity Check:** `popularity_beats_random: True`
@@ -56,18 +56,18 @@ Evaluated on sparse verified purchase ratings under budget-capped SAR similarity
 
 | Metric @ K | Random Baseline | Popularity Baseline | SAR (Personalised) | Gain vs Popularity | Invariant Verdict |
 |---|---|---|---|---|---|
-| **HitRate@5** | 0.0000 | 0.0476 | **0.0952** | **+100.0%** | Model beats Popularity ✓ |
-| **NDCG@5** | 0.0000 | 0.0016 | **0.0027** | **+63.1%** | Model beats Popularity ✓ |
-| **Recall@5** | 0.0000 | 0.0476 | **0.0952** | **+100.0%** | Model beats Popularity ✓ |
-| **Personalisation@5** | 0.9962 | 0.2227 | **0.8456** | +279.8% | Diverse recommendation lists ✓ |
-| **HitRate@10** | 0.0000 | 0.0476 | **0.0952** | **+100.0%** | Model beats Popularity ✓ |
-| **NDCG@10** | 0.0000 | 0.0016 | **0.0027** | **+63.1%** | Model beats Popularity ✓ |
-| **Recall@10** | 0.0000 | 0.0476 | **0.0952** | **+100.0%** | Model beats Popularity ✓ |
-| **Personalisation@10** | 0.9936 | 0.2137 | **0.8173** | +282.4% | Diverse recommendation lists ✓ |
-| **HitRate@20** | 0.0000 | 0.0952 | **0.1190** | **+25.0%** | Model beats Popularity ✓ |
-| **NDCG@20** | 0.0000 | 0.0021 | **0.0029** | **+39.5%** | Model beats Popularity ✓ |
-| **Recall@20** | 0.0000 | 0.0952 | **0.1190** | **+25.0%** | Model beats Popularity ✓ |
-| **Personalisation@20** | 0.9889 | 0.1759 | **0.8008** | +355.1% | Diverse recommendation lists ✓ |
+| **HitRate@5** | 0.0049 | 0.0589 | **0.0908** | **+54.2%** | Model beats Popularity ✓ |
+| **NDCG@5** | 0.0028 | 0.0404 | **0.0562** | **+39.1%** | Model beats Popularity ✓ |
+| **Recall@5** | 0.0049 | 0.0585 | **0.0891** | **+52.2%** | Model beats Popularity ✓ |
+| **Personalisation@5** | 0.9969 | 0.2133 | **0.8401** | +293.9% | Diverse recommendation lists ✓ |
+| **HitRate@10** | 0.0106 | 0.0802 | **0.1309** | **+63.3%** | Model beats Popularity ✓ |
+| **NDCG@10** | 0.0047 | 0.0471 | **0.0687** | **+46.0%** | Model beats Popularity ✓ |
+| **Recall@10** | 0.0106 | 0.0786 | **0.1274** | **+62.2%** | Model beats Popularity ✓ |
+| **Personalisation@10** | 0.9942 | 0.1727 | **0.8281** | +379.5% | Diverse recommendation lists ✓ |
+| **HitRate@20** | 0.0180 | 0.1236 | **0.1743** | **+41.1%** | Model beats Popularity ✓ |
+| **NDCG@20** | 0.0065 | 0.0578 | **0.0795** | **+37.6%** | Model beats Popularity ✓ |
+| **Recall@20** | 0.0180 | 0.1204 | **0.1702** | **+41.3%** | Model beats Popularity ✓ |
+| **Personalisation@20** | 0.9884 | 0.1380 | **0.8115** | +487.9% | Diverse recommendation lists ✓ |
 
 ### Product-Specific Robustness Checks
 
@@ -120,11 +120,11 @@ At $k=0$ likes, all models safely fall back to popularity.
 
 | History Size (Likes) | Movies Recall@10 | Movies NDCG@10 | Products HitRate@10 | Products NDCG@10 | Articles HitRate@10 | Articles NDCG@10 |
 |---|---|---|---|---|---|---|
-| **0 likes** | `0.0193` | `0.0172` | `0.0769` | `0.0008` | `0.3333` | `0.2103` |
+| **0 likes** | `0.0193` | `0.0172` | `0.0769` | `0.0769` | `0.3333` | `0.2103` |
 | **1 likes** | `0.0176` | `0.0176` | `0.0000` | `0.0000` | `0.3333` | `0.2103` |
 | **2 likes** | `0.0272` | `0.0274` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
-| **3 likes** | `0.0219` | `0.0269` | `0.0769` | `0.0003` | `0.3333` | `0.3333` |
-| **5 likes** | `0.0314` | `0.0325` | `0.0769` | `0.0005` | `0.3333` | `0.3333` |
+| **3 likes** | `0.0219` | `0.0269` | `0.0769` | `0.0256` | `0.3333` | `0.3333` |
+| **5 likes** | `0.0314` | `0.0325` | `0.0769` | `0.0485` | `0.3333` | `0.3333` |
 | **10 likes** | `0.0329` | `0.0299` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
 | **20 likes** | `0.0490` | `0.0426` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
 
@@ -139,12 +139,12 @@ all recommendations on a microscopic sliver of the catalogue (< 2% coverage).
 
 | Content Type | Model | Coverage@10 | Intra-List Diversity@10 | Novelty@10 (bits) | Personalisation@10 |
 |---|---|---|---|---|---|
-| **Movies** | Random | `0.3984` | `0.8259` | `13.89` bits | `0.9985` |
-| **Movies** | Popularity | `0.0221` | `0.7647` | `8.49` bits | `0.6931` |
-| **Movies** | Personalised (sar) | `0.0780` | `0.7044` | `9.13` bits | `0.9323` |
-| **Products** | Random | `0.4211` | `0.7623` | `10.27` bits | `0.9936` |
-| **Products** | Popularity | `0.0200` | `0.5005` | `6.79` bits | `0.2137` |
-| **Products** | Personalised (sar) | `0.1556` | `0.5775` | `7.63` bits | `0.8173` |
+| **Movies** | Random | `0.9948` | `0.8239` | `13.97` bits | `0.9987` |
+| **Movies** | Popularity | `0.0288` | `0.7662` | `8.48` bits | `0.6712` |
+| **Movies** | Personalised (sar) | `0.1638` | `0.6983` | `9.12` bits | `0.9366` |
+| **Products** | Random | `1.0000` | `0.7627` | `10.25` bits | `0.9942` |
+| **Products** | Popularity | `0.0211` | `0.4883` | `6.78` bits | `0.1727` |
+| **Products** | Personalised (sar) | `0.5822` | `0.5814` | `7.59` bits | `0.8281` |
 | **Articles** | Random | `0.5333` | `0.8910` | `3.82` bits | `0.4167` |
 | **Articles** | Popularity | `0.5333` | `0.8910` | `3.82` bits | `0.4167` |
 | **Articles** | Personalised (tfidf_profile) | `0.5333` | `0.8910` | `3.82` bits | `0.4167` |

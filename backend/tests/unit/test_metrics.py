@@ -6,6 +6,8 @@ import pandas as pd
 import pytest
 
 from engine.evaluation.metrics import (
+    bootstrap_ci,
+    compute_headline_metrics_with_ci,
     coverage,
     hit_rate,
     intra_list_diversity,
@@ -214,3 +216,62 @@ def test_ndcg_matches_plain_numpy_independent_formula() -> None:
 
     calculated = ndcg(true_df, preds_df, k=10)
     assert calculated == pytest.approx(expected_mean, rel=1e-4)
+
+
+def test_bootstrap_ci_properties() -> None:
+    """Verify bootstrap CI bounds, coverage, and deterministic properties (FIX-17)."""
+    import numpy as np
+
+    # Empty array
+    assert bootstrap_ci([]) == (0.0, 0.0)
+
+    # Constant array
+    assert bootstrap_ci([0.42, 0.42, 0.42]) == (0.42, 0.42)
+
+    # Known distribution
+    rng = np.random.default_rng(123)
+    data = rng.normal(loc=10.0, scale=2.0, size=500)
+    lo, hi = bootstrap_ci(data, n_bootstraps=500, ci=0.95, seed=42)
+    sample_mean = float(np.mean(data))
+
+    assert lo <= sample_mean <= hi
+    assert 9.7 <= lo <= 10.0
+    assert 10.0 <= hi <= 10.3
+
+    # Determinism with seed
+    lo2, hi2 = bootstrap_ci(data, n_bootstraps=500, ci=0.95, seed=42)
+    assert lo == lo2 and hi == hi2
+
+
+def test_compute_headline_metrics_with_ci_contract() -> None:
+    """Verify compute_headline_metrics_with_ci returns all metrics and CIs (FIX-17)."""
+    # 3 users: u1 perfect hits, u2 partial hit, u3 no hit
+    true_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i1", "signal": 5.0},
+            {"user_id": "u1", "item_id": "i2", "signal": 5.0},
+            {"user_id": "u2", "item_id": "i3", "signal": 4.0},
+            {"user_id": "u3", "item_id": "i9", "signal": 4.0},
+        ]
+    )
+    pred_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i1", "score": 2.0},
+            {"user_id": "u1", "item_id": "i2", "score": 1.0},
+            {"user_id": "u2", "item_id": "i3", "score": 2.0},
+            {"user_id": "u2", "item_id": "i8", "score": 1.0},
+            {"user_id": "u3", "item_id": "i4", "score": 2.0},
+            {"user_id": "u3", "item_id": "i5", "score": 1.0},
+        ]
+    )
+
+    result = compute_headline_metrics_with_ci(true_df, pred_df, k=2, n_bootstraps=300)
+    assert result["evaluated_users"] == 3
+
+    for m in ["precision", "recall", "ndcg", "map", "hit_rate"]:
+        assert m in result
+        assert f"{m}_ci95" in result
+        val = result[m]
+        lo, hi = result[f"{m}_ci95"]
+        assert 0.0 <= lo <= val + 1e-4
+        assert val - 1e-4 <= hi <= 1.0

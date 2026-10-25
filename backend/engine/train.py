@@ -248,7 +248,7 @@ def run_pipeline(
         )
     else:
         harness = EvaluationHarness(spec, models=eval_models)
-        max_test = 50 if fast else 200
+        max_test = 2000 if content_type in ("movies", "products") else (50 if fast else 200)
         metrics = harness.run(
             interactions=interactions,
             items=items,

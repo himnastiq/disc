@@ -243,6 +243,15 @@ def check_r4_evaluation_validity(
             if not isinstance(m_dict, dict):
                 continue
             for m_name, val in m_dict.items():
+                if isinstance(val, (list, tuple)):
+                    for v in val:
+                        if math.isnan(v) or math.isinf(v):
+                            all_bounds_valid = False
+                        if m_name.replace("_ci95", "") in bounded_metrics and not (
+                            0.0 <= v <= 1.0 + 1e-6
+                        ):
+                            all_bounds_valid = False
+                    continue
                 if math.isnan(val) or math.isinf(val):
                     all_bounds_valid = False
                 if m_name in bounded_metrics and not (0.0 <= val <= 1.0 + 1e-6):

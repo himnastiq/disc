@@ -10,7 +10,7 @@ from __future__ import annotations
 import itertools
 import math
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -358,6 +358,179 @@ def personalisation_score(
         distances.append(dist)
 
     return float(np.mean(distances)) if distances else 0.0
+
+
+def bootstrap_ci(
+    user_values: np.ndarray | list[float],
+    n_bootstraps: int = 500,
+    ci: float = 0.95,
+    seed: int = 42,
+) -> tuple[float, float]:
+    """Compute non-parametric bootstrap confidence interval over users (FIX-17).
+
+    Args:
+        user_values: Array of metric values for each evaluated user.
+        n_bootstraps: Number of bootstrap resamples (must be >= 200).
+        ci: Confidence level (default 0.95 for 95% CI).
+        seed: Random seed for deterministic bootstrap resampling.
+
+    Returns:
+        tuple[float, float]: (ci_lower, ci_upper) bounds rounded to 5 decimal places.
+    """
+    arr = np.asarray(user_values, dtype=float)
+    n = len(arr)
+    if n == 0:
+        return (0.0, 0.0)
+    if n == 1 or np.all(arr == arr[0]):
+        val = round(float(arr[0]), 5)
+        return (val, val)
+
+    rng = np.random.default_rng(seed)
+    indices = rng.integers(0, n, size=(n_bootstraps, n))
+    means = arr[indices].mean(axis=1)
+
+    alpha = 1.0 - ci
+    lower_pct = 100.0 * (alpha / 2.0)
+    upper_pct = 100.0 * (1.0 - alpha / 2.0)
+
+    ci_lower = float(np.percentile(means, lower_pct))
+    ci_upper = float(np.percentile(means, upper_pct))
+    return (round(ci_lower, 5), round(ci_upper, 5))
+
+
+def compute_headline_metrics_with_ci(
+    true_df: pd.DataFrame,
+    pred_df: pd.DataFrame,
+    k: int = 10,
+    n_bootstraps: int = 500,
+    ci: float = 0.95,
+    seed: int = 42,
+    col_user: str = "user_id",
+    col_item: str = "item_id",
+    col_prediction: str = "score",
+) -> dict[str, Any]:
+    """Compute headline ranking metrics and their bootstrap 95% CIs over evaluated users (FIX-17).
+
+    Headline metrics: precision, recall, ndcg, map, hit_rate.
+
+    Args:
+        true_df: Ground truth interactions containing relevant positive items.
+        pred_df: Model predictions containing recommended items and prediction scores.
+        k: Truncation cutoff rank.
+        n_bootstraps: Number of bootstrap iterations (>= 200).
+        ci: Confidence level (default 0.95).
+        seed: Deterministic random seed for bootstrap sampling.
+        col_user: User column name.
+        col_item: Item column name.
+        col_prediction: Score/prediction column name.
+
+    Returns:
+        dict[str, Any]: Point estimates and '[metric]_ci95' interval bounds.
+    """
+    empty_result = {
+        "precision": 0.0,
+        "precision_ci95": [0.0, 0.0],
+        "recall": 0.0,
+        "recall_ci95": [0.0, 0.0],
+        "ndcg": 0.0,
+        "ndcg_ci95": [0.0, 0.0],
+        "map": 0.0,
+        "map_ci95": [0.0, 0.0],
+        "hit_rate": 0.0,
+        "hit_rate_ci95": [0.0, 0.0],
+        "evaluated_users": 0,
+    }
+    if true_df.empty or pred_df.empty:
+        return empty_result
+
+    common_users = sorted(
+        set(true_df[col_user].astype(str)).intersection(set(pred_df[col_user].astype(str)))
+    )
+    if not common_users:
+        return empty_result
+
+    t_filtered = true_df[true_df[col_user].astype(str).isin(common_users)]
+    p_filtered = pred_df[pred_df[col_user].astype(str).isin(common_users)]
+
+    # Group true items by user
+    true_grouped = (
+        t_filtered.groupby(col_user)[col_item].apply(lambda s: set(s.astype(str))).to_dict()
+    )
+
+    # Get top-k predicted items per user
+    top_pred = _get_top_k_per_user(
+        p_filtered, k=k, col_user=col_user, col_prediction=col_prediction
+    )
+    pred_grouped = (
+        top_pred.sort_values(by=[col_user, col_prediction], ascending=[True, False])
+        .groupby(col_user)[col_item]
+        .apply(lambda s: [str(x) for x in s])
+        .to_dict()
+    )
+
+    p_scores: list[float] = []
+    r_scores: list[float] = []
+    n_scores: list[float] = []
+    m_scores: list[float] = []
+    h_scores: list[float] = []
+
+    for uid in common_users:
+        u_true = true_grouped.get(uid, set())
+        u_preds = pred_grouped.get(uid, [])
+        hits = [1 if item in u_true else 0 for item in u_preds]
+        h_cnt = sum(hits)
+        act = len(u_true)
+
+        # Precision & Recall & HitRate
+        p = h_cnt / float(k)
+        r = (h_cnt / float(act)) if act > 0 else 0.0
+        h = 1.0 if h_cnt > 0 else 0.0
+
+        # Mean Average Precision (MAP)
+        if h_cnt == 0 or act == 0:
+            m = 0.0
+        else:
+            cum_hits = 0
+            rr = 0.0
+            for idx, hit in enumerate(hits, start=1):
+                if hit:
+                    cum_hits += 1
+                    rr += cum_hits / float(idx)
+            m = rr / float(min(act, k))
+
+        # NDCG
+        if h_cnt == 0 or act == 0:
+            n = 0.0
+        else:
+            dcg = sum(hit / math.log(idx + 1) for idx, hit in enumerate(hits, start=1))
+            idcg = sum(1.0 / math.log(idx + 1) for idx in range(1, min(act, k) + 1))
+            n = (dcg / idcg) if idcg > 0.0 else 0.0
+
+        p_scores.append(p)
+        r_scores.append(r)
+        n_scores.append(n)
+        m_scores.append(m)
+        h_scores.append(h)
+
+    p_arr = np.array(p_scores, dtype=float)
+    r_arr = np.array(r_scores, dtype=float)
+    n_arr = np.array(n_scores, dtype=float)
+    m_arr = np.array(m_scores, dtype=float)
+    h_arr = np.array(h_scores, dtype=float)
+
+    return {
+        "precision": round(float(np.mean(p_arr)), 5),
+        "precision_ci95": list(bootstrap_ci(p_arr, n_bootstraps=n_bootstraps, ci=ci, seed=seed)),
+        "recall": round(float(np.mean(r_arr)), 5),
+        "recall_ci95": list(bootstrap_ci(r_arr, n_bootstraps=n_bootstraps, ci=ci, seed=seed + 1)),
+        "ndcg": round(float(np.mean(n_arr)), 5),
+        "ndcg_ci95": list(bootstrap_ci(n_arr, n_bootstraps=n_bootstraps, ci=ci, seed=seed + 2)),
+        "map": round(float(np.mean(m_arr)), 5),
+        "map_ci95": list(bootstrap_ci(m_arr, n_bootstraps=n_bootstraps, ci=ci, seed=seed + 3)),
+        "hit_rate": round(float(np.mean(h_arr)), 5),
+        "hit_rate_ci95": list(bootstrap_ci(h_arr, n_bootstraps=n_bootstraps, ci=ci, seed=seed + 4)),
+        "evaluated_users": len(common_users),
+    }
 
 
 def impression_roc_auc(
