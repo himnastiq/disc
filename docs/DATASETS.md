@@ -44,12 +44,22 @@
 
 - **Provider:** Microsoft Research
 - **URL:** https://msnews.github.io/
-- **Variant used:** MIND-small (train + dev)
-- **License:** Microsoft Research License (research use)
+- **Variant used:** MIND-small (`small`, train + dev splits)
+- **License:** Microsoft Research License Agreement (MSR-LA for Data, research and educational use only)
 - **Citation:**
-  > Wu, F., Qiao, Y., Chen, J.-H., Wu, C., Qi, T., Lian, J., Liu, D., Xie, X., Gao, J., Wu, W., & Zhou, M. (2020). MIND: A Large-scale Dataset for News Recommendation. Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL), 3597–3606.
-- **Terms:** <!-- TODO: verify current terms when downloading -->
-- **Data location:** `data/raw/mind/`
+  > Wu, F., Qiao, Y., Chen, J.-H., Wu, C., Qi, T., Lian, J., Liu, D., Xie, X., Gao, J., Wu, W., & Zhou, M. (2020). MIND: A Large-scale Dataset for News Recommendation. Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL), 3597–3606. https://aclanthology.org/2020.acl-main.331/
+- **Terms:**
+  - Intended strictly for non-commercial academic research and benchmarking.
+  - Direct anonymous download from legacy Azure Blob Storage is restricted by Microsoft.
+  - Dataset requires agreeing to Microsoft Research license terms via Hugging Face (`yjw1029/MIND`) or Kaggle (`swiftQuiet/mind-microsoft-news-dataset`).
+  - Redistribution of raw news content is prohibited.
+- **Data location:** `data/raw/mind/` (contains `train/` and `dev/` subfolders).
+- **Files per split:**
+  - `news.tsv`: Tab-separated 8-column table without header:
+    `[NewsID, Category, SubCategory, Title, Abstract, URL, TitleEntities, AbstractEntities]`.
+  - `behaviors.tsv`: Tab-separated 5-column table without header:
+    `[ImpressionID, UserID, Time, History, Impressions]`
+    where `History` contains space-separated clicked news IDs and `Impressions` contains candidate news IDs with click labels `NewsID-0` or `NewsID-1`.
 
 ---
 

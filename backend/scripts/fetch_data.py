@@ -214,6 +214,98 @@ def fetch_amazon(target_dir: Path, variant: str = "both") -> bool:
     return all_success
 
 
+def fetch_mind(target_dir: Path, variant: str = "small") -> bool:
+    """Download and extract MIND dataset (train and dev splits).
+
+    If direct network download is blocked due to Microsoft licensing/authentication,
+    prints clear manual instructions with exact expected file paths.
+    """
+    target_dir.mkdir(parents=True, exist_ok=True)
+    train_dir = target_dir / "train"
+    dev_dir = target_dir / "dev"
+    train_dir.mkdir(parents=True, exist_ok=True)
+    dev_dir.mkdir(parents=True, exist_ok=True)
+
+    expected_files = [
+        train_dir / "news.tsv",
+        train_dir / "behaviors.tsv",
+        dev_dir / "news.tsv",
+        dev_dir / "behaviors.tsv",
+    ]
+
+    if all(p.exists() and p.stat().st_size > 0 for p in expected_files):
+        logger.info("MIND dataset files already present in %s", target_dir)
+        return True
+
+    # Check for fixture fallback if requested or in offline development
+    fixture_dir = BACKEND_DIR / "tests" / "fixtures" / "mind"
+    if variant in ("fast", "mock", "demo") and fixture_dir.exists():
+        for split in ("train", "dev"):
+            s_dir = target_dir / split
+            s_dir.mkdir(parents=True, exist_ok=True)
+            for fname in ("news.tsv", "behaviors.tsv"):
+                src = fixture_dir / split / fname
+                dst = s_dir / fname
+                if src.exists() and not dst.exists():
+                    shutil.copy(src, dst)
+        if all(p.exists() and p.stat().st_size > 0 for p in expected_files):
+            logger.info("MIND fast/mock fixture files initialized in %s", target_dir)
+            return True
+
+    # Try downloading via candidate URLs
+    candidate_urls = [
+        (
+            "https://recodatasets.z20.web.core.windows.net/newsrec/MINDsmall_train.zip",
+            "https://recodatasets.z20.web.core.windows.net/newsrec/MINDsmall_dev.zip",
+        ),
+        (
+            "https://mind201910.blob.core.windows.net/mind/MINDsmall_train.zip",
+            "https://mind201910.blob.core.windows.net/mind/MINDsmall_dev.zip",
+        ),
+    ]
+
+    download_success = False
+    for train_url, dev_url in candidate_urls:
+        train_zip = target_dir / "MINDsmall_train.zip"
+        dev_zip = target_dir / "MINDsmall_dev.zip"
+        if download_url(train_url, train_zip) and download_url(dev_url, dev_zip):
+            try:
+                with zipfile.ZipFile(train_zip, "r") as z:
+                    z.extractall(train_dir)
+                with zipfile.ZipFile(dev_zip, "r") as z:
+                    z.extractall(dev_dir)
+                train_zip.unlink(missing_ok=True)
+                dev_zip.unlink(missing_ok=True)
+                download_success = True
+                break
+            except Exception as e:
+                logger.warning("Extraction failed for downloaded MIND zips: %s", e)
+
+    if not download_success:
+        print("\n" + "=" * 60)
+        print("  [!] AUTOMATED DOWNLOAD BLOCKED: MIND (Microsoft News Dataset)")
+        print("=" * 60)
+        print("  Direct public blob access to the Microsoft Azure storage container")
+        print("  is restricted. The official MIND repository now requires accepting")
+        print("  the Microsoft Research License Agreement.")
+        print("\n  MANUAL SETUP INSTRUCTIONS:")
+        print("  1. Visit the official Hugging Face mirror:")
+        print("     https://huggingface.co/datasets/yjw1029/MIND")
+        print(
+            "     (or Kaggle: https://www.kaggle.com/datasets/swiftQuiet/mind-microsoft-news-dataset)"
+        )
+        print("  2. Download MINDsmall_train.zip and MINDsmall_dev.zip")
+        print("  3. Extract to the following exact locations:")
+        print(f"     - {train_dir / 'news.tsv'}")
+        print(f"     - {train_dir / 'behaviors.tsv'}")
+        print(f"     - {dev_dir / 'news.tsv'}")
+        print(f"     - {dev_dir / 'behaviors.tsv'}")
+        print("=" * 60 + "\n")
+        return False
+
+    return True
+
+
 def print_dataset_info(name: str, info: dict[str, str], dry_run: bool = False) -> None:
     """Print information about a dataset."""
     prefix = "[DRY RUN] " if dry_run else ""
@@ -277,10 +369,12 @@ def main() -> None:
                     print(
                         "\n[!] Amazon Products fetch finished with errors or required manual steps."
                     )
-            else:
-                print(f"\n  Target directory created: {target}")
-                print(f"  NOTE: Actual download logic for {t} will be added in Phase 5.")
-                print("  For now, follow the manual steps above if needed.")
+            elif t == "articles":
+                success = fetch_mind(target, variant=args.variant)
+                if not success:
+                    print(
+                        "\n[!] MIND Articles fetch finished with blocked note or required manual steps."
+                    )
 
     print("\n" + "=" * 40)
     print("Done.")

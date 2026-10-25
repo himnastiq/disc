@@ -38,7 +38,7 @@
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
-| 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
+| 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 1 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
@@ -203,7 +203,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 **Goal:** the third type, which differs most (text content, freshness, impression-based evaluation), to show real adaptation.
 **Gates:** R1 to R6, "core unchanged".
 
-- [ ] **P5.1** Dataset step: fetch MIND-small via the vendored helpers (verify function names), record license and citation in `docs/DATASETS.md`. If download is blocked, mark `[!]` with manual steps (expected files: `news.tsv`, `behaviors.tsv` for train and dev). *Acceptance:* files load or blocked note written.
+- [!] **P5.1** Dataset step: verified vendored helpers (`download_mind`, `extract_mind` in `discovery.datasets.mind`); recorded license (MSR License for Data) and citation in `docs/DATASETS.md`. Automated anonymous Azure blob access is restricted by Microsoft (HTTP 409/401); documented manual download instructions (Hugging Face / Kaggle to `data/raw/mind/train/` and `data/raw/mind/dev/`) in `fetch_data.py` and `docs/DATASETS.md`; verified offline fixture in `backend/tests/fixtures/mind/` loads cleanly. *Acceptance:* files load or blocked note written.
 - [ ] **P5.2** Implement `MindArticlesAdapter`: parse `news.tsv` (id, category, subcategory, title, abstract, URL, entities) into Items (title, abstract as `text`, categories = [category, subcategory]); parse `behaviors.tsv` into interactions (history clicks and impression clicks with impression timestamps) and keep impression candidate lists for evaluation. Handle missing abstracts, unicode, and empty histories. *Acceptance:* parsing tests on fixture lines.
 - [ ] **P5.3** Define the time protocol: history items in MIND have no individual timestamps, so treat them as occurring before the user's first impression; split by impression time (earlier days train, later days test); record the actual date ranges in the data report. Leakage test: no test impression's clicked item is used as a training positive for that user. *Acceptance:* R2 test on real data.
 - [ ] **P5.4** Implement `TfidfProfileModel` using the vendored TF-IDF utilities (verify the class and its cleaning/tokenising helpers) over `title + abstract + category tokens`: fit vocabulary on train-period articles only; store sparse matrix and vocabulary as scipy npz and json. User profile = weighted mean of clicked article vectors (more recent clicks weigh more; weighting scheme from config); score = cosine similarity to candidates. *Acceptance:* unit tests (profile of identical history equals that article's vector direction; empty history gives popularity).
