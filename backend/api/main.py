@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.errors import register_error_handlers
 from engine import registry
 from engine.artifacts import load_artifacts, verify_artifacts
 from engine.config import load_config
@@ -120,6 +121,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Register standardized error handlers (P7.2)
+    register_error_handlers(app)
 
     return app
 

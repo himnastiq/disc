@@ -274,7 +274,7 @@ def test_gate_real_products_artifacts_integrity() -> None:
     assert "product_specific_checks" in metrics
     p_checks = metrics["product_specific_checks"]
     assert p_checks["sparse_data"]["sparse_user_ratio"] > 0.0
-    assert p_checks["long_tail"]["tail_item_count"] == 720
+    assert p_checks["long_tail"]["tail_item_count"] == int(len(loaded.items) * 0.8)
     assert p_checks["category_diversity"]["mean_unique_categories"] > 0.0
     assert p_checks["similar_alternatives_spot_check"]["passed"] is True
     assert p_checks["similar_alternatives_spot_check"]["shared_category_rate"] >= 0.60
