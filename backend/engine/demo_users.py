@@ -177,4 +177,13 @@ def select_demo_users(
     out_path = target_dir / "demo_users.json"
     out_path.write_text(json.dumps(selected_users, indent=2), encoding="utf-8")
 
+    manifest_path = target_dir / "manifest.json"
+    if manifest_path.exists():
+        from engine.artifacts import compute_file_sha256
+
+        manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if "files" in manifest_data:
+            manifest_data["files"]["demo_users.json"] = compute_file_sha256(out_path)
+            manifest_path.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
+
     return selected_users
