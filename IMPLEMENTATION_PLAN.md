@@ -37,7 +37,7 @@
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
-| 4 | Products pipeline (Amazon + SAR) | 5 | 0 | 0 | 8 | 62% |
+| 4 | Products pipeline (Amazon + SAR) | 6 | 0 | 0 | 8 | 75% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 0 | 0 | 0 | 12 | 0% |
 | 6 | Cross-type hardening and evidence | 0 | 0 | 0 | 8 | 0% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **51** | | | **129** | **39%** |
+| | **Overall** | **52** | | | **129** | **40%** |
 
-`[#######-------------] 39%  (51/129 tasks)`
+`[########------------] 40%  (52/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -192,7 +192,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P4.3** Validation report (R1) and chronological split with leakage test (R2). *Acceptance:* report and test pass.
 - [x] **P4.4** Add `configs/products.yaml` reusing `SarModel` (no new model code unless a documented need appears). Check memory usage of the similarity structure and keep the budget in R8. *Acceptance:* peak memory during training and serving recorded.
 - [x] **P4.5** Tune on validation, train, evaluate against baselines, cold-start curve, precompute artifacts, select demo users (same procedure as Phase 3). *Acceptance:* same artifact set as movies; R4 sanity results recorded honestly.
-- [ ] **P4.6** Product-specific checks: sparse-data behaviour (many users with few interactions), long-tail items, category diversity of top-k, "similar alternatives" quality spot-check (top-5 similar items for 10 random products share category above a recorded rate). *Acceptance:* numbers in `metrics.json`.
+- [x] **P4.6** Product-specific checks: sparse-data behaviour (many users with few interactions), long-tail items, category diversity of top-k, "similar alternatives" quality spot-check (top-5 similar items for 10 random products share category above a recorded rate). *Acceptance:* numbers in `metrics.json`.
 - [ ] **P4.7** **Core unchanged check:** `git diff` between the Phase 3 end commit and now shows changes only in `adapters/`, `configs/`, tests, docs, and artifacts tooling; any core change requires a `docs/DECISIONS.md` entry explaining why the abstraction was insufficient (and a fix to the abstraction, not a special case). *Acceptance:* check script `tools/core_unchanged.py` added and passing.
 - [ ] **P4.8** Phase 4 Gate and "break your own work" ritual.
 
