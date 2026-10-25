@@ -39,16 +39,16 @@
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 11 | 0 | 1 | 12 | 91% |
-| 6 | Cross-type hardening and evidence | 2 | 0 | 0 | 8 | 25% |
+| 6 | Cross-type hardening and evidence | 3 | 0 | 0 | 8 | 37% |
 | 7 | FastAPI backend | 0 | 0 | 0 | 13 | 0% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **67** | | | **129** | **51%** |
+| | **Overall** | **68** | | | **129** | **52%** |
 
-`[##########----------] 51%  (67/129 tasks)`
+`[##########----------] 52%  (68/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -225,7 +225,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 
 - [x] **P6.1** `tools/make_results.py` generates `docs/RESULTS.md` and `docs/figures/*.png` from the three `metrics.json` files (tables: model vs baselines per type; cold-start curves; extra metrics; protocol notes; honest limitations). *Acceptance:* regenerates identically; contains no hand-typed numbers.
 - [x] **P6.2** Extensibility proof: add a synthetic fourth type `toy` (test-only adapter and config in `tests/`) and a test that registers it, trains it, and serves recommendations **without editing any file in `engine/` core or `api/`**. *Acceptance:* test passes in CI.
-- [ ] **P6.3** Determinism: retrain each type twice in `--fast` mode and compare `topn.parquet` hashes. *Acceptance:* identical, or differences explained and eliminated.
+- [x] **P6.3** Determinism: retrain each type twice in `--fast` mode and compare `topn.parquet` hashes. *Acceptance:* identical, or differences explained and eliminated.
 - [ ] **P6.4** Clean-room rebuild: from a fresh clone and fresh virtualenv run `make setup data train-fast eval`; record wall-clock times and any manual steps. *Acceptance:* works using only README commands (update the README if not).
 - [ ] **P6.5** Cross-type consistency checks: all three artifact sets load through the same loader; all models pass the same R3 invariant suite via one parametrised test over registered types. *Acceptance:* parametrised test over `registry.types()`.
 - [ ] **P6.6** Statistical honesty: for each type and headline metric, compute a bootstrap confidence interval over users (at least 200 resamples) and report whether the model's advantage over popularity is outside the interval. *Acceptance:* intervals in `metrics.json` and shown in RESULTS.md.
