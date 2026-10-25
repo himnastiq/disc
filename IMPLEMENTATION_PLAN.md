@@ -40,15 +40,15 @@
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 10 | 0 | 1 | 12 | 83% |
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
-| 7 | FastAPI backend | 7 | 0 | 0 | 13 | 53% |
+| 7 | FastAPI backend | 8 | 0 | 0 | 13 | 61% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **79** | | | **129** | **61%** |
+| | **Overall** | **80** | | | **129** | **62%** |
 
-`[############--------] 61%  (79/129 tasks)`
+`[############--------] 62%  (80/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -246,7 +246,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P7.5** `GET /v1/recommend?type=&user_id=&k=&exclude=`: personalised results from `topn.parquet` when the requested k and exclusions allow, otherwise computed live from the model (no TensorFlow); response includes `mode`, `results[]` with `item_id`, `title`, `subtitle`, `categories`, `year`, `image_url`, `score` (raw), `display_score` (0 to 1 min-max within the list), `reason` (`{kind, item_id, text}` or null), and `meta`. *Acceptance:* R3 invariants asserted on every response in tests.
 - [x] **P7.6** `POST /v1/recommend/cold-start` body `{type, history: [{item_id, signal?}], exclude?: [], k}`: history max 200 entries, ids unique (duplicates are a 422 `duplicate_ids`), unknown ids ignored and listed in `ignored_item_ids`, `mode` = `popularity` when fewer positive items than the type's minimum (config) else `personalized`. *Acceptance:* edge-case tests: empty history, only unknown ids, 200 and 201 entries, signals out of range.
 - [x] **P7.7** `GET /v1/popular?type=&k=` and `GET /v1/similar?type=&item_id=&k=`. *Acceptance:* `similar` never returns the query item; unknown item gives 404 `unknown_item`.
-- [ ] **P7.8** Security: optional API key header `X-API-Key` compared in constant time **on encoded bytes**; CORS from env; request body size limit; input length limits (search query max 100 chars); no debug output. *Acceptance:* tests with a non-ASCII key header return 401, not 500.
+- [x] **P7.8** Security: optional API key header `X-API-Key` compared in constant time **on encoded bytes**; CORS from env; request body size limit; input length limits (search query max 100 chars); no debug output. *Acceptance:* tests with a non-ASCII key header return 401, not 500.
 - [ ] **P7.9** Export `openapi.json` (`scripts/export_openapi.py`) and commit it; add a CI check that the committed file equals the generated one. *Acceptance:* check script passes.
 - [ ] **P7.10** Contract and property tests: parametrise every endpoint over `registry.types()`; invariants from R3; fuzz with hypothesis (random k, random strings, random id lists); run schemathesis against the OpenAPI schema if it can be installed. *Acceptance:* zero 500 responses across the fuzz run.
 - [ ] **P7.11** Performance and memory: `scripts/bench_api.py` (warm-up, 500 requests per endpoint, report p50/p95/p99 and RSS). Meet R8 budgets or document why not. *Acceptance:* results appended to `docs/RESULTS.md` (generated section).

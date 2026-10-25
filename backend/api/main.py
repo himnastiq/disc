@@ -22,6 +22,7 @@ from api.routes.metadata import router as metadata_router
 from api.routes.recommend import router as recommend_router
 from api.routes.users import router as users_router
 from api.search import ItemSearchIndex
+from api.security import SecurityMiddleware
 from engine import registry
 from engine.artifacts import load_artifacts, verify_artifacts
 from engine.config import load_config
@@ -119,14 +120,18 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Discovery Engine",
         version="1.0.0",
+        debug=False,
         lifespan=lifespan,
     )
 
-    # CORS Middleware configuration
+    # Security middleware (API key check & body size limit)
+    app.add_middleware(SecurityMiddleware)
+
+    # CORS Middleware configuration (outermost so CORS headers apply to all responses)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=config["cors_origins"],
-        allow_credentials=True,
+        allow_credentials="*" not in config["cors_origins"],
         allow_methods=["*"],
         allow_headers=["*"],
     )
