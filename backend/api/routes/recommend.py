@@ -145,23 +145,31 @@ def get_recommendations(
     scored_items: list[tuple[str, float]] = []
     source = "live_model"
 
-    if serving_mode == "personalized" and loaded.topn is not None and not loaded.topn.empty:
-        user_topn = loaded.topn[loaded.topn["user_id"].astype(str) == uid_str]
-        if not user_topn.empty:
-            filtered_topn = user_topn[
-                ~user_topn["item_id"].astype(str).isin(exclusions)
-            ].sort_values(by="rank")
-
-            if len(filtered_topn) >= k:
-                source = "topn_parquet"
-                for _, row in filtered_topn.head(k).iterrows():
-                    scored_items.append((str(row["item_id"]), float(row["score"])))
-
-    # 5. Live computation fallback if topn was insufficient or user needs live serving
-    if not scored_items:
-        model_results = model.recommend_user(user_id=uid_str, k=k, exclude_ids=exclusions)
-        for item in model_results:
+    if serving_mode == "popularity":
+        source = "popularity"
+        pop_results = model.popular(k=k, exclude_ids=exclusions)
+        for item in pop_results:
             scored_items.append((str(item.item_id), float(item.score)))
+    else:
+        # Personalized mode: attempt precomputed topn.parquet retrieval
+        if loaded.topn is not None and not loaded.topn.empty:
+            user_topn = loaded.topn[loaded.topn["user_id"].astype(str) == uid_str]
+            if not user_topn.empty:
+                filtered_topn = user_topn[
+                    ~user_topn["item_id"].astype(str).isin(exclusions)
+                ].sort_values(by="rank")
+
+                if len(filtered_topn) >= k:
+                    source = "topn_parquet"
+                    for _, row in filtered_topn.head(k).iterrows():
+                        scored_items.append((str(row["item_id"]), float(row["score"])))
+
+        # Live computation fallback if topn was insufficient
+        if not scored_items:
+            source = "live_model"
+            model_results = model.recommend_user(user_id=uid_str, k=k, exclude_ids=exclusions)
+            for item in model_results:
+                scored_items.append((str(item.item_id), float(item.score)))
 
     # Ensure k items returned
     scored_items = scored_items[:k]
@@ -176,19 +184,20 @@ def get_recommendations(
     for (iid, score), d_score in zip(scored_items, display_scores, strict=False):
         meta_info = hydrated.get(iid, {})
 
-        # Compute faithful explanation reason if applicable
+        # Compute faithful explanation reason if applicable (personalized only)
         reason_obj: RecommendationReason | None = None
-        try:
-            exp = model.explain(recommended_item_id=iid, user_id=uid_str)
-            if exp is not None:
-                reason_obj = RecommendationReason(
-                    kind=exp.kind,
-                    item_id=exp.item_id,
-                    text=exp.text,
-                    similarity_score=getattr(exp, "score", None),
-                )
-        except Exception:
-            reason_obj = None
+        if serving_mode == "personalized":
+            try:
+                exp = model.explain(recommended_item_id=iid, user_id=uid_str)
+                if exp is not None:
+                    reason_obj = RecommendationReason(
+                        kind=exp.kind,
+                        item_id=exp.item_id,
+                        text=exp.text,
+                        similarity_score=getattr(exp, "score", None),
+                    )
+            except Exception:
+                reason_obj = None
 
         results.append(
             ScoredItemResponse(

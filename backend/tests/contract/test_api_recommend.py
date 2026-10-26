@@ -171,3 +171,44 @@ def test_recommend_unknown_type(api_client: TestClient) -> None:
     assert resp.status_code == 404
     data = resp.json()
     assert data["error"]["code"] == "unknown_type"
+
+
+@pytest.mark.parametrize("content_type", ["movies", "products"])
+def test_recommend_user_with_fewer_positives_returns_popularity(
+    api_client: TestClient, content_type: str
+) -> None:
+    """FIX-33: When a user has fewer positive interactions than the minimum required,
+    mode must be 'popularity' and results must agree with popularity serving.
+    """
+    from engine.config import load_config
+
+    spec = load_config(content_type, fast=True)
+    min_pos = spec.serving.min_positive_items_for_personalization
+    loaded = load_artifacts(get_artifacts_dir() / content_type, verify=False)
+    inter = loaded.interactions
+
+    # Find a user with fewer positive interactions than min_pos
+    target_user = None
+    for uid in inter["user_id"].astype(str).unique():
+        sub = inter[inter["user_id"].astype(str) == uid]
+        if "positive" in sub.columns:
+            pos_count = int(sub["positive"].sum())
+        else:
+            pos_count = int((sub["signal"] >= spec.signal.positive_threshold).sum())
+        if pos_count < min_pos:
+            target_user = uid
+            break
+
+    assert target_user is not None, (
+        f"Could not find a user with < {min_pos} positives in {content_type}"
+    )
+
+    resp = api_client.get(f"/v1/recommend?type={content_type}&user_id={target_user}&k=5")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["mode"] == "popularity"
+    assert data["meta"]["source"] == "popularity"
+    assert len(data["results"]) == 5
+    # Popular results should not have personalized explanation reasons
+    for r in data["results"]:
+        assert r["reason"] is None
