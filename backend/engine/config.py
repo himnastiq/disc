@@ -175,10 +175,8 @@ def resolve_serving_config(
                 candidate.model.params["timedecay_formula"] = best_p["timedecay_formula"]
             if "top_neighbors_per_item" in best_p:
                 candidate.serving.top_neighbors_per_item = int(best_p["top_neighbors_per_item"])
-            if "time_decay_coefficient" in best_p and best_p["time_decay_coefficient"] is not None:
+            if best_p.get("time_decay_coefficient") is not None:
                 candidate.model.params["time_decay_coefficient"] = best_p["time_decay_coefficient"]
-            elif "time_decay_coefficient" in best_p and best_p["time_decay_coefficient"] is None:
-                candidate.model.params["time_decay_coefficient"] = None
             if "positive_threshold" in best_p:
                 candidate.signal.positive_threshold = float(best_p["positive_threshold"])
         candidate_specs.append(candidate)

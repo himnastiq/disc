@@ -229,8 +229,8 @@ fast:
         # Build expected spec matching tuned parameters
         tuned_spec = load_config("movies", fast=True)
         tuned_spec.model.params["similarity_type"] = "lift"
-        tuned_spec.model.params["timedecay_formula"] = False
-        tuned_spec.model.params["time_decay_coefficient"] = None
+        tuned_spec.model.params["timedecay_formula"] = True
+        tuned_spec.model.params["time_decay_coefficient"] = 45.0
         tuned_spec.signal.positive_threshold = 3.5
         tuned_spec.serving.top_neighbors_per_item = 50
         expected_hash = compute_config_hash(tuned_spec)
@@ -246,8 +246,8 @@ fast:
         tuning_data = {
             "best_params": {
                 "similarity_type": "lift",
-                "timedecay_formula": False,
-                "time_decay_coefficient": None,
+                "timedecay_formula": True,
+                "time_decay_coefficient": 45.0,
                 "positive_threshold": 3.5,
                 "top_neighbors_per_item": 50,
             }
@@ -256,7 +256,8 @@ fast:
 
         reconstructed = resolve_serving_config("movies", type_dir)
         assert reconstructed.model.params["similarity_type"] == "lift"
-        assert reconstructed.model.params["timedecay_formula"] is False
+        assert reconstructed.model.params["timedecay_formula"] is True
+        assert reconstructed.model.params["time_decay_coefficient"] == 45.0
         assert compute_config_hash(reconstructed) == expected_hash
 
     def test_resolve_serving_config_corrupt_tuning_json_raises_loudly(self, tmp_path):
