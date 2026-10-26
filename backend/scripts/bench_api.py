@@ -1,8 +1,9 @@
-"""Discovery Engine - API Latency and Resource Benchmark (Phase 7, P7.11).
+"""Discovery Engine - API Latency and Resource Benchmark (Phase 7, P7.11, FIX-34).
 
 Measures p50, p95, p99 latencies and process RSS memory across all registered
-endpoints under load, evaluates compliance with R8 latency budgets (p95 < 150ms),
-and appends the benchmark results table to docs/RESULTS.md.
+endpoints under load with 200 randomly sampled users per domain, evaluates
+compliance with R8 latency budgets (p95 < 150ms), and writes honest,
+metrics-derived analysis into docs/RESULTS.md without hardcoded claims.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ import sys
 import time
 from ctypes import wintypes
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -26,6 +27,9 @@ if str(BACKEND_ROOT) not in sys.path:
 from fastapi.testclient import TestClient  # noqa: E402
 
 from api.main import create_app  # noqa: E402
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 RESULTS_MD_PATH = REPO_ROOT / "docs" / "RESULTS.md"
 TARGET_P95_MS = 150.0  # R8 budget threshold
@@ -84,31 +88,34 @@ def benchmark_endpoint(
     path: str,
     params: dict[str, Any] | None = None,
     json_body: dict[str, Any] | None = None,
+    req_gen: Callable[[], tuple[str, dict[str, Any] | None, dict[str, Any] | None]] | None = None,
     warmup: int = 50,
     requests: int = 500,
 ) -> dict[str, Any]:
-    """Benchmark a single endpoint measuring p50, p95, p99, mean, max latencies."""
+    """Benchmark an endpoint measuring p50, p95, p99, mean, max latencies under load."""
     # 1. Warm-up
     for _ in range(warmup):
+        req_path, req_params, req_body = req_gen() if req_gen else (path, params, json_body)
         if method == "GET":
-            client.get(path, params=params)
+            client.get(req_path, params=req_params)
         elif method == "POST":
-            client.post(path, json=json_body)
+            client.post(req_path, json=req_body)
 
     # 2. Measurement iterations
     latencies: list[float] = []
     rss_start = get_process_rss_mb()
 
     for _ in range(requests):
+        req_path, req_params, req_body = req_gen() if req_gen else (path, params, json_body)
         t0 = time.perf_counter()
         if method == "GET":
-            resp = client.get(path, params=params)
+            resp = client.get(req_path, params=req_params)
         elif method == "POST":
-            resp = client.post(path, json=json_body)
+            resp = client.post(req_path, json=req_body)
         t1 = time.perf_counter()
 
         assert resp.status_code == 200, (
-            f"Benchmark request failed with {resp.status_code}: {resp.text}"
+            f"Benchmark request to {req_path} failed with {resp.status_code}: {resp.text}"
         )
         latencies.append((t1 - t0) * 1000.0)
 
@@ -139,11 +146,11 @@ def run_benchmark(
     warmup: int = 50,
     append_to_results: bool = True,
 ) -> list[dict[str, Any]]:
-    """Execute complete performance benchmark suite across core endpoints."""
+    """Execute complete performance benchmark suite with 200 random users sampled per domain."""
     print("=" * 70)
-    print("Discovery Engine - API Latency & Memory Benchmark (Phase 7, P7.11)")
+    print("Discovery Engine - API Latency & Memory Benchmark (Phase 7, P7.11, FIX-34)")
     print(
-        f"Iterations: {requests} reqs/endpoint (warm-up: {warmup}) | Target p95 < {TARGET_P95_MS}ms"
+        f"Protocol: 200 sampled users/type | {requests} reqs/endpoint | Target p95 < {TARGET_P95_MS}ms"
     )
     print("=" * 70)
 
@@ -151,15 +158,40 @@ def run_benchmark(
     results: list[dict[str, Any]] = []
 
     with TestClient(app) as client:
-        # Dynamically resolve valid user and item IDs from loaded artifacts
-        movie_user = str(app.state.artifacts["movies"].users["user_id"].iloc[0])
+        rng = np.random.default_rng(42)
+
+        # Sample 200 random users per registered type
+        sampled_users: dict[str, list[str]] = {}
+        for ctype in ["movies", "products", "articles"]:
+            if ctype in app.state.lookups:
+                uids = list(app.state.lookups[ctype].user_ids)
+                n_sample = min(200, len(uids))
+                sampled_users[ctype] = rng.choice(uids, size=n_sample, replace=False).tolist()
+            else:
+                sampled_users[ctype] = ["1"]
+
+        # Default catalogue items for item-level endpoints
         movie_item = str(app.state.artifacts["movies"].items["item_id"].iloc[0])
-
-        prod_user = str(app.state.artifacts["products"].users["user_id"].iloc[0])
         prod_item = str(app.state.artifacts["products"].items["item_id"].iloc[0])
-
-        article_user = str(app.state.artifacts["articles"].users["user_id"].iloc[0])
         article_item = str(app.state.artifacts["articles"].items["item_id"].iloc[0])
+
+        def make_user_recs_gen(ctype: str) -> Callable[[], tuple[str, dict[str, Any], None]]:
+            users = sampled_users[ctype]
+
+            def _gen() -> tuple[str, dict[str, Any], None]:
+                chosen_user = str(rng.choice(users))
+                return "/v1/recommend", {"type": ctype, "user_id": chosen_user, "k": 10}, None
+
+            return _gen
+
+        def make_user_profile_gen(ctype: str) -> Callable[[], tuple[str, dict[str, Any], None]]:
+            users = sampled_users[ctype]
+
+            def _gen() -> tuple[str, dict[str, Any], None]:
+                chosen_user = str(rng.choice(users))
+                return f"/v1/users/{chosen_user}/profile", {"type": ctype}, None
+
+            return _gen
 
         bench_configs: list[dict[str, Any]] = [
             # Metadata endpoints
@@ -171,16 +203,19 @@ def run_benchmark(
                 "path": "/v1/items/search",
                 "params": {"type": "movies", "q": "star", "limit": 10},
             },
+            # User profile (200 random users)
             {
                 "method": "GET",
-                "path": f"/v1/users/{movie_user}/profile",
-                "params": {"type": "movies"},
+                "path": "/v1/users/{id}/profile",
+                "req_gen": make_user_profile_gen("movies"),
+                "label_suffix": "(movies, 200 users)",
             },
-            # Movies endpoints
+            # Movies endpoints (200 random users)
             {
                 "method": "GET",
                 "path": "/v1/recommend",
-                "params": {"type": "movies", "user_id": movie_user, "k": 10},
+                "req_gen": make_user_recs_gen("movies"),
+                "label_suffix": "(movies, 200 users)",
             },
             {
                 "method": "POST",
@@ -197,11 +232,12 @@ def run_benchmark(
                 "path": "/v1/similar",
                 "params": {"type": "movies", "item_id": movie_item, "k": 10},
             },
-            # Products endpoints
+            # Products endpoints (200 random users)
             {
                 "method": "GET",
                 "path": "/v1/recommend",
-                "params": {"type": "products", "user_id": prod_user, "k": 10},
+                "req_gen": make_user_recs_gen("products"),
+                "label_suffix": "(products, 200 users)",
             },
             {
                 "method": "POST",
@@ -217,11 +253,12 @@ def run_benchmark(
                 "path": "/v1/similar",
                 "params": {"type": "products", "item_id": prod_item, "k": 10},
             },
-            # Articles endpoints
+            # Articles endpoints (200 random users)
             {
                 "method": "GET",
                 "path": "/v1/recommend",
-                "params": {"type": "articles", "user_id": article_user, "k": 5},
+                "req_gen": make_user_recs_gen("articles"),
+                "label_suffix": "(articles, 200 users)",
             },
             {
                 "method": "POST",
@@ -233,20 +270,24 @@ def run_benchmark(
                 },
             },
         ]
+
         for cfg in bench_configs:
             label = f"{cfg['method']} {cfg['path']}"
-            if cfg.get("params"):
+            if cfg.get("label_suffix"):
+                label += f" {cfg['label_suffix']}"
+            elif cfg.get("params"):
                 label += f" ({cfg['params'].get('type', '')})"
             elif cfg.get("json_body"):
                 label += f" ({cfg['json_body'].get('type', '')})"
 
-            print(f"Benchmarking: {label:<45} ...", end="", flush=True)
+            print(f"Benchmarking: {label:<50} ...", end="", flush=True)
             res = benchmark_endpoint(
                 client=client,
                 method=cfg["method"],
                 path=cfg["path"],
                 params=cfg.get("params"),
                 json_body=cfg.get("json_body"),
+                req_gen=cfg.get("req_gen"),
                 warmup=warmup,
                 requests=requests,
             )
@@ -257,12 +298,25 @@ def run_benchmark(
                 f" p50={res['p50_ms']:5.2f}ms | p95={res['p95_ms']:5.2f}ms | RSS={res['rss_mb']:5.1f}MB [{status_str}]"
             )
 
-    # Generate Markdown Table
+    # Compute actual summary statistics for honest, generated analysis text
+    rec_results = [
+        r for r in results if "/v1/recommend" in r["label"] and "cold-start" not in r["label"]
+    ]
+    cold_results = [r for r in results if "cold-start" in r["label"]]
+    p50_topn = float(np.median([r["p50_ms"] for r in rec_results])) if rec_results else 0.0
+    p95_topn = float(np.max([r["p95_ms"] for r in rec_results])) if rec_results else 0.0
+    p95_cold = float(np.max([r["p95_ms"] for r in cold_results])) if cold_results else 0.0
+    rss_peak = float(np.max([r["rss_mb"] for r in results])) if results else 0.0
+    worst_p95 = float(np.max([r["p95_ms"] for r in results])) if results else 0.0
+    margin_ratio = TARGET_P95_MS / max(worst_p95, 0.001)
+
+    # Generate Markdown Table and Honest Generated Analysis Section
     md_lines: list[str] = [
         "",
         "## 8. API Serving Performance & Resource Budgets (Phase 7)",
         "",
         f"> **Benchmark Protocol:** Warm-up: {warmup} requests | Load: {requests} requests per endpoint.",
+        "> **Sampling Strategy:** 200 random users sampled per content domain (FIX-34).",
         f"> Latency Budget (R8): **p95 < {int(TARGET_P95_MS)} ms** across all personalized and cold-start endpoints.",
         "",
         "| Endpoint & Domain | Requests | p50 (Median) | p95 (Tail) | p99 (Worst) | Mean Latency | Process RSS | R8 Budget (<150ms) |",
@@ -280,11 +334,11 @@ def run_benchmark(
     md_lines.extend(
         [
             "",
-            "### Architectural Performance Analysis",
+            "### Architectural Performance Analysis (Generated from Benchmark Data)",
             "",
-            "- **In-Memory Artifact Serving:** Precomputed `topn.parquet` lookups execute in sub-millisecond time (<1.0 ms median), bypassing database overhead entirely.",
-            "- **Sparse Live Scoring:** Personalized fallback and cold-start matrix multiplications in `SarModel` (via sparse COO non-zero iteration) and `TfidfProfileModel` (via sparse CSR dot-product) comfortably beat the 150 ms tail budget by over 50x to 100x.",
-            "- **Memory Footprint:** Baseline process RSS remains lean (< 250 MB) with zero deep-learning runtime overhead (no TensorFlow, PyTorch, or JVM memory footprint).",
+            f"- **In-Memory Artifact Serving:** Precomputed `topn` and live model queries across 200 randomly sampled users per domain executed with an aggregate median latency of {p50_topn:.2f} ms and maximum tail latency of {p95_topn:.2f} ms, well within the {int(TARGET_P95_MS)} ms budget.",
+            f"- **Sparse Live Scoring & Cold Start:** Cold-start queries across all domains achieved a maximum tail latency of {p95_cold:.2f} ms; the worst-case p95 latency across all tested endpoints ({worst_p95:.2f} ms) operated {margin_ratio:.1f}x below the {int(TARGET_P95_MS)} ms threshold.",
+            f"- **Memory Footprint:** Peak process RSS reached {rss_peak:.1f} MB with all three content domains simultaneously loaded in memory, confirming zero deep-learning runtime overhead.",
             "",
         ]
     )
@@ -293,7 +347,6 @@ def run_benchmark(
 
     if append_to_results and RESULTS_MD_PATH.exists():
         existing_content = RESULTS_MD_PATH.read_text(encoding="utf-8")
-        # If Section 8 already exists, replace it; otherwise append
         section_header = "## 8. API Serving Performance & Resource Budgets (Phase 7)"
         if section_header in existing_content:
             before_section = existing_content.split(section_header)[0]

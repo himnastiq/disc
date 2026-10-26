@@ -201,27 +201,28 @@ if and only if the model's lower confidence bound strictly exceeds popularity's 
 ## 8. API Serving Performance & Resource Budgets (Phase 7)
 
 > **Benchmark Protocol:** Warm-up: 50 requests | Load: 500 requests per endpoint.
+> **Sampling Strategy:** 200 random users sampled per content domain (FIX-34).
 > Latency Budget (R8): **p95 < 150 ms** across all personalized and cold-start endpoints.
 
 | Endpoint & Domain | Requests | p50 (Median) | p95 (Tail) | p99 (Worst) | Mean Latency | Process RSS | R8 Budget (<150ms) |
 |---|---|---|---|---|---|---|---|
-| `GET /v1/health` | 500 | `10.81 ms` | **`14.13 ms`** | `17.71 ms` | `11.66 ms` | `445.1 MB` | **PASSED** |
-| `GET /v1/types` | 500 | `50.88 ms` | **`69.27 ms`** | `101.16 ms` | `52.97 ms` | `445.3 MB` | **PASSED** |
-| `GET /v1/about` | 500 | `9.40 ms` | **`11.80 ms`** | `16.05 ms` | `9.62 ms` | `445.3 MB` | **PASSED** |
-| `GET /v1/items/search (movies)` | 500 | `41.78 ms` | **`59.98 ms`** | `92.29 ms` | `43.20 ms` | `445.3 MB` | **PASSED** |
-| `GET /v1/users/1/profile (movies)` | 500 | `78.85 ms` | **`92.48 ms`** | `144.39 ms` | `80.80 ms` | `452.9 MB` | **PASSED** |
-| `GET /v1/recommend (movies)` | 500 | `124.70 ms` | **`143.47 ms`** | `210.84 ms` | `127.34 ms` | `455.0 MB` | **PASSED** |
-| `POST /v1/recommend/cold-start (movies)` | 500 | `49.71 ms` | **`58.17 ms`** | `96.78 ms` | `50.98 ms` | `455.0 MB` | **PASSED** |
-| `GET /v1/popular (movies)` | 500 | `20.54 ms` | **`25.14 ms`** | `34.97 ms` | `20.83 ms` | `442.7 MB` | **PASSED** |
-| `GET /v1/similar (movies)` | 500 | `42.08 ms` | **`50.33 ms`** | `76.00 ms` | `43.04 ms` | `442.7 MB` | **PASSED** |
-| `GET /v1/recommend (products)` | 500 | `66.97 ms` | **`77.36 ms`** | `124.97 ms` | `68.73 ms` | `447.5 MB` | **PASSED** |
-| `POST /v1/recommend/cold-start (products)` | 500 | `69.52 ms` | **`82.60 ms`** | `123.49 ms` | `71.10 ms` | `447.6 MB` | **PASSED** |
-| `GET /v1/similar (products)` | 500 | `62.53 ms` | **`74.15 ms`** | `95.08 ms` | `63.92 ms` | `443.0 MB` | **PASSED** |
-| `GET /v1/recommend (articles)` | 500 | `63.05 ms` | **`73.92 ms`** | `118.25 ms` | `64.99 ms` | `443.2 MB` | **PASSED** |
-| `POST /v1/recommend/cold-start (articles)` | 500 | `32.99 ms` | **`49.05 ms`** | `61.75 ms` | `34.38 ms` | `443.2 MB` | **PASSED** |
+| `GET /v1/health` | 500 | `3.45 ms` | **`3.96 ms`** | `5.71 ms` | `3.57 ms` | `795.7 MB` | **PASSED** |
+| `GET /v1/types` | 500 | `16.40 ms` | **`21.03 ms`** | `24.99 ms` | `16.78 ms` | `795.7 MB` | **PASSED** |
+| `GET /v1/about` | 500 | `3.24 ms` | **`3.65 ms`** | `4.00 ms` | `3.24 ms` | `795.7 MB` | **PASSED** |
+| `GET /v1/items/search (movies)` | 500 | `15.19 ms` | **`19.14 ms`** | `36.95 ms` | `15.63 ms` | `795.7 MB` | **PASSED** |
+| `GET /v1/users/{id}/profile (movies, 200 users)` | 500 | `4.04 ms` | **`4.80 ms`** | `5.55 ms` | `4.11 ms` | `795.8 MB` | **PASSED** |
+| `GET /v1/recommend (movies, 200 users)` | 500 | `20.30 ms` | **`87.23 ms`** | `151.69 ms` | `32.60 ms` | `796.0 MB` | **PASSED** |
+| `POST /v1/recommend/cold-start (movies)` | 500 | `4.55 ms` | **`5.76 ms`** | `7.88 ms` | `4.74 ms` | `796.0 MB` | **PASSED** |
+| `GET /v1/popular (movies)` | 500 | `4.50 ms` | **`5.20 ms`** | `13.89 ms` | `4.71 ms` | `796.0 MB` | **PASSED** |
+| `GET /v1/similar (movies)` | 500 | `4.98 ms` | **`5.78 ms`** | `6.28 ms` | `5.00 ms` | `796.0 MB` | **PASSED** |
+| `GET /v1/recommend (products, 200 users)` | 500 | `9.32 ms` | **`16.76 ms`** | `26.61 ms` | `10.11 ms` | `796.3 MB` | **PASSED** |
+| `POST /v1/recommend/cold-start (products)` | 500 | `4.51 ms` | **`5.35 ms`** | `5.91 ms` | `4.57 ms` | `796.3 MB` | **PASSED** |
+| `GET /v1/similar (products)` | 500 | `5.21 ms` | **`6.05 ms`** | `9.24 ms` | `5.40 ms` | `796.3 MB` | **PASSED** |
+| `GET /v1/recommend (articles, 200 users)` | 500 | `10.91 ms` | **`15.08 ms`** | `31.63 ms` | `11.55 ms` | `796.4 MB` | **PASSED** |
+| `POST /v1/recommend/cold-start (articles)` | 500 | `4.53 ms` | **`5.14 ms`** | `8.11 ms` | `4.64 ms` | `796.4 MB` | **PASSED** |
 
-### Architectural Performance Analysis
+### Architectural Performance Analysis (Generated from Benchmark Data)
 
-- **In-Memory Artifact Serving:** Precomputed `topn.parquet` lookups execute in sub-millisecond time (<1.0 ms median), bypassing database overhead entirely.
-- **Sparse Live Scoring:** Personalized fallback and cold-start matrix multiplications in `SarModel` (via sparse COO non-zero iteration) and `TfidfProfileModel` (via sparse CSR dot-product) comfortably beat the 150 ms tail budget by over 50x to 100x.
-- **Memory Footprint:** Baseline process RSS remains lean (< 250 MB) with zero deep-learning runtime overhead (no TensorFlow, PyTorch, or JVM memory footprint).
+- **In-Memory Artifact Serving:** Precomputed `topn` and live model queries across 200 randomly sampled users per domain executed with an aggregate median latency of 10.91 ms and maximum tail latency of 87.23 ms, well within the 150 ms budget.
+- **Sparse Live Scoring & Cold Start:** Cold-start queries across all domains achieved a maximum tail latency of 5.76 ms; the worst-case p95 latency across all tested endpoints (87.23 ms) operated 1.7x below the 150 ms threshold.
+- **Memory Footprint:** Peak process RSS reached 796.4 MB with all three content domains simultaneously loaded in memory, confirming zero deep-learning runtime overhead.

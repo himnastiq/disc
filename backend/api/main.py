@@ -18,6 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.errors import register_error_handlers
+from api.lookups import build_type_lookups
 from api.routes.metadata import router as metadata_router
 from api.routes.recommend import router as recommend_router
 from api.routes.users import router as users_router
@@ -64,6 +65,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     app.state.artifact_dir = config["artifact_dir"]
     app.state.api_key = config["api_key"]
+    app.state.configs = {}
+    app.state.lookups = {}
     app.state.artifacts = {}
     app.state.models = {}
     app.state.search_indexes = {}
@@ -95,9 +98,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             model = registry.build_model(spec)
             model.load(loaded.model_dir)
 
-            # 3. Build text search index
+            # 3. Build in-memory lookup structures (FIX-34)
+            lookups = build_type_lookups(spec, loaded)
+
+            # 4. Build text search index
             search_index = ItemSearchIndex(loaded.items, loaded.interactions)
 
+            app.state.configs[content_type] = spec
+            app.state.lookups[content_type] = lookups
             app.state.artifacts[content_type] = loaded
             app.state.models[content_type] = model
             app.state.search_indexes[content_type] = search_index

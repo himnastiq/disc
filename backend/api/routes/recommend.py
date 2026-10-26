@@ -1,13 +1,12 @@
-"""Discovery Engine - Recommendation endpoints (Phase 7, P7.5, P7.6, P7.7)."""
+"""Discovery Engine - Recommendation endpoints (Phase 7, P7.5, P7.6, P7.7, FIX-34)."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-import pandas as pd
 from fastapi import APIRouter, Query, Request
 
-from api.deps import resolve_loaded_artifacts, resolve_model
+from api.deps import resolve_model, resolve_type_lookups
 from api.errors import DuplicateIDsError
 from api.schemas import (
     ColdStartRequest,
@@ -18,11 +17,9 @@ from api.schemas import (
     ScoredItemResponse,
     SimilarResponse,
 )
-from engine.config import load_config
 from engine.errors import UnknownItem, UnknownUser
 
 if TYPE_CHECKING:
-    from engine.artifacts import LoadedArtifacts
     from engine.models.base import RecommenderModel
 
 router = APIRouter(prefix="/v1", tags=["recommendations"])
@@ -37,47 +34,6 @@ def compute_display_scores(scores: list[float]) -> list[float]:
     if s_max == s_min:
         return [1.0] * len(scores)
     return [round(float((s - s_min) / (s_max - s_min)), 4) for s in scores]
-
-
-def hydrate_items(item_ids: list[str], items_df: pd.DataFrame) -> dict[str, dict[str, Any]]:
-    """Fetch item titles, subtitles, categories, year, and images for response enrichment."""
-    id_set = set(item_ids)
-    subset = items_df[items_df["item_id"].astype(str).isin(id_set)]
-    result: dict[str, dict[str, Any]] = {}
-
-    for _, row in subset.iterrows():
-        iid = str(row["item_id"])
-        cats_raw = row.get("categories")
-        categories = list(cats_raw) if isinstance(cats_raw, (list, tuple)) else []
-        subtitle = str(row["subtitle"]) if pd.notna(row.get("subtitle")) else None
-        year = int(row["year"]) if pd.notna(row.get("year")) else None
-        image_url = str(row["image_url"]) if pd.notna(row.get("image_url")) else None
-
-        extra: dict[str, Any] = {}
-        for col in items_df.columns:
-            if col not in (
-                "item_id",
-                "title",
-                "subtitle",
-                "categories",
-                "year",
-                "image_url",
-                "text",
-            ):
-                val = row[col]
-                if pd.notna(val):
-                    extra[col] = val
-
-        result[iid] = {
-            "title": str(row.get("title", iid)),
-            "subtitle": subtitle,
-            "categories": categories,
-            "year": year,
-            "image_url": image_url,
-            "extra": extra,
-        }
-
-    return result
 
 
 def parse_exclusions(exclude_list: list[str]) -> set[str]:
@@ -100,48 +56,27 @@ def get_recommendations(
     exclude: list[str] = Query(default_factory=list, description="Item IDs to explicitly exclude"),
 ) -> RecommendResponse:
     """Serve personalized recommendations from precomputed topn.parquet when possible, or compute live."""
-    loaded: LoadedArtifacts = resolve_loaded_artifacts(request, type)
+    lookups = resolve_type_lookups(request, type)
     model: RecommenderModel = resolve_model(request, type)
-    spec = load_config(type, fast=True)
+    spec = lookups.spec
 
     uid_str = str(user_id)
 
-    # 1. Verify user exists
-    user_exists = (
-        not loaded.users[loaded.users["user_id"].astype(str) == uid_str].empty
-        or not loaded.interactions[loaded.interactions["user_id"].astype(str) == uid_str].empty
-    )
-    if not user_exists:
+    # 1. Verify user exists via O(1) in-memory index
+    if uid_str not in lookups.user_ids:
         raise UnknownUser(user_id=uid_str, content_type=type)
 
     # 2. Exclusions: user-supplied + past interactions (if allow_repeat is False)
     exclusions = parse_exclusions(exclude)
-    user_seen: set[str] = set()
     if not spec.model.allow_repeat:
-        u_interactions = loaded.interactions[loaded.interactions["user_id"].astype(str) == uid_str]
-        user_seen = set(u_interactions["item_id"].astype(str))
-        exclusions.update(user_seen)
+        exclusions.update(lookups.user_seen_items.get(uid_str, set()))
 
     # 3. Check user's positive interactions to determine mode
-    if "positive" in loaded.interactions.columns:
-        user_pos_count = int(
-            loaded.interactions[
-                (loaded.interactions["user_id"].astype(str) == uid_str)
-                & (loaded.interactions["positive"].astype(bool))
-            ].shape[0]
-        )
-    else:
-        user_pos_count = int(
-            loaded.interactions[
-                (loaded.interactions["user_id"].astype(str) == uid_str)
-                & (loaded.interactions["signal"] >= spec.signal.positive_threshold)
-            ].shape[0]
-        )
-
+    user_pos_count = lookups.user_positive_count.get(uid_str, 0)
     min_pos_for_pers = spec.serving.min_positive_items_for_personalization
     serving_mode = "popularity" if user_pos_count < min_pos_for_pers else "personalized"
 
-    # 4. Attempt precomputed topn.parquet retrieval
+    # 4. Attempt precomputed topn retrieval
     scored_items: list[tuple[str, float]] = []
     source = "live_model"
 
@@ -151,18 +86,15 @@ def get_recommendations(
         for item in pop_results:
             scored_items.append((str(item.item_id), float(item.score)))
     else:
-        # Personalized mode: attempt precomputed topn.parquet retrieval
-        if loaded.topn is not None and not loaded.topn.empty:
-            user_topn = loaded.topn[loaded.topn["user_id"].astype(str) == uid_str]
-            if not user_topn.empty:
-                filtered_topn = user_topn[
-                    ~user_topn["item_id"].astype(str).isin(exclusions)
-                ].sort_values(by="rank")
-
-                if len(filtered_topn) >= k:
-                    source = "topn_parquet"
-                    for _, row in filtered_topn.head(k).iterrows():
-                        scored_items.append((str(row["item_id"]), float(row["score"])))
+        # Personalized mode: attempt precomputed topn retrieval
+        user_topn_tuples = lookups.user_topn.get(uid_str, [])
+        if user_topn_tuples:
+            filtered_topn = [
+                (iid, score) for iid, score in user_topn_tuples if iid not in exclusions
+            ]
+            if len(filtered_topn) >= k:
+                source = "topn_parquet"
+                scored_items.extend(filtered_topn[:k])
 
         # Live computation fallback if topn was insufficient
         if not scored_items:
@@ -174,15 +106,13 @@ def get_recommendations(
     # Ensure k items returned
     scored_items = scored_items[:k]
 
-    # 6. Hydrate items metadata and calculate display scores
+    # 5. Hydrate items metadata and calculate display scores
     raw_scores = [s for _, s in scored_items]
     display_scores = compute_display_scores(raw_scores)
-    item_ids = [iid for iid, _ in scored_items]
-    hydrated = hydrate_items(item_ids, loaded.items)
 
     results: list[ScoredItemResponse] = []
     for (iid, score), d_score in zip(scored_items, display_scores, strict=False):
-        meta_info = hydrated.get(iid, {})
+        meta_info = lookups.item_metadata.get(iid, {})
 
         # Compute faithful explanation reason if applicable (personalized only)
         reason_obj: RecommendationReason | None = None
@@ -230,9 +160,9 @@ def recommend_cold_start(
     body: ColdStartRequest,
 ) -> ColdStartResponse:
     """Generate recommendations from hypothetical user history (cold-start)."""
-    loaded: LoadedArtifacts = resolve_loaded_artifacts(request, body.type)
+    lookups = resolve_type_lookups(request, body.type)
     model: RecommenderModel = resolve_model(request, body.type)
-    spec = load_config(body.type, fast=True)
+    spec = lookups.spec
 
     # 1. Enforce unique item IDs in history (duplicates produce 422 duplicate_ids)
     seen_ids: set[str] = set()
@@ -250,8 +180,8 @@ def recommend_cold_start(
             duplicates=sorted(duplicate_ids),
         )
 
-    # 2. Filter history: valid catalogue items vs ignored items
-    catalogue = set(loaded.items["item_id"].astype(str))
+    # 2. Filter history: valid catalogue items vs ignored items via O(1) lookup
+    catalogue = lookups.catalogue_ids
     valid_history: list[tuple[str, float]] = []
     ignored_item_ids: list[str] = []
 
@@ -294,12 +224,10 @@ def recommend_cold_start(
     # 4. Hydrate item metadata and compute display scores
     raw_scores = [s for _, s in scored_items]
     display_scores = compute_display_scores(raw_scores)
-    item_ids = [iid for iid, _ in scored_items]
-    hydrated = hydrate_items(item_ids, loaded.items)
 
     results: list[ScoredItemResponse] = []
     for (iid, score), d_score in zip(scored_items, display_scores, strict=False):
-        meta_info = hydrated.get(iid, {})
+        meta_info = lookups.item_metadata.get(iid, {})
 
         # Compute faithful explanation reason if applicable
         reason_obj: RecommendationReason | None = None
@@ -353,7 +281,7 @@ def get_popular(
     ),
 ) -> PopularResponse:
     """Return top-k overall popular items for content type."""
-    loaded: LoadedArtifacts = resolve_loaded_artifacts(request, type)
+    lookups = resolve_type_lookups(request, type)
     model: RecommenderModel = resolve_model(request, type)
 
     pop_items = model.popular(k=k)
@@ -361,13 +289,11 @@ def get_popular(
 
     raw_scores = [float(item.score) for item in pop_items]
     display_scores = compute_display_scores(raw_scores)
-    item_ids = [str(item.item_id) for item in pop_items]
-    hydrated = hydrate_items(item_ids, loaded.items)
 
     results: list[ScoredItemResponse] = []
     for item, d_score in zip(pop_items, display_scores, strict=False):
         iid = str(item.item_id)
-        meta_info = hydrated.get(iid, {})
+        meta_info = lookups.item_metadata.get(iid, {})
         reason_obj = RecommendationReason(
             kind="popular",
             item_id=None,
@@ -408,29 +334,26 @@ def get_similar(
     ),
 ) -> SimilarResponse:
     """Return top-k items similar to query item."""
-    loaded: LoadedArtifacts = resolve_loaded_artifacts(request, type)
+    lookups = resolve_type_lookups(request, type)
     model: RecommenderModel = resolve_model(request, type)
 
-    catalogue = set(loaded.items["item_id"].astype(str))
     clean_item_id = str(item_id).strip()
-    if clean_item_id not in catalogue:
+    if clean_item_id not in lookups.catalogue_ids:
         raise UnknownItem(clean_item_id, type)
 
     similar_items = model.similar_items(item_id=clean_item_id, k=k)
     filtered_items = [it for it in similar_items if str(it.item_id) != clean_item_id][:k]
 
-    query_meta = hydrate_items([clean_item_id], loaded.items).get(clean_item_id, {})
+    query_meta = lookups.item_metadata.get(clean_item_id, {})
     query_title = query_meta.get("title", clean_item_id)
 
     raw_scores = [float(it.score) for it in filtered_items]
     display_scores = compute_display_scores(raw_scores)
-    item_ids = [str(it.item_id) for it in filtered_items]
-    hydrated = hydrate_items(item_ids, loaded.items)
 
     results: list[ScoredItemResponse] = []
     for it, d_score in zip(filtered_items, display_scores, strict=False):
         iid = str(it.item_id)
-        meta_info = hydrated.get(iid, {})
+        meta_info = lookups.item_metadata.get(iid, {})
         reason_obj = RecommendationReason(
             kind="similar_item",
             item_id=clean_item_id,

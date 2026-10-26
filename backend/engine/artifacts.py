@@ -208,6 +208,18 @@ def verify_artifacts(
     return manifest
 
 
+def as_str_list(val: Any) -> list[str]:
+    """Convert list, tuple, ndarray or scalar into a clean list of strings."""
+    if val is None:
+        return []
+    if isinstance(val, (list, tuple)):
+        return [str(x) for x in val if x is not None and str(x).strip()]
+    if hasattr(val, "tolist"):
+        return [str(x) for x in val.tolist() if x is not None and str(x).strip()]
+    s = str(val).strip()
+    return [s] if s else []
+
+
 def load_artifacts(
     artifact_dir: Path,
     verify: bool = True,
@@ -233,6 +245,8 @@ def load_artifacts(
     )
 
     items_df = pd.read_parquet(artifact_dir / "items.parquet")
+    if "categories" in items_df.columns:
+        items_df["categories"] = items_df["categories"].apply(as_str_list)
     interactions_df = pd.read_parquet(artifact_dir / "interactions.parquet")
     users_df = pd.read_parquet(artifact_dir / "users.parquet")
     metrics_data = json.loads((artifact_dir / "metrics.json").read_text(encoding="utf-8"))
