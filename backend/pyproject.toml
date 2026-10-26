@@ -26,7 +26,8 @@ core = [
     "pyyaml>=6.0",
     "tqdm>=4.65",
     "requests>=2.31",
-    "fastapi>=0.104",
+    "fastapi>=0.109.0",
+    "starlette>=0.35.0",
     "uvicorn[standard]>=0.24",
     "joblib>=1.3",
 ]
