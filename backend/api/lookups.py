@@ -13,16 +13,7 @@ if TYPE_CHECKING:
     from engine.schema import ContentTypeSpec
 
 
-def as_str_list(val: Any) -> list[str]:
-    """Convert list, tuple, ndarray or scalar into a list of strings."""
-    if val is None:
-        return []
-    if isinstance(val, (list, tuple)):
-        return [str(x) for x in val if x is not None and str(x).strip()]
-    if hasattr(val, "tolist"):
-        return [str(x) for x in val.tolist() if x is not None and str(x).strip()]
-    s = str(val).strip()
-    return [s] if s else []
+from engine.artifacts import as_str_list
 
 
 @dataclass

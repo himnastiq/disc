@@ -22,6 +22,7 @@ from api.schemas import (
 )
 from api.search import ItemSearchIndex
 from engine import registry
+from engine.artifacts import as_str_list
 from engine.config import load_config
 from engine.errors import UnknownItem
 
@@ -176,8 +177,7 @@ def get_users_for_type(
 
         uid = str(d["user_id"])
         demo_ids.add(uid)
-        cats_raw = d.get("top_categories", [])
-        categories = list(cats_raw) if isinstance(cats_raw, (list, tuple)) else []
+        categories = as_str_list(d.get("top_categories", []))
 
         result_users.append(
             UserSummary(
@@ -202,8 +202,7 @@ def get_users_for_type(
             if uid in demo_ids:
                 continue
 
-            cats_raw = row.get("top_categories")
-            categories = list(cats_raw) if isinstance(cats_raw, (list, tuple)) else []
+            categories = as_str_list(row.get("top_categories"))
             persona_val = str(row["persona"]) if pd.notna(row.get("persona")) else None
 
             result_users.append(
@@ -270,8 +269,7 @@ def get_item_detail(
         raise UnknownItem(item_id=item_id, content_type=type)
 
     row = matches.iloc[0]
-    cats_raw = row.get("categories")
-    categories = list(cats_raw) if isinstance(cats_raw, (list, tuple)) else []
+    categories = as_str_list(row.get("categories"))
 
     subtitle = str(row["subtitle"]) if pd.notna(row.get("subtitle")) else None
     year = int(row["year"]) if pd.notna(row.get("year")) else None

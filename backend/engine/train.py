@@ -11,12 +11,11 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 import pandas as pd
 
 from engine.adapters import movielens as _movielens_adapter  # noqa: F401
 from engine.adapters import toy as _toy_adapter  # noqa: F401
-from engine.artifacts import save_artifacts
+from engine.artifacts import as_str_list, save_artifacts
 from engine.config import load_config
 from engine.demo_users import select_demo_users_from_dfs
 from engine.evaluation.harness import EvaluationHarness
@@ -39,10 +38,7 @@ def compute_user_stats_and_personas(
     item_cats: dict[str, list[str]] = {}
     if items is not None and "categories" in items.columns:
         for _, row in items.iterrows():
-            cats = row["categories"]
-            item_cats[str(row["item_id"])] = (
-                list(cats) if isinstance(cats, (list, tuple, set, np.ndarray)) else []
-            )
+            item_cats[str(row["item_id"])] = as_str_list(row.get("categories"))
 
     top100_items = set(interactions["item_id"].astype(str).value_counts().head(100).index)
 

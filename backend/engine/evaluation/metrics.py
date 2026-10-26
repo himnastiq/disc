@@ -21,6 +21,7 @@ from discovery.evaluation.python_evaluation import (
     precision_at_k,
     recall_at_k,
 )
+from engine.artifacts import as_str_list
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -278,11 +279,7 @@ def intra_list_diversity(
 
     if isinstance(item_categories, pd.DataFrame):
         cat_map: dict[str, set[str]] = {
-            str(row[col_item]): (
-                set(row["categories"])
-                if isinstance(row["categories"], (list, set, tuple))
-                else set()
-            )
+            str(row[col_item]): set(as_str_list(row.get("categories")))
             for _, row in item_categories.iterrows()
         }
     else:

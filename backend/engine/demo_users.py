@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
+from engine.artifacts import as_str_list
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -58,13 +60,7 @@ def select_demo_users_from_dfs(
                 for existing in selected_recs
             ):
                 row = matching[matching["user_id"] == uid].iloc[0]
-                top_cats = (
-                    list(row["top_categories"])
-                    if "top_categories" in row
-                    and hasattr(row["top_categories"], "__iter__")
-                    and not isinstance(row["top_categories"], str)
-                    else []
-                )
+                top_cats = as_str_list(row.get("top_categories"))
                 selected_users.append(
                     {
                         "user_id": str(uid),
@@ -92,11 +88,7 @@ def select_demo_users_from_dfs(
             for existing in selected_recs
         ):
             row = valid_users_df[valid_users_df["user_id"] == uid].iloc[0]
-            top_cats = (
-                list(row["top_categories"])
-                if "top_categories" in row and isinstance(row["top_categories"], (list, tuple))
-                else []
-            )
+            top_cats = as_str_list(row.get("top_categories"))
             selected_users.append(
                 {
                     "user_id": str(uid),
@@ -115,11 +107,7 @@ def select_demo_users_from_dfs(
             if any(u["user_id"] == str(uid) for u in selected_users):
                 continue
             row = valid_users_df[valid_users_df["user_id"] == uid].iloc[0]
-            top_cats = (
-                list(row["top_categories"])
-                if "top_categories" in row and isinstance(row["top_categories"], (list, tuple))
-                else []
-            )
+            top_cats = as_str_list(row.get("top_categories"))
             selected_users.append(
                 {
                     "user_id": str(uid),

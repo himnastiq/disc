@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -12,7 +13,22 @@ import pandas as pd
 
 from engine.config import compute_config_hash
 from engine.errors import ArtifactCorruptError, ArtifactError
-from engine.evaluation.harness import get_git_sha
+
+
+def get_git_sha() -> str:
+    """Retrieve current git commit SHA, or 'unknown' if git is unavailable."""
+    try:
+        res = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5,
+        )
+        return res.stdout.strip()
+    except Exception:
+        return "unknown"
+
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -249,8 +265,13 @@ def load_artifacts(
         items_df["categories"] = items_df["categories"].apply(as_str_list)
     interactions_df = pd.read_parquet(artifact_dir / "interactions.parquet")
     users_df = pd.read_parquet(artifact_dir / "users.parquet")
+    if "top_categories" in users_df.columns:
+        users_df["top_categories"] = users_df["top_categories"].apply(as_str_list)
     metrics_data = json.loads((artifact_dir / "metrics.json").read_text(encoding="utf-8"))
     demo_users_data = json.loads((artifact_dir / "demo_users.json").read_text(encoding="utf-8"))
+    for d in demo_users_data:
+        if "top_categories" in d:
+            d["top_categories"] = as_str_list(d["top_categories"])
 
     topn_p = artifact_dir / "topn.parquet"
     topn_df = pd.read_parquet(topn_p) if topn_p.exists() else None

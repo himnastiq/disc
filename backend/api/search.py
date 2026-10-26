@@ -9,6 +9,7 @@ from typing import Any
 import pandas as pd
 
 from api.schemas import SearchItem
+from engine.artifacts import as_str_list
 
 _PUNCTUATION_REGEX = re.compile(r"[^\w\s]", re.UNICODE)
 _WHITESPACE_REGEX = re.compile(r"\s+")
@@ -57,8 +58,7 @@ class ItemSearchIndex:
             item_id = str(row["item_id"])
             title = str(row.get("title", item_id))
             subtitle = str(row["subtitle"]) if pd.notna(row.get("subtitle")) else None
-            cats_raw = row.get("categories")
-            categories = list(cats_raw) if isinstance(cats_raw, (list, tuple)) else []
+            categories = as_str_list(row.get("categories"))
             year_val = row.get("year")
             year = int(year_val) if pd.notna(year_val) else None
             img_val = row.get("image_url")
