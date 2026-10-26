@@ -206,3 +206,14 @@ def test_mind_adapter_subsequent_history_not_backdated_before_earlier_sessions(
     assert ts_later >= ts_n1, (
         f"DATA LEAKAGE: N_LATER (timestamp {ts_later}) was backdated before Session 1 (timestamp {ts_n1})!"
     )
+
+
+def test_mind_adapter_uninitialized_state_raises_runtime_error(tmp_path: Path) -> None:
+    """F-020: Adapter items() and interactions() must raise RuntimeError if uninitialized."""
+    spec = load_config("articles", fast=True)
+    adapter = MindArticlesAdapter(spec, raw_dir=tmp_path)
+    adapter._prepare_data = lambda: None  # type: ignore[method-assign]
+    with pytest.raises(RuntimeError, match=r"MIND items DataFrame is uninitialized"):
+        adapter.items()
+    with pytest.raises(RuntimeError, match=r"MIND interactions DataFrame is uninitialized"):
+        adapter.interactions()

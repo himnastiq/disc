@@ -381,3 +381,14 @@ def test_amazon_adapter_item_cap_perturbation_invariance(tmp_path: Path) -> None
     assert items_d1 == items_d2, (
         f"Perturbation leak: D1 retained {items_d1} but D2 retained {items_d2}"
     )
+
+
+def test_amazon_adapter_uninitialized_state_raises_runtime_error(tmp_path: Path) -> None:
+    """F-020: Adapter items() and interactions() must raise RuntimeError if uninitialized."""
+    spec = load_config("products", fast=True)
+    adapter = AmazonProductsAdapter(spec, raw_dir=tmp_path)
+    adapter._prepare_data = lambda: None  # type: ignore[method-assign]
+    with pytest.raises(RuntimeError, match=r"Amazon items DataFrame is uninitialized"):
+        adapter.items()
+    with pytest.raises(RuntimeError, match=r"Amazon interactions DataFrame is uninitialized"):
+        adapter.interactions()

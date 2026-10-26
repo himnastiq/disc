@@ -396,13 +396,15 @@ class MindArticlesAdapter(DatasetAdapter):
     def items(self) -> pd.DataFrame:
         """Return canonical catalogue items DataFrame conforming to schema."""
         self._prepare_data()
-        assert self._items_df is not None
+        if self._items_df is None:
+            raise RuntimeError("MIND items DataFrame is uninitialized after _prepare_data()")
         return self._items_df
 
     def interactions(self) -> pd.DataFrame:
         """Return canonical interactions DataFrame conforming to schema."""
         self._prepare_data()
-        assert self._interactions_df is not None
+        if self._interactions_df is None:
+            raise RuntimeError("MIND interactions DataFrame is uninitialized after _prepare_data()")
         return self._interactions_df
 
     def validate(self) -> ValidationReport:
