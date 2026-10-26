@@ -65,8 +65,8 @@ lint:
 	cd backend && $(PYTHON) -m ruff format --check .
 	cd backend && $(PYTHON) -m mypy engine/ api/
 
-check: lint test
-	@echo "All checks passed."
+check:
+	$(PYTHON) tools/check.py
 
 gates: check
 	@echo "Running extended gate checks..."

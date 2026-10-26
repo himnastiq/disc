@@ -466,11 +466,17 @@ def run_articles_dual_protocol_eval(
         cs_users = common_users
 
     user_train_hist: dict[str, list[tuple[str, float]]] = {}
-    for uid, group in train_df.groupby("user_id"):
+    cs_users_set = set(cs_users)
+    cs_train = (
+        train_df[train_df["user_id"].astype(str).isin(cs_users_set)]
+        if cs_users_set
+        else pd.DataFrame(columns=train_df.columns)
+    )
+    for uid, group in cs_train.groupby("user_id"):
         sorted_g = group.sort_values(by="timestamp", ascending=True)
-        user_train_hist[str(uid)] = [
-            (str(r["item_id"]), float(r["signal"])) for _, r in sorted_g.iterrows()
-        ]
+        user_train_hist[str(uid)] = list(
+            zip(sorted_g["item_id"].astype(str), sorted_g["signal"].astype(float), strict=True)
+        )
 
     eval_k = min(10, max(spec.evaluation.k or [10]))
     pos_test = test_df[test_df["signal"] >= spec.signal.positive_threshold]
