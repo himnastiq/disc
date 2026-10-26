@@ -40,15 +40,15 @@
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 10 | 0 | 1 | 12 | 83% |
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
-| 7 | FastAPI backend | 10 | 3 | 0 | 13 | 76% |
+| 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **82** | | | **129** | **63%** |
+| | **Overall** | **85** | | | **129** | **65%** |
 
-`[############--------] 63%  (82/129 tasks)`
+`[#############-------] 65%  (85/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -455,16 +455,16 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 - [x] **P7.2** `schemas.py` (pydantic response and request models), `errors.py` (single error format, handlers for validation errors, `UnknownType` (404 `unknown_type`), `UnknownUser` (404 `unknown_user`), `UnknownItem`, `ColdStartUnsupported` (409 `cold_start_unsupported`), and a catch-all 500 that returns a generic message without a stack trace). *Acceptance:* every error path returns the standard shape.
 - [x] **P7.3** Read-only metadata endpoints: `GET /v1/health` (status, per-type availability, artifact versions), `GET /v1/types` (display name, card type, supports cold start, counts), `GET /v1/types/{type}/users?limit=&persona=` (demo users first, then sampled users), `GET /v1/items/{item_id}?type=`, `GET /v1/items/search?type=&q=&limit=` (normalised text search: lowercase, strip accents and punctuation, article handling, ranking exact > prefix > word-start > contains, ties by popularity), `GET /v1/about` (attribution, dataset citations, original-versus-derived summary read from docs or constants), `GET /v1/metrics?type=` (serves `metrics.json` unchanged). *Acceptance:* contract tests for each endpoint for each type.
 - [x] **P7.4** `GET /v1/users/{user_id}/profile?type=`: interaction count, positive count, top categories with shares, recent items (last 10 with titles and timestamps), first and last activity, persona label. *Acceptance:* values match a direct pandas computation in tests.
-- [~] **P7.5** `GET /v1/recommend?type=&user_id=&k=&exclude=`: personalised results from `topn.parquet` when the requested k and exclusions allow, otherwise computed live from the model (no TensorFlow); response includes `mode`, `results[]` with `item_id`, `title`, `subtitle`, `categories`, `year`, `image_url`, `score` (raw), `display_score` (0 to 1 min-max within the list), `reason` (`{kind, item_id, text}` or null), and `meta`. *Acceptance:* R3 invariants asserted on every response in tests.
-  *Note:* Re-opened [~] for FIX-33 (mode/results agreement on popularity fallback), FIX-34 (in-memory lookup optimizations), FIX-35 (meta fields: model, artifact_version, latency_ms), and FIX-38 (error handling for explanations).
-- [~] **P7.6** `POST /v1/recommend/cold-start` body `{type, history: [{item_id, signal?}], exclude?: [], k}`: history max 200 entries, ids unique (duplicates are a 422 `duplicate_ids`), unknown ids ignored and listed in `ignored_item_ids`, `mode` = `popularity` when fewer positive items than the type's minimum (config) else `personalized`. *Acceptance:* edge-case tests: empty history, only unknown ids, 200 and 201 entries, signals out of range.
-  *Note:* Re-opened [~] for FIX-32 (history item without signal counts as liked using positive_threshold) and FIX-35 (meta fields: model, artifact_version, latency_ms, history_size).
+- [x] **P7.5** `GET /v1/recommend?type=&user_id=&k=&exclude=`: personalised results from `topn.parquet` when the requested k and exclusions allow, otherwise computed live from the model (no TensorFlow); response includes `mode`, `results[]` with `item_id`, `title`, `subtitle`, `categories`, `year`, `image_url`, `score` (raw), `display_score` (0 to 1 min-max within the list), `reason` (`{kind, item_id, text}` or null), and `meta`. *Acceptance:* R3 invariants asserted on every response in tests.
+  *Note:* Re-ticked [x] after FIX-33 (mode/results agreement on popularity fallback), FIX-34 (in-memory TypeLookups), FIX-35 (meta fields: model, artifact_version, latency_ms; k capped 1..50), FIX-38 (error handling for explanations with explanation_errors count in meta), and FIX-42 (non-empty string categories across all endpoints). All R3 invariants and tests pass.
+- [x] **P7.6** `POST /v1/recommend/cold-start` body `{type, history: [{item_id, signal?}], exclude?: [], k}`: history max 200 entries, ids unique (duplicates are a 422 `duplicate_ids`), unknown ids ignored and listed in `ignored_item_ids`, `mode` = `popularity` when fewer positive items than the type's minimum (config) else `personalized`. *Acceptance:* edge-case tests: empty history, only unknown ids, 200 and 201 entries, signals out of range.
+  *Note:* Re-ticked [x] after FIX-32 (history item without signal defaults to positive_threshold), FIX-35 (meta fields: model, artifact_version, latency_ms, history_size; k capped 1..50), FIX-38 (explanation error handling), and FIX-42 (categories non-empty). All contract and edge-case tests pass.
 - [x] **P7.7** `GET /v1/popular?type=&k=` and `GET /v1/similar?type=&item_id=&k=`. *Acceptance:* `similar` never returns the query item; unknown item gives 404 `unknown_item`.
 - [x] **P7.8** Security: optional API key header `X-API-Key` compared in constant time **on encoded bytes**; CORS from env; request body size limit; input length limits (search query max 100 chars); no debug output. *Acceptance:* tests with a non-ASCII key header return 401, not 500.
 - [x] **P7.9** Export `openapi.json` (`scripts/export_openapi.py`) and commit it; add a CI check that the committed file equals the generated one. *Acceptance:* check script passes.
 - [x] **P7.10** Contract and property tests: parametrise every endpoint over `registry.types()`; invariants from R3; fuzz with hypothesis (random k, random strings, random id lists); run schemathesis against the OpenAPI schema if it can be installed. *Acceptance:* zero 500 responses across the fuzz run.
-- [~] **P7.11** Performance and memory: `scripts/bench_api.py` (warm-up, 500 requests per endpoint, report p50/p95/p99 and RSS). Meet R8 budgets or document why not. *Acceptance:* results appended to `docs/RESULTS.md` (generated section).
-  *Note:* Re-opened [~] for FIX-34 (200 random users sampled per type, generated analysis in RESULTS.md with recorded p50/p95/p99/RSS without hand-typed claims).
+- [x] **P7.11** Performance and memory: `scripts/bench_api.py` (warm-up, 500 requests per endpoint, report p50/p95/p99 and RSS). Meet R8 budgets or document why not. *Acceptance:* results appended to `docs/RESULTS.md` (generated section).
+  *Note:* Re-ticked [x] after FIX-34 (benchmarking 200 random users sampled per type, generated analysis in RESULTS.md with recorded p50/p95/p99/RSS meeting R8 budgets without manual fabrications).
 - [x] **P7.12** Runtime purity test: start the app in a subprocess, hit all endpoints, then assert that `tensorflow`, `pyspark`, `torch`, and `cornac` were never imported (read `sys.modules` via a test-only debug hook or run with an import blocker). *Acceptance:* test passes.
 - [x] **P7.13** Phase 7 Gate and "break your own work" ritual (include: recommend for a user then add one of the results to `exclude`: it must disappear; changing `k` must not reorder the common prefix; concurrent requests give identical results).
 
@@ -1376,4 +1376,43 @@ cd backend && E:/discover/.venv/Scripts/python.exe -m pytest tests/ -v --tb=shor
 =========== 409 passed, 1 skipped, 1 warning in 1916.94s (0:31:56) ============
 "All checks passed."
 ```
+
+### Session 25: 2026-10-26, agent session (FIX-32 through FIX-44, Categories Bug, Spec Conformance, Cross-Platform Checksums, and Phase 7 Re-tick)
+- **Completed Tasks & Fixes:**
+  - **FIX-40 (Restore Plan Sections 4-13):** Created `tools/restore_plan_sections.py`, merged architecture, spec, gate, and risks sections 4–13, verified `python tools/progress.py` made zero changes, removed `IMPLEMENTATION_PLAN.restored.md`. Authoritative sections 8 (API spec) and 10 (Gates R1–R11) fully restored.
+  - **FIX-32 (Cold Start Signal Default):** History items without explicit `signal` default to `spec.signal.positive_threshold` (positive interaction).
+  - **FIX-33 (Mode & Results Agreement on Fallback):** `GET /v1/recommend` returns `mode="popularity"` and calls `model.popular()` when known user has fewer positives than `min_positive_items_for_personalization`.
+  - **FIX-34 (Serving Optimization & Honest Benchmarking):** Implemented in-memory `TypeLookups` caching item metadata, items DataFrame, users dictionary, and parsed configs. Rewrote `scripts/bench_api.py` to benchmark 200 randomly sampled users per type and update `docs/RESULTS.md` Section 8 directly from measurements.
+  - **FIX-35 (Plan Conformance):** Enforced `k` in range 1..50 with standard 422 validation errors across `/v1/recommend`, `/v1/recommend/cold-start`, `/v1/popular`, and `/v1/similar`. Standardized card types (`movie`, `product`, `article`). Added `meta` to popular/similar and included `model`, `artifact_version`, `latency_ms`, `history_size` on cold-start. Capped profile `top_categories` to 10. Regenerated `backend/api/openapi.json`.
+  - **FIX-36 (Generic Registry Extensibility):** Added `test_only: bool = Field(default=False)` to `ContentTypeSpec` and `test_only: true` to `toy.yaml`. Removed hardcoded `"toy"` checks from API routes in favor of `registry.public_types()`.
+  - **FIX-37 (Serving Config & Hash Verification):** Added `resolve_serving_config` in `engine/config.py` resolving candidate configurations against artifact tuning parameters and asserting exact config hash match against `manifest.json`.
+  - **FIX-38 (Robust Explanation Logging):** Replaced silent `except Exception: pass` in recommend and cold-start routes with warning logging and incremented `explanation_errors` counter in `meta`. Optimized R2 leakage checking via vectorized Series comparisons.
+  - **FIX-39 (FastAPI & Starlette Version Floor):** Raised dependency versions to `fastapi>=0.109.0` and `starlette>=0.35.0` providing RFC 9110 `HTTP_422_UNPROCESSABLE_CONTENT`.
+  - **FIX-41 (Spec Conformance Audit):** Audited Phases 0 to 7 against Sections 6, 7, 8, and 10 in `docs/CONFORMANCE.md`: 44 PASS, 3 documented DEVIATIONS (D-007, D-010, D-016), 1 PENDING (R9 Frontend), 0 FAIL. Added root `/health` endpoint alias.
+  - **FIX-42 (Categories ndarray Bug Fix):** Parquet list columns loading as numpy `ndarray` caused `isinstance(..., (list, tuple))` to fail and drop categories. Updated `engine/artifacts.py` to convert `items["categories"]` and user `top_categories` via `as_str_list()` supporting `list`, `tuple`, `ndarray`, and scalars. Replaced isinstance checks across API and engine. Added `test_api_categories.py` asserting non-empty categories on `recommend`, `similar`, `popular`, `items`, `search`, `profile`, and `users` for movies and products (14/14 passed).
+  - **FIX-43 (Cross-Platform Check Runner):** Added `tools/check.py` running ruff check, ruff format --check, mypy, and pytest on Windows without Make; wired `make check` to call it.
+  - **FIX-44 (Cross-Platform CRLF-Normalized Artifact Checksums):** Fixed CI checksum mismatch failure on `demo_users.json` across git checkouts:
+    1. In `engine/artifacts.py`, `write_text_file` writes text files (`.json`, `.md`, `.txt`, `.csv`, `.yaml`, `.yml`) with explicit `\n` line endings across all platforms.
+    2. In `compute_file_sha256`, text files are normalized (`b"\r\n"` -> `b"\n"`) prior to hashing, ensuring SHA-256 digests are strictly invariant to CRLF/LF line-ending translations while preserving bit-level strictness on binary files (`.parquet`, `.npz`, `.npy`).
+    3. Regenerated `backend/tests/fixtures/artifacts_mini/` for movies, products, and articles.
+    4. Added `test_cross_platform_crlf_hash_invariance_and_strict_tamper_detection` asserting artifacts converted entirely to CRLF verify and load, while bit mutations in binary files or content edits in JSON continue to strictly raise `ArtifactCorruptError`.
+    5. Updated `.github/workflows/ci.yml` pytest runner to `--maxfail=20 -ra` for comprehensive failure reporting.
+- **Re-ticked Tasks:** Re-ticked `P7.5`, `P7.6`, and `P7.11` as `[x]`; Phase 7 is 100% complete (13/13 tasks). Dashboard updated to 85/129 (63%).
+- **Clean Git Clone CI Simulation Raw Output:**
+```powershell
+git clone . $env:TEMP\ci_sim
+cd $env:TEMP\ci_sim\backend
+python -m pip install -e ".[core,dev]"
+python -m pytest tests -m "not real_data" -q --maxfail=20 -rN
+........................................................................ [ 18%]
+.........................s.............................................. [ 36%]
+........................................................................ [ 54%]
+........................................................................ [ 72%]
+........................................................................ [ 90%]
+......................................                                   [100%]
+============================== warnings summary ===============================
+397 passed, 1 skipped, 41 deselected, 2 warnings in 96.51s (0:01:36)
+```
+- **Core Unchanged Check (`python tools/core_unchanged.py`):** PASSED.
+- **Next Steps:** Phase 7 is 100% complete and fully verified. Awaiting human confirmation before starting Phase 8 or MIND.
 
