@@ -67,6 +67,29 @@ def test_cold_start_personalized_flow(api_client: TestClient, content_type: str)
         prev_raw = item.score
         assert 0.0 <= item.display_score <= 1.0
 
+    assert "model" in res.meta
+    assert "artifact_version" in res.meta
+    assert "latency_ms" in res.meta
+    assert "history_size" in res.meta
+    assert res.meta["latency_ms"] >= 0.0
+    assert res.meta["history_size"] == len(sample_history)
+    assert res.meta["type"] == content_type
+
+
+def test_cold_start_invalid_k(api_client: TestClient) -> None:
+    """Verify /v1/recommend/cold-start rejects k < 1 or k > 50 with 422 validation_error."""
+    resp_zero = api_client.post(
+        "/v1/recommend/cold-start", json={"type": "movies", "history": [], "k": 0}
+    )
+    assert resp_zero.status_code == 422
+    assert resp_zero.json()["error"]["code"] == "validation_error"
+
+    resp_51 = api_client.post(
+        "/v1/recommend/cold-start", json={"type": "movies", "history": [], "k": 51}
+    )
+    assert resp_51.status_code == 422
+    assert resp_51.json()["error"]["code"] == "validation_error"
+
 
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
 def test_cold_start_empty_history(api_client: TestClient, content_type: str) -> None:

@@ -88,6 +88,24 @@ def assert_r3_invariants_on_response(
             )
             assert item.reason.item_id != iid, "Reason item cannot be the recommended item itself"
 
+    # 8. Meta diagnostic fields
+    assert "model" in recs.meta
+    assert "artifact_version" in recs.meta
+    assert "latency_ms" in recs.meta
+    assert recs.meta["latency_ms"] >= 0.0
+    assert recs.meta["type"] == recs.content_type
+
+
+def test_recommend_invalid_k(api_client: TestClient) -> None:
+    """Verify /v1/recommend rejects k < 1 or k > 50 with 422 validation_error."""
+    resp_zero = api_client.get("/v1/recommend?type=movies&user_id=1&k=0")
+    assert resp_zero.status_code == 422
+    assert resp_zero.json()["error"]["code"] == "validation_error"
+
+    resp_51 = api_client.get("/v1/recommend?type=movies&user_id=1&k=51")
+    assert resp_51.status_code == 422
+    assert resp_51.json()["error"]["code"] == "validation_error"
+
 
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
 def test_recommend_endpoint_r3_invariants(api_client: TestClient, content_type: str) -> None:

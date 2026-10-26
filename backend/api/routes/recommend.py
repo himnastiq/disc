@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Query, Request
@@ -52,10 +53,13 @@ def get_recommendations(
     request: Request,
     type: str = Query(..., description="Content type identifier", max_length=50),
     user_id: str = Query(..., description="User unique identifier", max_length=100),
-    k: int = Query(default=10, ge=1, le=100, description="Number of recommendations requested"),
+    k: int = Query(
+        default=10, ge=1, le=50, description="Number of recommendations requested [1, 50]"
+    ),
     exclude: list[str] = Query(default_factory=list, description="Item IDs to explicitly exclude"),
 ) -> RecommendResponse:
     """Serve personalized recommendations from precomputed topn.parquet when possible, or compute live."""
+    t0 = time.perf_counter()
     lookups = resolve_type_lookups(request, type)
     model: RecommenderModel = resolve_model(request, type)
     spec = lookups.spec
@@ -144,13 +148,21 @@ def get_recommendations(
             )
         )
 
+    latency_ms = round((time.perf_counter() - t0) * 1000, 2)
     return RecommendResponse(
         content_type=type,
         user_id=uid_str,
         mode=serving_mode,
         k=len(results),
         results=results,
-        meta={"source": source, "positive_interactions": user_pos_count},
+        meta={
+            "type": type,
+            "model": spec.model.name,
+            "artifact_version": lookups.artifact_version,
+            "latency_ms": latency_ms,
+            "source": source,
+            "positive_interactions": user_pos_count,
+        },
     )
 
 
@@ -160,6 +172,7 @@ def recommend_cold_start(
     body: ColdStartRequest,
 ) -> ColdStartResponse:
     """Generate recommendations from hypothetical user history (cold-start)."""
+    t0 = time.perf_counter()
     lookups = resolve_type_lookups(request, body.type)
     model: RecommenderModel = resolve_model(request, body.type)
     spec = lookups.spec
@@ -259,6 +272,7 @@ def recommend_cold_start(
             )
         )
 
+    latency_ms = round((time.perf_counter() - t0) * 1000, 2)
     return ColdStartResponse(
         content_type=body.type,
         mode=serving_mode,
@@ -266,6 +280,11 @@ def recommend_cold_start(
         ignored_item_ids=ignored_item_ids,
         results=results,
         meta={
+            "type": body.type,
+            "model": spec.model.name,
+            "artifact_version": lookups.artifact_version,
+            "latency_ms": latency_ms,
+            "history_size": len(body.history),
             "valid_history_length": len(valid_history),
             "positive_items_count": pos_items_count,
         },
@@ -277,10 +296,11 @@ def get_popular(
     request: Request,
     type: str = Query(..., max_length=50, description="Content type identifier"),
     k: int = Query(
-        default=10, ge=1, le=100, description="Number of popular items requested [1, 100]"
+        default=10, ge=1, le=50, description="Number of popular items requested [1, 50]"
     ),
 ) -> PopularResponse:
     """Return top-k overall popular items for content type."""
+    t0 = time.perf_counter()
     lookups = resolve_type_lookups(request, type)
     model: RecommenderModel = resolve_model(request, type)
 
@@ -315,10 +335,18 @@ def get_popular(
             )
         )
 
+    latency_ms = round((time.perf_counter() - t0) * 1000, 2)
     return PopularResponse(
         content_type=type,
         k=len(results),
         results=results,
+        meta={
+            "type": type,
+            "model": lookups.spec.model.name,
+            "artifact_version": lookups.artifact_version,
+            "latency_ms": latency_ms,
+            "k": k,
+        },
     )
 
 
@@ -330,10 +358,11 @@ def get_similar(
         ..., max_length=100, description="Catalogue item identifier to find similar items for"
     ),
     k: int = Query(
-        default=10, ge=1, le=100, description="Number of similar items requested [1, 100]"
+        default=10, ge=1, le=50, description="Number of similar items requested [1, 50]"
     ),
 ) -> SimilarResponse:
     """Return top-k items similar to query item."""
+    t0 = time.perf_counter()
     lookups = resolve_type_lookups(request, type)
     model: RecommenderModel = resolve_model(request, type)
 
@@ -375,9 +404,17 @@ def get_similar(
             )
         )
 
+    latency_ms = round((time.perf_counter() - t0) * 1000, 2)
     return SimilarResponse(
         content_type=type,
         query_item_id=clean_item_id,
         k=len(results),
         results=results,
+        meta={
+            "type": type,
+            "model": lookups.spec.model.name,
+            "artifact_version": lookups.artifact_version,
+            "latency_ms": latency_ms,
+            "k": k,
+        },
     )

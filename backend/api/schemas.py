@@ -55,7 +55,7 @@ class TypeInfo(BaseModel):
 
     id: str = Field(..., description="Content type identifier, e.g. 'movies'")
     display_name: str = Field(..., description="Human-readable title")
-    card_type: str = Field(..., description="UI card template: 'media', 'product', or 'article'")
+    card_type: str = Field(..., description="UI card template: 'movie', 'product', or 'article'")
     supports_cold_start: bool = Field(
         ..., description="Whether model supports cold-start recommendation"
     )
@@ -299,7 +299,7 @@ class ColdStartRequest(BaseModel):
         default_factory=list, max_length=500, description="Item IDs to explicitly exclude"
     )
     k: int = Field(
-        default=10, ge=1, le=100, description="Number of recommendations requested [1, 100]"
+        default=10, ge=1, le=50, description="Number of recommendations requested [1, 50]"
     )
 
 
@@ -322,6 +322,9 @@ class PopularResponse(BaseModel):
     content_type: str = Field(..., description="Content type identifier")
     k: int = Field(..., description="Number of popular items returned")
     results: list[ScoredItemResponse] = Field(..., description="Top popular items")
+    meta: dict[str, Any] = Field(
+        default_factory=dict, description="Diagnostic and serving metadata"
+    )
 
 
 class SimilarResponse(BaseModel):
@@ -331,3 +334,6 @@ class SimilarResponse(BaseModel):
     query_item_id: str = Field(..., description="Query item identifier")
     k: int = Field(..., description="Number of similar items returned")
     results: list[ScoredItemResponse] = Field(..., description="Top similar items")
+    meta: dict[str, Any] = Field(
+        default_factory=dict, description="Diagnostic and serving metadata"
+    )

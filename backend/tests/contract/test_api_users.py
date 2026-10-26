@@ -90,7 +90,7 @@ def test_user_profile_matches_direct_pandas_computation(
         for cat in item_cats_map.get(str(row["item_id"]), []):
             cat_counts[cat] += 1
 
-    expected_top_cat_names = [c for c, _ in cat_counts.most_common()]
+    expected_top_cat_names = [c for c, _ in cat_counts.most_common(10)]
 
     # 2. Call API endpoint
     resp = api_client.get(f"/v1/users/{test_user_id}/profile?type={content_type}")
@@ -112,7 +112,8 @@ def test_user_profile_matches_direct_pandas_computation(
     assert returned_recent_ids == expected_recent_ids
     assert len(profile.recent_items) <= 10
 
-    # Top categories order and counts must agree
+    # Top categories order and counts must agree, capped at 10 items
+    assert len(profile.top_categories) <= 10
     returned_cat_names = [c.category for c in profile.top_categories]
     assert returned_cat_names == expected_top_cat_names
 

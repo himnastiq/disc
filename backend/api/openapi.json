@@ -95,8 +95,8 @@
           },
           "k": {
             "default": 10,
-            "description": "Number of recommendations requested [1, 100]",
-            "maximum": 100.0,
+            "description": "Number of recommendations requested [1, 50]",
+            "maximum": 50.0,
             "minimum": 1.0,
             "title": "K",
             "type": "integer"
@@ -422,6 +422,12 @@
             "description": "Number of popular items returned",
             "title": "K",
             "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "description": "Diagnostic and serving metadata",
+            "title": "Meta",
+            "type": "object"
           },
           "results": {
             "description": "Top popular items",
@@ -827,6 +833,12 @@
             "title": "K",
             "type": "integer"
           },
+          "meta": {
+            "additionalProperties": true,
+            "description": "Diagnostic and serving metadata",
+            "title": "Meta",
+            "type": "object"
+          },
           "query_item_id": {
             "description": "Query item identifier",
             "title": "Query Item Id",
@@ -854,7 +866,7 @@
         "description": "Summary description of a registered content type.",
         "properties": {
           "card_type": {
-            "description": "UI card template: 'media', 'product', or 'article'",
+            "description": "UI card template: 'movie', 'product', or 'article'",
             "title": "Card Type",
             "type": "string"
           },
@@ -1374,14 +1386,14 @@
             }
           },
           {
-            "description": "Number of popular items requested [1, 100]",
+            "description": "Number of popular items requested [1, 50]",
             "in": "query",
             "name": "k",
             "required": false,
             "schema": {
               "default": 10,
-              "description": "Number of popular items requested [1, 100]",
-              "maximum": 100,
+              "description": "Number of popular items requested [1, 50]",
+              "maximum": 50,
               "minimum": 1,
               "title": "K",
               "type": "integer"
@@ -1446,14 +1458,14 @@
             }
           },
           {
-            "description": "Number of recommendations requested",
+            "description": "Number of recommendations requested [1, 50]",
             "in": "query",
             "name": "k",
             "required": false,
             "schema": {
               "default": 10,
-              "description": "Number of recommendations requested",
-              "maximum": 100,
+              "description": "Number of recommendations requested [1, 50]",
+              "maximum": 50,
               "minimum": 1,
               "title": "K",
               "type": "integer"
@@ -1574,14 +1586,14 @@
             }
           },
           {
-            "description": "Number of similar items requested [1, 100]",
+            "description": "Number of similar items requested [1, 50]",
             "in": "query",
             "name": "k",
             "required": false,
             "schema": {
               "default": 10,
-              "description": "Number of similar items requested [1, 100]",
-              "maximum": 100,
+              "description": "Number of similar items requested [1, 50]",
+              "maximum": 50,
               "minimum": 1,
               "title": "K",
               "type": "integer"

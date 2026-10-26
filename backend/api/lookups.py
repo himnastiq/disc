@@ -31,6 +31,7 @@ class TypeLookups:
 
     content_type: str
     spec: ContentTypeSpec
+    artifact_version: str = "1.0.0"
     catalogue_ids: set[str] = field(default_factory=set)
     user_ids: set[str] = field(default_factory=set)
     item_metadata: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -47,7 +48,8 @@ class TypeLookups:
 
 def build_type_lookups(spec: ContentTypeSpec, loaded: LoadedArtifacts) -> TypeLookups:
     """Build precomputed lookup indices from loaded artifacts without per-request DataFrame scans."""
-    lookups = TypeLookups(content_type=spec.type, spec=spec)
+    artifact_ver = str(loaded.manifest.get("artifact_schema_version", "1.0.0"))
+    lookups = TypeLookups(content_type=spec.type, spec=spec, artifact_version=artifact_ver)
 
     # 1. Item catalogue and metadata dict
     items_df = loaded.items
@@ -176,7 +178,7 @@ def build_type_lookups(spec: ContentTypeSpec, loaded: LoadedArtifacts) -> TypeLo
             tot = sum(cat_counts.values())
             shares = []
             if tot > 0:
-                for c, cnt in cat_counts.most_common():
+                for c, cnt in cat_counts.most_common(10):
                     shares.append(
                         {
                             "category": c,

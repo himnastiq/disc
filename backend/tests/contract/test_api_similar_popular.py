@@ -62,6 +62,12 @@ def test_get_popular_success(api_client: TestClient, content_type: str) -> None:
         assert item.reason is not None
         assert item.reason.kind == "popular"
 
+    assert "model" in res.meta
+    assert "artifact_version" in res.meta
+    assert "latency_ms" in res.meta
+    assert res.meta["latency_ms"] >= 0.0
+    assert res.meta["type"] == content_type
+
 
 def test_get_popular_unknown_type(api_client: TestClient) -> None:
     """Test /v1/popular returns 404 unknown_type for non-existent content type."""
@@ -72,10 +78,14 @@ def test_get_popular_unknown_type(api_client: TestClient) -> None:
 
 
 def test_get_popular_invalid_k(api_client: TestClient) -> None:
-    """Test /v1/popular rejects k < 1 or k > 100 with 422 validation_error."""
+    """Test /v1/popular rejects k < 1 or k > 50 with 422 validation_error."""
     resp_zero = api_client.get("/v1/popular?type=movies&k=0")
     assert resp_zero.status_code == 422
     assert resp_zero.json()["error"]["code"] == "validation_error"
+
+    resp_51 = api_client.get("/v1/popular?type=movies&k=51")
+    assert resp_51.status_code == 422
+    assert resp_51.json()["error"]["code"] == "validation_error"
 
     resp_huge = api_client.get("/v1/popular?type=movies&k=101")
     assert resp_huge.status_code == 422
@@ -126,6 +136,12 @@ def test_get_similar_success_and_never_returns_query_item(
             assert item.reason.kind == "similar_item"
             assert item.reason.item_id == query_id
 
+        assert "model" in res.meta
+        assert "artifact_version" in res.meta
+        assert "latency_ms" in res.meta
+        assert res.meta["latency_ms"] >= 0.0
+        assert res.meta["type"] == content_type
+
 
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
 def test_get_similar_unknown_item_returns_404(api_client: TestClient, content_type: str) -> None:
@@ -148,10 +164,14 @@ def test_get_similar_unknown_type(api_client: TestClient) -> None:
 
 
 def test_get_similar_invalid_k(api_client: TestClient) -> None:
-    """Test /v1/similar rejects k < 1 or k > 100 with 422 validation_error."""
+    """Test /v1/similar rejects k < 1 or k > 50 with 422 validation_error."""
     resp_zero = api_client.get("/v1/similar?type=movies&item_id=1&k=0")
     assert resp_zero.status_code == 422
     assert resp_zero.json()["error"]["code"] == "validation_error"
+
+    resp_51 = api_client.get("/v1/similar?type=movies&item_id=1&k=51")
+    assert resp_51.status_code == 422
+    assert resp_51.json()["error"]["code"] == "validation_error"
 
     resp_huge = api_client.get("/v1/similar?type=movies&item_id=1&k=101")
     assert resp_huge.status_code == 422
