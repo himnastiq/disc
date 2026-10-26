@@ -284,14 +284,11 @@ def get_item_detail(
             if pd.notna(val):
                 meta[col] = val
 
-    # Popularity rank if search index available
+    # Popularity rank if search index available (F-019)
     popularity_rank: int | None = None
     search_indexes = getattr(request.app.state, "search_indexes", {})
     if type in search_indexes:
-        for entry in search_indexes[type]._entries:
-            if entry["item_id"] == str(item_id):
-                popularity_rank = entry["popularity_rank"]
-                break
+        popularity_rank = search_indexes[type].get_popularity_rank(str(item_id))
 
     return ItemDetail(
         item_id=str(row["item_id"]),
