@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.errors import register_error_handlers
@@ -151,6 +151,13 @@ def create_app() -> FastAPI:
     app.include_router(metadata_router)
     app.include_router(users_router)
     app.include_router(recommend_router)
+
+    # Root /health alias for load balancers and platform monitors
+    @app.get("/health", include_in_schema=False)
+    def root_health(request: Request) -> Any:
+        from api.routes.metadata import get_health
+
+        return get_health(request)
 
     return app
 
