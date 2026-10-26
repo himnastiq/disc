@@ -228,3 +228,34 @@ def test_amazon_adapter_chronological_split_no_leakage(amazon_fixture_dir: Path)
     check_r2_no_leakage(train_df, test_df)
     check_r2_no_leakage(train_df, valid_df)
     check_r2_no_leakage(valid_df, test_df)
+
+
+def test_parse_dict_line_rejects_arbitrary_code_execution(tmp_path: Path) -> None:
+    """F-001: Assert that _parse_dict_line never executes arbitrary Python code."""
+    from engine.adapters.amazon import _parse_dict_line
+
+    marker_file = tmp_path / "pwned_marker.txt"
+    # Construct an exploit string that tries to create marker_file
+    escaped_path = str(marker_file).replace("\\", "\\\\")
+    malicious_payload = f"__import__('pathlib').Path('{escaped_path}').write_text('PWNED')"
+
+    result = _parse_dict_line(malicious_payload)
+
+    # Must be safely rejected/ignored and return None
+    assert result is None
+    # CRITICAL: The code must NOT have executed, so marker_file must NOT exist!
+    assert not marker_file.exists(), "SECURITY VULNERABILITY: eval() executed malicious payload!"
+
+    # Break-your-own-fix edge cases:
+    # 1. Malicious lambda embedded in dictionary
+    assert _parse_dict_line("{'asin': (lambda: 'B002')()}") is None
+    # 2. Empty or whitespace line
+    assert _parse_dict_line("") is None
+    assert _parse_dict_line("   \n\t  ") is None
+    # 3. Valid JSON with unicode characters
+    parsed_json = _parse_dict_line('{"asin": "B001", "title": "Guitar \u2014 Caf\u00e9"}')
+    assert parsed_json == {"asin": "B001", "title": "Guitar — Café"}
+    # 4. Valid single-quoted dict literal with unicode
+    parsed_single = _parse_dict_line("{'asin': 'B001', 'title': 'Guitar — Café'}")
+    assert parsed_single == {"asin": "B001", "title": "Guitar — Café"}
+

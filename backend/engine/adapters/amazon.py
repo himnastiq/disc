@@ -46,12 +46,7 @@ def _parse_dict_line(line: str) -> dict[str, Any] | None:
             res = ast.literal_eval(line)
             return res if isinstance(res, dict) else None
         except Exception:
-            try:
-                # Last resort fallback
-                res = eval(line)
-                return res if isinstance(res, dict) else None
-            except Exception:
-                return None
+            return None
 
 
 @register_adapter("amazon_products")
