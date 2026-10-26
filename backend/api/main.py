@@ -26,7 +26,7 @@ from api.search import ItemSearchIndex
 from api.security import SecurityMiddleware
 from engine import registry
 from engine.artifacts import load_artifacts, verify_artifacts
-from engine.config import load_config
+from engine.config import resolve_serving_config
 from engine.logging_utils import configure_logging, get_logger
 
 if TYPE_CHECKING:
@@ -91,8 +91,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             verify_artifacts(type_dir)
             loaded = load_artifacts(type_dir, verify=False)
 
-            # 2. Recommender model reconstitution
-            spec = load_config(content_type, fast=True)
+            # 2. Recommender model reconstitution from manifest-verified serving config (FIX-37)
+            spec = resolve_serving_config(content_type, type_dir)
             model = registry.build_model(spec)
             model.load(loaded.model_dir)
 

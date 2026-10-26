@@ -340,3 +340,43 @@ model:
         resp_rec = client.get("/v1/recommend?type=hidden_secret&user_id=1")
         assert resp_rec.status_code == 404
         assert resp_rec.json()["error"]["code"] == "unknown_type"
+
+
+def test_serving_config_hash_strictly_matches_manifest_and_tampering_marks_unavailable(
+    api_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FIX-37: Serving model is built from manifest-recorded artifact config and hash matches.
+
+    If the manifest config hash is tampered with, the type is marked unavailable on startup.
+    """
+    import shutil
+
+    from engine.config import compute_config_hash
+    from tests.conftest import MINI_ARTIFACTS_DIR
+
+    # 1. Active client has exact config hash match for all available types
+    app = api_client.app
+    for ctype in CONTENT_TYPES:
+        if app.state.availability.get(ctype):
+            spec = app.state.configs[ctype]
+            manifest_hash = app.state.artifacts[ctype].manifest["config_hash"]
+            assert compute_config_hash(spec) == manifest_hash
+
+    # 2. Tampered manifest config hash marks type unavailable on startup
+    test_artifact_root = tmp_path / "tampered_artifacts"
+    test_artifact_root.mkdir()
+
+    # Copy mini movies artifacts
+    shutil.copytree(MINI_ARTIFACTS_DIR / "movies", test_artifact_root / "movies")
+
+    # Tamper with manifest config_hash
+    manifest_file = test_artifact_root / "movies" / "manifest.json"
+    manifest_data = json.loads(manifest_file.read_text(encoding="utf-8"))
+    manifest_data["config_hash"] = "tampered_hash_0123456789abcdef0123456789abcdef0123456789abcdef"
+    manifest_file.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
+
+    monkeypatch.setenv("ARTIFACT_DIR", str(test_artifact_root))
+    isolated_app = create_app()
+    with TestClient(isolated_app) as client:
+        assert client.app.state.availability.get("movies") is False
+        assert "mismatch" in client.app.state.unavailable_reasons.get("movies", "").lower()

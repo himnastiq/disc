@@ -182,3 +182,37 @@ fast:
         with pytest.raises(ConfigError) as exc_info_b:
             load_config(broken_override_yaml, fast=True)
         assert "Configuration validation failed" in str(exc_info_b.value)
+
+    def test_resolve_serving_config_hash_mismatch_raises(self, tmp_path):
+        import json
+
+        from engine.config import resolve_serving_config
+
+        type_dir = tmp_path / "fake_movies"
+        type_dir.mkdir()
+
+        manifest = {
+            "artifact_schema_version": "1.0.0",
+            "content_type": "movies",
+            "dataset_variant": "1m",
+            "config_hash": "deadbeef" * 8,
+        }
+        (type_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+        with pytest.raises(ConfigError) as exc_info:
+            resolve_serving_config("movies", type_dir)
+        assert "Serving config hash mismatch" in str(exc_info.value)
+        assert "deadbeef" in str(exc_info.value)
+
+    def test_resolve_serving_config_agrees_with_manifest_across_all_types(self):
+        import json
+        from pathlib import Path
+
+        from engine.config import compute_config_hash, resolve_serving_config
+
+        for ctype in ["movies", "products", "articles"]:
+            art_dir = Path("artifacts") / ctype
+            if art_dir.exists() and (art_dir / "manifest.json").exists():
+                spec = resolve_serving_config(ctype, art_dir)
+                manifest = json.loads((art_dir / "manifest.json").read_text(encoding="utf-8"))
+                assert compute_config_hash(spec) == manifest["config_hash"]

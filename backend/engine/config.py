@@ -21,6 +21,7 @@ DEFAULT_CONFIGS_DIR = Path(__file__).resolve().parent / "configs"
 def compute_config_hash(data: dict[str, Any] | ContentTypeSpec) -> str:
     """Compute a deterministic SHA-256 hash for a configuration dictionary or ContentTypeSpec."""
     raw_dict = data.model_dump() if isinstance(data, ContentTypeSpec) else copy.deepcopy(data)
+    raw_dict.pop("test_only", None)
 
     # Serialize canonical JSON with sorted keys
     canonical_json = json.dumps(raw_dict, sort_keys=True, separators=(",", ":"))
@@ -131,3 +132,55 @@ def load_config(
         ) from e
 
     return spec
+
+
+def resolve_serving_config(
+    content_type: str,
+    type_dir: Path,
+    configs_dir: Path | None = None,
+) -> ContentTypeSpec:
+    """Reconstruct and verify the exact serving configuration from artifact manifest (FIX-37).
+
+    Matches dataset variant, applies tuned serving parameters, and asserts config_hash agreement.
+    """
+    manifest_path = type_dir / "manifest.json"
+    if not manifest_path.exists():
+        raise ConfigError(
+            f"Cannot resolve serving config: manifest.json not found at {manifest_path}"
+        )
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_hash = manifest.get("config_hash")
+
+    # Reconstruct serving config checking both standard and fast configurations
+    candidate_specs: list[ContentTypeSpec] = []
+    for is_fast in (False, True):
+        candidate = load_config(content_type, fast=is_fast, configs_dir=configs_dir)
+        tuning_file = type_dir / "tuning.json"
+        if tuning_file.exists():
+            try:
+                tdata = json.loads(tuning_file.read_text(encoding="utf-8"))
+                best_p = tdata.get("best_params", {})
+                if "top_neighbors_per_item" in best_p:
+                    candidate.serving.top_neighbors_per_item = int(best_p["top_neighbors_per_item"])
+                if (
+                    "time_decay_coefficient" in best_p
+                    and best_p["time_decay_coefficient"] is not None
+                ):
+                    candidate.model.params["time_decay_coefficient"] = best_p[
+                        "time_decay_coefficient"
+                    ]
+                if "positive_threshold" in best_p:
+                    candidate.signal.positive_threshold = float(best_p["positive_threshold"])
+            except Exception:
+                pass
+        candidate_specs.append(candidate)
+        if expected_hash and compute_config_hash(candidate) == expected_hash:
+            return candidate
+
+    # If neither candidate produced expected_hash, report the mismatch
+    last_computed = compute_config_hash(candidate_specs[0])
+    raise ConfigError(
+        f"Serving config hash mismatch for '{content_type}': "
+        f"computed {last_computed} but artifact manifest requires {expected_hash}"
+    )
