@@ -72,23 +72,23 @@ Every requirement is audited and categorized into:
 | Gate | Title | Invariant / Acceptance Criterion | Status | Primary Enforcement & Test Verification |
 |---|---|---|---|---|
 | **R1** | **Data Validity** | Sparsity in [0, 1]; no duplicate interaction rows; no null IDs; valid timestamps; catalogue membership; bijective mapping | **PASS** | [`engine/evaluation/checks.py:21-117`](file:///e:/discover/backend/engine/evaluation/checks.py#L21-L117), [`tests/unit/test_checks.py`](file:///e:/discover/backend/tests/unit/test_checks.py) |
-| **R2** | **No Leakage** | `max(train.timestamp) <= min(test.timestamp)`; no test interactions in similarity, vocabulary, or popularity | **PASS** | [`engine/evaluation/splits.py:11-63`](file:///e:/discover/backend/engine/evaluation/splits.py#L11-L63), [`tests/integration/test_articles_split_leakage.py`](file:///e:/discover/backend/tests/integration/test_articles_split_leakage.py) |
+| **R2** | **No Leakage** | `max(train.timestamp) <= min(test.timestamp)`; train-only popularity cap, session non-backdating, computed R2 split verification | **PASS** | [`engine/evaluation/splits.py:11-63`](file:///e:/discover/backend/engine/evaluation/splits.py#L11-L63), [`tests/integration/test_articles_split_leakage.py`](file:///e:/discover/backend/tests/integration/test_articles_split_leakage.py) |
 | **R3** | **Model Invariants** | Length <= k; no duplicates; no excluded/seen items; monotonic scores; cold-start consistency; faithful explanations | **PASS** | [`engine/evaluation/checks.py:138-215`](file:///e:/discover/backend/engine/evaluation/checks.py#L138-L215), [`tests/contract/test_api_recommend.py`](file:///e:/discover/backend/tests/contract/test_api_recommend.py) |
 | **R4** | **Evaluation Validity** | Identical split & candidate protocol for baselines; Random < Popularity <= Model sanity; diversity & novelty reported | **PASS** | [`engine/evaluation/harness.py:35-180`](file:///e:/discover/backend/engine/evaluation/harness.py#L35-L180), [`docs/RESULTS.md`](file:///e:/discover/docs/RESULTS.md) |
 | **R5** | **Cold-Start Behaviour** | History sizes 0..20 evaluated; size 0 falls back to popularity mode; duplicates rejected (422); unknown IDs ignored | **PASS** | [`engine/coldstart.py:40-120`](file:///e:/discover/backend/engine/coldstart.py#L40-L120), [`tests/contract/test_api_cold_start.py`](file:///e:/discover/backend/tests/contract/test_api_cold_start.py) |
 | **R6** | **Reproducibility** | Fixed random seeds (seed 42); retraining produces identical hashes; clean checkout builds with committed mini fixtures | **PASS** | [`engine/train.py:25-35`](file:///e:/discover/backend/engine/train.py#L25-L35), [`tests/integration/test_determinism.py`](file:///e:/discover/backend/tests/integration/test_determinism.py) |
 | **R7** | **API Contract & Edge Cases** | All endpoints tested across all types; k in 1..50; error shape consistent; no stack traces leaked; no TensorFlow in sys.modules | **PASS** | [`tests/contract/`](file:///e:/discover/backend/tests/contract/), [`tests/integration/test_api_runtime_purity.py`](file:///e:/discover/backend/tests/integration/test_api_runtime_purity.py) |
-| **R8** | **Performance & Resources** | Latency p95 GET /recommend < 150 ms (actual < 5 ms); API RSS < 2 GB (actual ~340 MB) | **PASS** | [`scripts/bench_api.py`](file:///e:/discover/backend/scripts/bench_api.py), [`docs/RESULTS.md`](file:///e:/discover/docs/RESULTS.md) |
+| **R8** | **Performance & Resources** | Latency p95 GET /recommend < 150 ms (measured max p95: 87.23 ms on movies, 16.76 ms on products, 15.08 ms on articles); API RSS < 2 GB (measured peak RSS: 796.4 MB with all three domains loaded) | **PASS** | [`scripts/bench_api.py`](file:///e:/discover/backend/scripts/bench_api.py), [`docs/RESULTS.md:201-229`](file:///e:/discover/docs/RESULTS.md#L201-L229) |
 | **R9** | **Frontend Robustness** | TypeScript strict clean, zod runtime validation, responsive layouts, failure injection | **PENDING** | Scheduled for Phases 8–10 (Frontend implementation). |
-| **R10**| **Licensing & Attribution** | MIT license preserved; NOTICE.md and ATTRIBUTION.md current; no `import recommenders` in codebase; citations present | **PASS** | [`NOTICE.md`](file:///e:/discover/NOTICE.md), [`ATTRIBUTION.md`](file:///e:/discover/ATTRIBUTION.md), [`backend/tests/contract/test_licensing.py`](file:///e:/discover/backend/tests/contract/test_licensing.py) |
-| **R11**| **Security Basics** | Constant-time API key check on bytes (`secrets.compare_digest`); CORS from env; 1MB body limit; no secrets in repo | **PASS** | [`api/security.py:20-60`](file:///e:/discover/backend/api/security.py#L20-L60), [`tests/unit/test_api_security.py`](file:///e:/discover/backend/tests/unit/test_api_security.py) |
+| **R10**| **Licensing & Attribution** | MIT license preserved; NOTICE.md and ATTRIBUTION.md current; no `import recommenders` in codebase; citations present | **PASS** | [`backend/discovery/NOTICE.md`](file:///e:/discover/backend/discovery/NOTICE.md), [`docs/ATTRIBUTION.md`](file:///e:/discover/docs/ATTRIBUTION.md), [`backend/tests/unit/test_vendored_manifest.py`](file:///e:/discover/backend/tests/unit/test_vendored_manifest.py) |
+| **R11**| **Security Basics** | Constant-time API key check on bytes (`hmac.compare_digest`); CORS from env; 1MB body limit; no secrets in repo | **PASS** | [`api/security.py:20-60`](file:///e:/discover/backend/api/security.py#L20-L60), [`tests/unit/test_api_security.py`](file:///e:/discover/backend/tests/unit/test_api_security.py) |
 
 ---
 
 ## 5. Audit Summary and Verdict
 
 - **Total Requirements Audited:** 48
-- **PASS:** 44 (91.7%)
+- **PASS:** 44 (91.7% — all verified by code inspection and automated test suites)
 - **DEVIATION:** 3 (6.3% — all explicitly justified and documented in [DECISIONS.md](file:///e:/discover/docs/DECISIONS.md))
   - **D-007**: Recommenders source function named `python_chrono_split`.
   - **D-010**: Sparsification of top-50 co-occurrence neighbors to guarantee memory budget < 2GB.
@@ -96,4 +96,4 @@ Every requirement is audited and categorized into:
 - **PENDING:** 1 (2.0% — R9 Frontend Robustness, scheduled for Phases 8–10).
 - **FAIL:** 0 (0.0%).
 
-**Audit Verdict:** **CONFORMANT**. The backend implementation for Phases 0 through 7 satisfies all architectural, API, and robustness constraints specified in the Implementation Plan.
+**Audit Verdict:** **CONFORMANT**. The backend implementation for Phases 0 through 7 satisfies all architectural, API, and robustness constraints specified in the Implementation Plan. All claims are verified against pipeline outputs and runnable test suites.
