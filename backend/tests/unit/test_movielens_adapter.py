@@ -158,8 +158,27 @@ def test_movielens_adapter_validate_writes_report(tmp_path: Path) -> None:
     """Verify validate(output_path) writes full R1 data report JSON file."""
     import json
 
+    # Create isolated mock raw data in tmp_path/raw
+    raw_dir = tmp_path / "raw"
+    ml_dir = raw_dir / "ml-100k"
+    ml_dir.mkdir(parents=True, exist_ok=True)
+    u_item_lines = [
+        "1|Toy Story (1995)|01-Jan-1995||http://imdb.com/1|0|0|0|1|1|1|0|0|0|0|0|0|0|0|0|0|0|0|0\n",
+        "2|GoldenEye (1995)|01-Jan-1995||http://imdb.com/2|0|1|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0\n",
+    ]
+    (ml_dir / "u.item").write_text("".join(u_item_lines), encoding="ISO-8859-1")
+    u_data_lines = [
+        "10\t1\t5\t1000\n",
+        "10\t2\t4\t1010\n",
+    ]
+    (ml_dir / "u.data").write_text("".join(u_data_lines), encoding="utf-8")
+    (raw_dir / "u.data").write_text("".join(u_data_lines), encoding="utf-8")
+    (raw_dir / "u.item").write_text("".join(u_item_lines), encoding="ISO-8859-1")
+
     spec = load_config("movies", fast=True)
-    adapter = MovieLensAdapter(spec)
+    spec.dataset.min_user_interactions = 1
+    spec.dataset.min_item_interactions = 1
+    adapter = MovieLensAdapter(spec, raw_dir=raw_dir)
 
     out_file = tmp_path / "data_report.json"
     report = adapter.validate(output_path=out_file)

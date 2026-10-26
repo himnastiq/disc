@@ -18,6 +18,7 @@ from engine.train import run_pipeline
 
 
 @pytest.mark.integration
+@pytest.mark.real_data
 def test_movies_100k_golden_regression(tmp_path: Path) -> None:
     """Execute fast pipeline on 100K and assert recommendations and metrics match golden values."""
     golden_path = Path(__file__).resolve().parent.parent / "fixtures" / "golden_movies_100k.json"

@@ -12,15 +12,11 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import shutil
 import sys
 import zipfile
 from pathlib import Path
-
-import urllib3
-
-# Suppress insecure request warnings if fallback SSL is used on restricted systems
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Project root (two levels up from backend/scripts/)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -83,14 +79,20 @@ def download_url(url: str, dest_path: Path) -> bool:
     temp_path = dest_path.with_suffix(dest_path.suffix + ".tmp")
 
     try:
+        ca_bundle: str | bool
         try:
-            r = requests.get(url, stream=True, timeout=30)
-        except requests.exceptions.SSLError:
-            logger.warning(
-                "SSL verification failed for %s. Retrying with fallback (verify=False)...", url
-            )
-            r = requests.get(url, stream=True, verify=False, timeout=30)
+            import certifi
 
+            ca_bundle = certifi.where()
+        except ImportError:
+            ca_bundle = True
+
+        opt_out = os.environ.get("DISCOVERY_INSECURE_SSL", "0").lower() in ("1", "true", "yes")
+        verify = False if opt_out else ca_bundle
+        if opt_out:
+            logger.warning("TLS verification disabled via DISCOVERY_INSECURE_SSL=1 for %s", url)
+
+        r = requests.get(url, stream=True, verify=verify, timeout=30)
         r.raise_for_status()
         total_size = int(r.headers.get("content-length", 0))
         downloaded = 0
@@ -341,7 +343,15 @@ def main() -> None:
         action="store_true",
         help="Show what would be downloaded without downloading",
     )
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Disable SSL/TLS certificate verification (opt-out fallback)",
+    )
     args = parser.parse_args()
+
+    if args.insecure:
+        os.environ["DISCOVERY_INSECURE_SSL"] = "1"
 
     # Ensure data directory exists
     DATA_DIR.mkdir(parents=True, exist_ok=True)

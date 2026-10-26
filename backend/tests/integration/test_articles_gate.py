@@ -352,9 +352,13 @@ def test_ritual_5_core_unchanged_check() -> None:
     import sys
 
     sys.path.insert(0, str(REPO_ROOT / "tools"))
-    from core_unchanged import check_core_unchanged
+    from core_unchanged import GitHistoryUnavailable, check_core_unchanged
 
-    passed, disallowed, core_violations = check_core_unchanged()
+    try:
+        passed, disallowed, core_violations = check_core_unchanged()
+    except GitHistoryUnavailable as exc:
+        pytest.skip(str(exc))
+
     assert passed, (
         f"Core unchanged check failed: disallowed={disallowed}, violations={core_violations}"
     )

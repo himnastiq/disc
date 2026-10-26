@@ -34,7 +34,7 @@ Excluded components:
 ### 3. Minimal Compatibility Patches for Light Top-Level Imports
 To ensure `backend/discovery/` can be imported in a lightweight environment with only `core` dependencies (without pulling in heavy NLP or notebook dependencies at module load):
 - **`utils/notebook_utils.py`:** Made imports of `nbformat`, `nbconvert.preprocessors.ExecutePreprocessor`, and `IPython.display.display` lazy within the functions that invoke them (`execute_notebook`, `read_notebook`, `store_metadata`). This allows `is_jupyter()` and `is_databricks()` to be imported without requiring notebook packages.
-- **`datasets/download_utils.py`:** Added a standard-library fallback for `@retry` when the optional `retrying` package is not installed.
+- **`datasets/download_utils.py`:** Added a standard-library fallback for `@retry` when the optional `retrying` package is not installed; enforced standard TLS certificate verification via `certifi` CA bundle with explicit `DISCOVERY_INSECURE_SSL` opt-out support (FIX-45).
 - **`datasets/mind.py`:** Added a standard-library `re.findall` fallback for `RegexpTokenizer` when `nltk` is not installed.
 - **`models/tfidf/tfidf_utils.py`:** Removed top-level imports of `BertTokenizer`, `nltk`, and `PorterStemmer`; lazy-imported them within `__tokenize` only when `bert`, `scibert`, or `nltk` tokenization methods are explicitly requested.
 - **`datasets/movielens.py`:** Made `pandera` optional for the test-only `MockMovielensSchema` class so core dataset loading does not require pandera.

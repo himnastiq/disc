@@ -37,6 +37,13 @@ except ImportError:
 
 
 
+try:
+    import certifi
+    _DEFAULT_CA_BUNDLE = certifi.where()
+except ImportError:
+    _DEFAULT_CA_BUNDLE = True
+
+
 log = logging.getLogger(__name__)
 
 
@@ -58,7 +65,11 @@ def maybe_download(url, filename=None, work_directory=".", expected_bytes=None):
     os.makedirs(work_directory, exist_ok=True)
     filepath = os.path.join(work_directory, filename)
     if not os.path.exists(filepath):
-        r = requests.get(url, stream=True)
+        insecure = os.environ.get("DISCOVERY_INSECURE_SSL", "0").lower() in ("1", "true", "yes")
+        verify = False if insecure else _DEFAULT_CA_BUNDLE
+        if insecure:
+            log.warning("TLS verification disabled via DISCOVERY_INSECURE_SSL=1 for %s", url)
+        r = requests.get(url, stream=True, verify=verify)
         if r.status_code == 200:
             log.info(f"Downloading {url}")
             total_size = int(r.headers.get("content-length", 0))

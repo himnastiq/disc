@@ -27,8 +27,18 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# Phase 3 end commit SHA (P3.13)
-PHASE_3_END_COMMIT = "6da1d3a"
+class GitHistoryUnavailable(Exception):
+    """Raised when required git commit history or tags are missing (e.g. shallow clone)."""
+
+
+# Phase boundary tags
+PHASE_3_END_TAG = "phase-3-end"
+PHASE_4_END_TAG = "phase-4-end"
+PHASE_5_END_TAG = "phase-5-end"
+PHASE_6_END_TAG = "phase-6-end"
+PHASE_7_END_TAG = "phase-7-end"
+
+DEFAULT_BASE_REF = PHASE_3_END_TAG
 
 # Allowed path patterns for domain additions
 ALLOWED_PATTERNS = [
@@ -75,14 +85,40 @@ EXEMPT_PREFIXES = [
 ]
 
 
-def get_git_diff_files(base_commit: str, target: str = "HEAD") -> list[str]:
+def check_ref_exists(ref: str, repo_root: Path = REPO_ROOT) -> bool:
+    """Check if a git ref resolves to a valid commit object."""
+    if not (repo_root / ".git").exists():
+        return False
+    res = subprocess.run(
+        ["git", "cat-file", "-e", f"{ref}^{{commit}}"],
+        cwd=repo_root,
+        capture_output=True,
+        check=False,
+    )
+    return res.returncode == 0
+
+
+def get_git_diff_files(
+    base_commit: str, target: str = "HEAD", repo_root: Path = REPO_ROOT
+) -> list[str]:
     """Retrieve list of modified files between base_commit and target."""
-    if not (REPO_ROOT / ".git").exists():
-        return []
+    if not (repo_root / ".git").exists():
+        raise GitHistoryUnavailable(
+            f"Git repository (.git) not found at '{repo_root}'. Git history is unavailable."
+        )
+
+    for ref in (base_commit, target):
+        if not check_ref_exists(ref, repo_root=repo_root):
+            raise GitHistoryUnavailable(
+                f"Git reference '{ref}' is missing or does not resolve to a commit in '{repo_root}'. "
+                "The repository may be a shallow clone (e.g. actions/checkout without fetch-depth: 0) "
+                "or tags are missing. Run 'git fetch --tags' or clone with full history."
+            )
+
     cmd = ["git", "diff", "--name-only", base_commit, target]
     result = subprocess.run(
         cmd,
-        cwd=REPO_ROOT,
+        cwd=repo_root,
         capture_output=True,
         text=True,
         check=True,
@@ -124,13 +160,14 @@ def has_documented_decision_for_core_change(decisions_file: Path) -> bool:
 
 
 def check_core_unchanged(
-    base_commit: str = PHASE_3_END_COMMIT,
+    base_commit: str = DEFAULT_BASE_REF,
     target: str = "HEAD",
     decisions_path: Path | None = None,
+    repo_root: Path = REPO_ROOT,
 ) -> tuple[bool, list[str], list[str]]:
     """Check that only allowed files were modified and return (passed, disallowed, core_violations)."""
-    decisions_file = decisions_path or (REPO_ROOT / "docs" / "DECISIONS.md")
-    modified_files = get_git_diff_files(base_commit, target)
+    decisions_file = decisions_path or (repo_root / "docs" / "DECISIONS.md")
+    modified_files = get_git_diff_files(base_commit, target, repo_root=repo_root)
 
     disallowed_files: list[str] = []
     core_violations: list[str] = []
@@ -162,21 +199,25 @@ def main() -> None:
     )
     parser.add_argument(
         "--base",
-        default=PHASE_3_END_COMMIT,
-        help=f"Base commit to compare against (default: {PHASE_3_END_COMMIT} Phase 3 end)",
+        default=DEFAULT_BASE_REF,
+        help=f"Base ref to compare against (default: {DEFAULT_BASE_REF})",
     )
     parser.add_argument(
         "--target",
         default="HEAD",
-        help="Target commit to compare against (default: HEAD)",
+        help="Target ref to compare against (default: HEAD)",
     )
     args = parser.parse_args()
 
     print(f"Comparing diff between base '{args.base}' and target '{args.target}'...")
-    passed, disallowed, core_violations = check_core_unchanged(
-        base_commit=args.base,
-        target=args.target,
-    )
+    try:
+        passed, disallowed, core_violations = check_core_unchanged(
+            base_commit=args.base,
+            target=args.target,
+        )
+    except GitHistoryUnavailable as exc:
+        print(f"\n[ERROR] Git history unavailable: {exc}")
+        sys.exit(1)
 
     if not passed:
         print("\n[ERROR] Core Unchanged Check FAILED!")

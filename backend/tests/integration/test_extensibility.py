@@ -239,9 +239,13 @@ serving:
 def test_extensibility_invariance_core_unchanged() -> None:
     """Verify that tools/core_unchanged.py confirms zero engine core modifications."""
     sys.path.insert(0, str(REPO_ROOT / "tools"))
-    from core_unchanged import check_core_unchanged
+    from core_unchanged import GitHistoryUnavailable, check_core_unchanged
 
-    passed, disallowed, core_violations = check_core_unchanged()
+    try:
+        passed, disallowed, core_violations = check_core_unchanged()
+    except GitHistoryUnavailable as exc:
+        pytest.skip(str(exc))
+
     assert passed, (
         f"Extensibility invariant violated: disallowed={disallowed}, violations={core_violations}"
     )

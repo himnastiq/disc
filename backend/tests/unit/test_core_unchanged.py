@@ -10,11 +10,16 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 # Add tools to path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 from core_unchanged import (  # noqa: E402
+    PHASE_3_END_TAG,
+    PHASE_4_END_TAG,
+    GitHistoryUnavailable,
     check_core_unchanged,
     is_allowed_path,
     is_core_engine_file,
@@ -56,14 +61,15 @@ def test_disallowed_arbitrary_files() -> None:
     assert not is_allowed_path("backend/extra_module.py")
 
 
-PHASE_4_END_COMMIT = "c31af6e"
-
-
 def test_phase_4_git_history_zero_core_violations() -> None:
-    """Verify that Phase 4 real git history (6da1d3a..c31af6e) contains zero core engine changes."""
-    passed, disallowed, core_violations = check_core_unchanged(
-        base_commit="6da1d3a", target=PHASE_4_END_COMMIT
-    )
+    """Verify that Phase 4 real git history (phase-3-end..phase-4-end) contains zero core engine changes."""
+    try:
+        passed, disallowed, core_violations = check_core_unchanged(
+            base_commit=PHASE_3_END_TAG, target=PHASE_4_END_TAG
+        )
+    except GitHistoryUnavailable as exc:
+        pytest.skip(str(exc))
+
     assert passed, (
         f"Phase 4 check failed! Disallowed: {disallowed}, Core violations: {core_violations}"
     )
@@ -73,8 +79,52 @@ def test_phase_4_git_history_zero_core_violations() -> None:
 
 def test_real_repo_passes_core_unchanged() -> None:
     """Verify that current repo passes core unchanged check and any core additions are documented."""
-    passed, disallowed, core_violations = check_core_unchanged()
+    try:
+        passed, disallowed, core_violations = check_core_unchanged()
+    except GitHistoryUnavailable as exc:
+        pytest.skip(str(exc))
+
     assert passed, (
         f"Core unchanged check failed! Disallowed: {disallowed}, Core violations: {core_violations}"
     )
     assert disallowed == []
+
+
+def test_shallow_clone_skip_behaviour(tmp_path: Path) -> None:
+    """Verify check_core_unchanged raises GitHistoryUnavailable and triggers skip on shallow clone."""
+    import subprocess
+
+    clone_dir = tmp_path / "shallow_clone"
+    repo_url = f"file://{REPO_ROOT.resolve().as_posix()}"
+    clone_res = subprocess.run(
+        ["git", "clone", "--depth", "1", repo_url, str(clone_dir)],
+        capture_output=True,
+        text=True,
+    )
+    if clone_res.returncode != 0:
+        pytest.skip(f"git clone failed in test environment: {clone_res.stderr}")
+
+    # Assert GitHistoryUnavailable is raised when history is shallow
+    with pytest.raises(GitHistoryUnavailable) as exc_info:
+        check_core_unchanged(
+            base_commit=PHASE_3_END_TAG,
+            target="HEAD",
+            repo_root=clone_dir,
+        )
+    assert (
+        "missing or does not resolve" in str(exc_info.value)
+        or "unavailable" in str(exc_info.value).lower()
+    )
+
+    # Assert test handling catches it and triggers pytest.skip with the reason
+    with pytest.raises(pytest.skip.Exception) as skip_info:
+        try:
+            check_core_unchanged(
+                base_commit=PHASE_3_END_TAG,
+                target="HEAD",
+                repo_root=clone_dir,
+            )
+        except GitHistoryUnavailable as exc:
+            pytest.skip(f"Git history unavailable in shallow clone: {exc}")
+
+    assert "Git history unavailable in shallow clone" in str(skip_info.value)

@@ -22,7 +22,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from core_unchanged import check_core_unchanged  # noqa: E402
+from core_unchanged import GitHistoryUnavailable, check_core_unchanged  # noqa: E402
 
 from engine.adapters.amazon import AmazonProductsAdapter  # noqa: E402
 from engine.artifacts import load_artifacts, verify_artifacts  # noqa: E402
@@ -300,10 +300,13 @@ def test_gate_real_products_artifacts_integrity() -> None:
 @pytest.mark.integration
 def test_gate_core_unchanged_invariant() -> None:
     """RITUAL 7: Verify core engine abstractions remained 100% untouched across Phase 4."""
-    # Phase 4 boundary: 6da1d3a (Phase 3 end) to c31af6e (Phase 4 Gate / end)
-    passed, disallowed, core_violations = check_core_unchanged(
-        base_commit="6da1d3a", target="c31af6e"
-    )
+    # Phase 4 boundary: phase-3-end to phase-4-end
+    try:
+        passed, disallowed, core_violations = check_core_unchanged(
+            base_commit="phase-3-end", target="phase-4-end"
+        )
+    except GitHistoryUnavailable as exc:
+        pytest.skip(str(exc))
     assert passed, (
         f"Core unchanged invariant failed! Core violations: {core_violations}, Disallowed: {disallowed}"
     )

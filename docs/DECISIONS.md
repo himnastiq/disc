@@ -507,6 +507,24 @@ Offline evaluation metrics are computed retrospectively on logged interaction da
 
 **Related tasks:** P6.7, P6.6, R1-R6
 
+## D-019: Robust TLS verification with certifi and explicit opt-out (2026-10-26)
+
+**Context:**
+During CI runs, downloading remote dataset archives (such as MovieLens 100K from `files.grouplens.org`) generated `InsecureRequestWarning`s. Investigation showed that `backend/scripts/fetch_data.py` previously attempted an SSL retry with `verify=False` when host root certificates were not found, and vendored `discovery.datasets.download_utils` invoked `requests.get` without an explicit CA bundle.
+
+**Options considered:**
+1. Leave `verify=False` fallback in `fetch_data.py` and silence `urllib3.exceptions.InsecureRequestWarning`.
+2. Disable network downloads entirely in CI and gate all dataset-downloading tests behind `@pytest.mark.real_data`.
+3. Enforce strict TLS certificate verification by default using `certifi.where()` across all download paths (`fetch_data.py` and `download_utils.py`), mark real-data integration tests with `@pytest.mark.real_data`, and provide an explicit opt-out mechanism (`DISCOVERY_INSECURE_SSL=1` or `--insecure`) for corporate proxy or air-gapped environments.
+
+**Decision:**
+Option 3. Enforce certificate verification with `certifi` CA bundle by default across all downloaders. Eliminate unauthenticated fallback requests. Add an explicit opt-out (`DISCOVERY_INSECURE_SSL=1` or `--insecure`) that logs a visible security warning. Gate `test_movies_100k_golden_regression` and any other tests touching real data under `@pytest.mark.real_data` so CI executes offline.
+
+**Consequences:**
+Eliminates `InsecureRequestWarning` across all environments. Downloads from `files.grouplens.org` succeed with valid certificate verification under `certifi`. Tests run completely offline in CI unless `-m "real_data"` is explicitly requested.
+
+**Related tasks:** FIX-45, P3.1, P3.12
+
 ---
 
 <!-- Add new entries above this line -->
