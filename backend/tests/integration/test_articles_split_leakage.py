@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -10,11 +12,39 @@ from engine.config import load_config
 from engine.errors import LeakageError
 from engine.evaluation.checks import check_r1_data_validity, check_r2_no_leakage
 
-pytestmark = [pytest.mark.integration, pytest.mark.real_data]
+pytestmark = [pytest.mark.integration]
 
 
+def test_articles_mind_fixture_split_leakage() -> None:
+    """Verify impression time split (R2) and no leakage on committed MIND test fixture (runs in CI)."""
+    fixture_dir = Path(__file__).resolve().parent.parent / "fixtures" / "mind"
+    spec = load_config("articles", fast=True)
+    adapter = MindArticlesAdapter(spec, raw_dir=fixture_dir)
+
+    interactions = adapter.interactions()
+    items = adapter.items()
+
+    assert not interactions.empty
+    assert not items.empty
+
+    train_df, valid_df, test_df = adapter.split(interactions)
+    assert not train_df.empty
+    assert not test_df.empty
+
+    check_r2_no_leakage(train_df, test_df)
+    if not valid_df.empty:
+        check_r2_no_leakage(train_df, valid_df)
+        check_r2_no_leakage(valid_df, test_df)
+
+
+@pytest.mark.real_data
 def test_articles_mind_validation_report_and_leakage_passes() -> None:
     """Verify validation report (R1) and impression time split (R2) on MIND data."""
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    raw_path = repo_root / "data" / "raw" / "mind"
+    if not raw_path.exists():
+        pytest.skip(f"MIND raw dataset not found at {raw_path}. Run 'make data' to fetch.")
+
     spec = load_config("articles", fast=True)
     adapter = MindArticlesAdapter(spec)
 
@@ -56,11 +86,11 @@ def test_articles_mind_validation_report_and_leakage_passes() -> None:
     )
 
 
-@pytest.mark.integration
 def test_articles_deliberate_leakage_detected() -> None:
     """Verify check_r2_no_leakage raises LeakageError when temporal boundary is violated."""
+    fixture_dir = Path(__file__).resolve().parent.parent / "fixtures" / "mind"
     spec = load_config("articles", fast=True)
-    adapter = MindArticlesAdapter(spec)
+    adapter = MindArticlesAdapter(spec, raw_dir=fixture_dir)
 
     interactions = adapter.interactions()
     train_df, _, test_df = adapter.split(interactions)

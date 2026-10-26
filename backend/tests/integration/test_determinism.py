@@ -18,7 +18,7 @@ import pytest
 
 from engine.train import run_pipeline
 
-pytestmark = [pytest.mark.integration, pytest.mark.real_data]
+pytestmark = [pytest.mark.integration]
 
 
 def _assert_topn_determinism(content_type: str, tmp_path: Path, seed: int = 42) -> None:
@@ -63,19 +63,24 @@ def _assert_topn_determinism(content_type: str, tmp_path: Path, seed: int = 42) 
     assert metrics1["sanity_checks"] == metrics2["sanity_checks"]
 
 
-@pytest.mark.integration
+def test_pipeline_determinism_toy(tmp_path: Path) -> None:
+    """Assert byte-for-byte identical topn.parquet hash on synthetic Toy pipeline (runs in CI without real data)."""
+    _assert_topn_determinism("toy", tmp_path, seed=42)
+
+
+@pytest.mark.real_data
 def test_pipeline_determinism_movies(tmp_path: Path) -> None:
     """Assert byte-for-byte identical topn.parquet hash on Movies in fast mode."""
     _assert_topn_determinism("movies", tmp_path, seed=42)
 
 
-@pytest.mark.integration
+@pytest.mark.real_data
 def test_pipeline_determinism_products(tmp_path: Path) -> None:
     """Assert byte-for-byte identical topn.parquet hash on Products in fast mode."""
     _assert_topn_determinism("products", tmp_path, seed=42)
 
 
-@pytest.mark.integration
+@pytest.mark.real_data
 def test_pipeline_determinism_articles(tmp_path: Path) -> None:
     """Assert byte-for-byte identical topn.parquet hash on Articles in fast mode."""
     _assert_topn_determinism("articles", tmp_path, seed=42)
