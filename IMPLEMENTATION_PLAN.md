@@ -98,6 +98,218 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 
 ---
 
+## 4. Architecture
+
+```
+ raw datasets (MovieLens / Amazon / MIND)
+        |
+        v
+ Adapter (per type)  --->  unified schema: interactions + items
+        |
+        v
+ Registry: type -> {adapter, model, config}           <-- engine/ (original)
+        |
+        v
+ Model wrapper (SAR / TF-IDF-profile / baselines)     <-- uses discovery/ (derived)
+        |
+ Evaluation harness (splits + metrics + cold-start curves + robustness checks)
+        |
+        v
+ artifacts/<type>/  (model data, items, interactions, users, metrics.json, manifest)
+        |
+        v
+ FastAPI (api/): loads artifacts at startup, serves /v1/*   (no deep-learning imports)
+        |
+        v
+ Next.js (frontend/): route handlers proxy to FastAPI; dashboard UI
+```
+
+---
+
+## 5. Repository layout (create in Phase 0)
+
+```
+discovery-engine/
+  README.md
+  IMPLEMENTATION_PLAN.md          # this file (keep at repo root)
+  LICENSE                         # the project's own license (default MIT unless the owner says otherwise)
+  Makefile
+  .gitignore  .pre-commit-config.yaml  .github/workflows/ci.yml
+  docs/
+    ATTRIBUTION.md  DATASETS.md  DECISIONS.md  ARCHITECTURE.md
+    RESULTS.md  DEMO_SCRIPT.md  figures/  screenshots/
+  tools/
+    progress.py  vendored_manifest.py  make_results.py  select_demo_users.py
+  data/            # gitignored: raw/ and processed/
+  artifacts/       # gitignored except small demo artifacts if the owner decides
+  backend/
+    pyproject.toml  (extras: core, dev, deep)   uv.lock or requirements lock
+    discovery/     # DERIVED from Recommenders: trimmed + renamed. Has LICENSE and NOTICE.md
+      datasets/  evaluation/  models/  utils/
+    engine/        # ORIGINAL
+      schema.py  config.py  registry.py  artifacts.py  errors.py  logging_utils.py
+      adapters/    base.py  movielens.py  amazon_products.py  mind_articles.py  toy.py (test-only)
+      models/      base.py  baselines.py  sar_model.py  tfidf_profile_model.py
+      evaluation/  splits.py  metrics.py  harness.py  checks.py
+      explain.py   coldstart.py   train.py
+      configs/     movies.yaml  products.yaml  articles.yaml
+    api/
+      main.py  deps.py  schemas.py  routes/  security.py  errors.py
+    tests/
+      unit/  property/  integration/  contract/  fixtures/
+    scripts/       fetch_data.py  bench_api.py  export_openapi.py
+  frontend/
+    package.json  next.config.js  tailwind.config.ts  tsconfig.json
+    src/app/  src/components/  src/lib/ (api client, zod schemas, generated types)
+    tests/ (vitest)   e2e/ (playwright)   mocks/ (msw fixtures)
+```
+
+---
+
+## 6. Core contracts
+
+### 6.1 Unified schema (`engine/schema.py`, pydantic)
+
+- **Interaction:** `user_id: str`, `item_id: str`, `signal: float` (strength, e.g. rating or 1.0 for a click), `timestamp: int` (unix seconds; required, drives chronological splits and time decay), `positive: bool` (derived from the config's signal rule).
+- **Item:** `item_id: str`, `title: str`, `subtitle: str | None` (e.g. brand or category line), `categories: list[str]`, `text: str | None` (abstract or description, used by content models), `year: int | None`, `image_url: str | None`, `extra: dict`.
+- **ContentTypeSpec:** loaded from YAML (below).
+
+IDs are always **strings** at the engine and API boundary, even if a dataset uses integers.
+
+### 6.2 Config example (`engine/configs/movies.yaml`, validated by pydantic at load)
+
+```yaml
+type: movies
+display_name: Movies
+card_type: movie             # movie | product | article  (frontend card variant)
+dataset:
+  adapter: movielens
+  variant: "1m"              # "100k" for --fast runs and tests
+  min_user_interactions: 5
+  min_item_interactions: 5
+signal:
+  positive_threshold: 4.0    # rating >= 4 counts as positive
+  use_rating_as_weight: true
+split:
+  strategy: chronological    # chronological | leave_last_n | impression_time
+  ratio: 0.8
+  seed: 42
+model:
+  name: sar
+  params: { similarity_type: jaccard, time_decay_coefficient: 30, timedecay_formula: true }
+  allow_repeat: false        # whether already-seen items may be recommended
+  supports_cold_start: true
+evaluation:
+  k: [5, 10, 20]
+  cold_start_history_sizes: [0, 1, 2, 3, 5, 10, 20]
+  baselines: [popularity, random]
+serving:
+  top_neighbors_per_item: 50
+  max_items_in_similarity: 8000   # caps memory (dense NxN similarity is the risk)
+```
+
+### 6.3 Adapter interface (`engine/adapters/base.py`)
+
+`DatasetAdapter` (abstract) with: `download(raw_dir)`, `load_raw()`, `interactions() -> DataFrame` (schema columns), `items() -> DataFrame`, `validate() -> ValidationReport`, `split(interactions) -> (train, valid, test)`. Adapters own all dataset-specific logic (parsing, title cleaning, id mapping, filtering). **Engine core must contain no dataset-specific code.**
+
+### 6.4 Model interface (`engine/models/base.py`)
+
+`RecommenderModel` (abstract):
+- `fit(train_interactions, items)`
+- `recommend_user(user_id, k, exclude_ids=()) -> list[ScoredItem]` (known user)
+- `recommend_history(history: list[(item_id, signal)], k, exclude_ids=()) -> list[ScoredItem]` (cold-start, new user from a list of items; raise `ColdStartUnsupported` if not supported)
+- `similar_items(item_id, k) -> list[ScoredItem]`
+- `popular(k, exclude_ids=()) -> list[ScoredItem]`
+- `explain(history_item_ids, recommended_item_id) -> Reason | None` (faithful: names the history item that contributed most to the score)
+- `save(dir)` / `load(dir)` (no pickle of arbitrary objects for serving artifacts; use npz, parquet, json, scipy sparse)
+- property `supports_cold_start`
+
+`ScoredItem`: `item_id`, `score` (raw), `rank`. Normalised display scores are computed in the API layer only.
+
+**Important about SAR and cold start:** as far as the plan author recalls, Recommenders' SAR `recommend_k_items` rejects users not seen in training. Cold-start for SAR must therefore be computed by the wrapper directly: build the user's affinity vector from the given history (using the fitted model's item index and time-decay settings) and multiply with the item similarity matrix. **Verify the attribute names and the exact scoring formula in the vendored SAR source**, and add a consistency test: for a known user, scoring from their own training history via the cold-start path must produce the same top-k as `recommend_user` (see R3 in section 10).
+
+### 6.5 Artifact layout (`artifacts/<type>/`)
+
+`manifest.json` (artifact schema version, type, model name, config hash, git SHA, dataset variant, created_at, file checksums), `items.parquet`, `interactions.parquet` (train + test, flagged), `users.parquet` (precomputed user stats and persona labels), `model/` (model-specific files: sparse top-K neighbours, TF-IDF matrix, vocabulary json, popularity counts), `topn.parquet` (precomputed top-50 per known user), `metrics.json`, `demo_users.json`. The loader must verify checksums and schema version and fail with a clear error otherwise.
+
+---
+
+## 7. Per-type design differences (this is what "adapts to content type" means)
+
+| Aspect | Movies (MovieLens) | Products (Amazon) | Articles (MIND) |
+|---|---|---|---|
+| Signal | rating, positive if >= 4 | review/rating, positive if >= 4 (or any review, per config) | click (impression label 1) |
+| Item lifespan | years | years | hours to days (recency matters) |
+| Repeat consumption | no | no (config flag) | no |
+| Content features | genres, year | category, brand, title, description | title, abstract, category, subcategory |
+| Primary model | SAR | SAR | TF-IDF content model with user profile |
+| Cold start | via similarity matrix | via similarity matrix | native (profile from history texts) |
+| Candidate pool | all items | all items (capped) | recent-window articles only (config `recency_window`) |
+| Split | chronological per user | chronological per user | by impression time (later days as test) |
+| Card type | movie (genre chips, year) | product (brand, category, image slot) | article (headline, abstract snippet, category) |
+
+---
+
+## 8. API specification (summary; details in Phase 7)
+
+Base path `/v1`. JSON errors always shaped `{"error": {"code": str, "message": str}}`. Item and user ids are strings. `k` bounded to 1..50. Endpoints: `GET /health`, `GET /types`, `GET /types/{type}/users`, `GET /users/{user_id}/profile?type=`, `GET /recommend?type=&user_id=&k=`, `POST /recommend/cold-start`, `GET /popular?type=&k=`, `GET /similar?type=&item_id=&k=`, `GET /items/search?type=&q=&limit=`, `GET /items/{item_id}?type=`, `GET /metrics?type=`, `GET /about`. Recommendation responses contain `mode` ("personalized" | "popularity"), `results[]` (item fields, `score`, `reason`), and `meta` (type, model, artifact_version, latency_ms, history_size).
+
+---
+
+## 9. Frontend specification (summary; details in Phases 8 to 9)
+
+Single dashboard. Top bar: "Discovery Engine" wordmark, **TypeSwitcher** (Movies / Products / Articles), **UserSelect** (persona-labelled demo users plus search). URL query params hold `type`, `user`, `tab` so views are shareable. Tabs: **For You** (profile card + recommendation grid with reason badges), **Compare** (popular vs personalised, overlap highlighting, optional two-user comparison), **Cold Start** (search and add liked items, live recommendations), **Evaluation** (metrics table, model-vs-baseline chart, cold-start curve, protocol notes), **About** (attribution, datasets, architecture, original vs derived). Every data panel has loading skeleton, empty state, and error state with retry. Light/dark mode, responsive, keyboard accessible.
+
+---
+
+## 10. Robustness protocol (applies to every phase)
+
+Robustness of the recommendations is the main focus. Each phase lists which gates apply. A phase is complete only when its gates pass and the results are recorded in the Session Log (gate name, date, pass/fail, evidence such as test counts or metric values).
+
+### Gates
+
+**R1 Data validity.** Row counts and sparsity reported; no duplicate (user,item,timestamp) rows unless justified; no null ids; timestamps parse and are within a plausible range; filtering thresholds applied and logged (how many users/items removed); every interacted item has a catalogue entry (or the gap is counted and handled); id mapping is bijective.
+
+**R2 No leakage.** For chronological splits, per user: `max(train.timestamp) <= min(test.timestamp)`. No test interactions in any fitted structure (similarity matrix, TF-IDF vocabulary, popularity counts, hyperparameter selection). Hyperparameters are selected on a validation split, never on test. A dedicated automated test fails if any test row influences the fitted model (for example by fitting twice, once with test rows shuffled out, and comparing artifacts).
+
+**R3 Model invariants.** For every endpoint-level and model-level recommendation call, assert: length <= k; no duplicate items; no excluded or already-seen items (unless `allow_repeat`); all item ids exist in the catalogue; scores finite and sorted descending; deterministic for fixed seed and artifacts; **cold-start consistency** (history-based scoring for a known user equals user-based scoring on their training history, for models that support both); `similar_items` never returns the query item; explanations are **faithful** (the named history item is the true maximum contributor, verified by a property test).
+
+**R4 Evaluation validity.** The same split and the same candidate protocol for model and baselines; metrics checked against hand-computed values on a tiny fixture; sanity ordering reported: Random < Popularity <= Model on ranking metrics. If the model does not beat popularity, **do not hide it**: investigate (bug versus genuine), document the finding in `docs/DECISIONS.md` and RESULTS.md, and still present honest numbers. Also report coverage, novelty, intra-list diversity (by category), and a personalisation score (mean pairwise Jaccard distance between top-k lists of sampled users; a value near zero means the model collapsed to popularity).
+
+**R5 Cold-start behaviour.** Evaluate with history sizes from `cold_start_history_sizes`. Verify: size 0 returns popularity with mode `popularity`; quality is non-decreasing on average as history grows (report non-monotonic cases honestly); behaviour with unknown item ids (ignored and reported), duplicates (rejected), huge histories (capped).
+
+**R6 Reproducibility.** Fixed seeds everywhere; retraining twice produces identical top-N artifacts (compare hashes); a fresh clone can rebuild everything from the README commands; dependency versions locked.
+
+**R7 API contract and edge cases.** Every endpoint tested for every registered type: success, unknown type, unknown user, unknown item, k below 1 and above 50, empty history, oversized history, malformed JSON, wrong types, duplicated ids, unicode and very long strings in search; error shape consistent; no stack traces leaked; OpenAPI schema exported and matches frontend types; the API process never imports TensorFlow (assert `"tensorflow" not in sys.modules`); startup survives a missing or corrupt artifact for one type by marking it `unavailable` instead of crashing.
+
+**R8 Performance and resources.** Budgets on a normal laptop (record actual values): p95 `GET /recommend` < 150 ms, cold-start POST < 300 ms, API RSS memory < 2 GB with all types loaded, training for `--fast` mode < 10 minutes per type. Measure with `scripts/bench_api.py`.
+
+**R9 Frontend robustness.** `tsc` strict clean; ESLint clean; runtime validation (zod) of every API response; tests for loading, empty, error, and slow states; failure injection (API down, 500, malformed JSON, very slow); no hydration warnings; keyboard navigation works; no layout break at 360, 768, 1280 px widths; displayed metrics equal `metrics.json` values exactly.
+
+**R10 Licensing and attribution.** `LICENSE` and headers preserved; `NOTICE.md` and `ATTRIBUTION.md` current; the manifest lists every vendored file; no `import recommenders` anywhere; the original `recommenders` package is not installed in the project environment; About tab and README carry attribution and dataset citations.
+
+**R11 Security basics.** Optional API key check uses constant-time comparison on **bytes** (a str with non-ASCII characters makes `secrets.compare_digest` raise); CORS origins from env (no wildcard in non-dev profile); request body size limits; no secrets in the repo or the frontend bundle; `pip-audit` and `npm audit` reviewed.
+
+### The "break your own work" ritual (end of every phase)
+
+Before ticking the Phase Gate, write down in the Session Log **five concrete ways the phase's output could be wrong or misleading** (for example "popularity baseline accidentally computed on test data", "reasons name an item the user never saw", "cold-start returns already-liked items"), then write or run a test or script for each one. Fix what you find. Record what you tried and the outcome.
+
+### Automation
+
+`make check` must run, at minimum: ruff, mypy (backend), pytest (unit, property, integration, contract), frontend `tsc`, ESLint, vitest. `make gates` runs the slower checks (reproducibility rebuild on `--fast`, bench script, Playwright e2e). CI runs `make check` on every push.
+
+---
+
+## 11. Datasets (summary; details go in `docs/DATASETS.md`)
+
+| Type | Dataset | Notes |
+|---|---|---|
+| Movies | MovieLens (100K for `--fast` and tests, 1M for final results) | Via the vendored `discovery.datasets.movielens` loader. Research and education use. Cite Harper and Konstan 2015. |
+| Products | Amazon reviews (use the loader in `discovery.datasets.amazon_reviews` if it provides product titles/categories; otherwise one mid-size category of the Amazon reviews 5-core set plus its metadata) | Check what the vendored loader actually ships before choosing. Cap item count so the similarity matrix fits in memory (see `max_items_in_similarity`). If a manual download is needed, mark `[!]` and tell the human. |
+| Articles | MIND-small (`news.tsv`, `behaviors.tsv`) | Via the vendored `discovery.datasets.mind` helpers (verify names). Microsoft Research License. Cite Wu et al., ACL 2020. |
+
+---
+
 # PHASES
 
 > Task format: `- [ ] **Pn.m** description. *Acceptance:* ...`. Gates are listed per phase. The `tools/progress.py` script counts `[x]` boxes in this PHASES section only.
@@ -336,6 +548,49 @@ Each item must keep the API free of deep-learning imports (training offline, art
 - [ ] **P12.3** Poster and image support via a licensed source (for example TMDB, requires an API key and its attribution text) behind a config flag.
 - [ ] **P12.4** A fourth real content type (books or music) using only an adapter and a config, to demonstrate extensibility with real data.
 - [ ] **P12.5** Side-by-side model switcher in the UI (same user, two models).
+
+---
+
+## 12. Known risks and mitigations
+
+| Risk | Mitigation |
+|---|---|
+| Vendored code drags in heavy or conflicting dependencies | Trace imports (P1.2); lazy-import optional dependencies (P1.5); import-purity tests |
+| Dataset downloads fail or terms require manual steps | `fetch_data.py` prints exact manual steps; mark `[!]`; continue with other types |
+| SAR similarity matrix too large for products | Cap items (`max_items_in_similarity`), store only top-K neighbours for serving, document the cap |
+| Offline metrics look good because of leakage | R2 tests, validation-only tuning, shuffled-label test (P6.8) |
+| Model fails to beat popularity on a dataset | Report honestly; investigate; discuss in limitations. Do not tune on test |
+| Explanations misleading | Faithful explanation property tests (P3.7, P5.7) |
+| News freshness ignored | Recency window and test (P5.5) |
+| Agent hallucinates library APIs | Rule 6: read the vendored source before use |
+| Quota interruptions leave work half-done | Commit per task, `[~]` notes, Session Log handoff |
+| Plan drift | Rule 7 and `docs/DECISIONS.md` for every deviation |
+
+---
+
+## 13. Templates
+
+### Session Log entry template (append at the end of this file)
+
+```
+### Session N: YYYY-MM-DD, agent/account label
+- Started at: task Pn.m   Ended at: task Pn.m
+- Completed: Pn.a, Pn.b, ...
+- In progress ([~]): Pn.c (what is done, what remains, where the code is)
+- Blocked ([!]): Pn.d (what the human must do)
+- Decisions made: (link to docs/DECISIONS.md entries)
+- Gate results: (gate, type, pass/fail, evidence such as test counts or metric values)
+- "Break your own work" findings: (5 hypotheses and outcomes)
+- Test status: make check = PASS/FAIL (details)
+- Next steps for the next session:
+```
+
+### Decision entry template (`docs/DECISIONS.md`)
+
+```
+## D-NNN: Title (date)
+Context: ...  Options considered: ...  Decision: ...  Consequences: ...  Related tasks: ...
+```
 
 ---
 
