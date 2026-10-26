@@ -116,6 +116,14 @@ def test_list_available_content_types() -> None:
     assert types == ["articles", "movies", "products"]
     assert "toy" not in types
 
+    from engine.registry import public_types
+
+    assert public_types() == ["articles", "movies", "products"]
+
+    all_types = list_available_content_types(include_test_only=True)
+    assert "toy" in all_types
+    assert sorted(all_types) == ["articles", "movies", "products", "toy"]
+
 
 def test_get_adapter_by_spec() -> None:
     spec = load_config("movies")

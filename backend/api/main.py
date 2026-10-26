@@ -76,10 +76,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     artifact_root = config["artifact_dir"]
     logger.info("Initializing Discovery Engine API from artifacts: %s", artifact_root)
 
-    available_types = [t for t in registry.types() if t != "toy"]
+    available_types = registry.public_types()
     for content_type in available_types:
-        if content_type == "toy":
-            continue
         type_dir = artifact_root / content_type
         if not type_dir.exists():
             reason = f"Artifact directory not found at {type_dir}"

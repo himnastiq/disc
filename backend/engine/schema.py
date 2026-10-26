@@ -241,3 +241,7 @@ class ContentTypeSpec(SchemaBase):
     fast: dict[str, Any] | None = Field(
         default=None, description="Optional overrides applied in --fast mode"
     )
+    test_only: bool = Field(
+        default=False,
+        description="Whether this content type is test-only and excluded from public serving",
+    )

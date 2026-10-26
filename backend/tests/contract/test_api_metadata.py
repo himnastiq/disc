@@ -284,3 +284,59 @@ def test_metrics_endpoint_contract(api_client: TestClient, content_type: str) ->
     if content_type == "articles":
         assert data.get("synthetic_demo") is True
         assert data.get("provenance_banner") is not None
+
+
+def test_registering_hidden_or_test_only_type_changes_nothing_in_public_api(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FIX-36: Registering a test_only / hidden type changes nothing in the public API routes/types."""
+    import shutil
+
+    from engine import config as config_mod
+
+    configs_dir = tmp_path / "configs"
+    configs_dir.mkdir()
+
+    for cfg in config_mod.DEFAULT_CONFIGS_DIR.glob("*.yaml"):
+        shutil.copy(cfg, configs_dir / cfg.name)
+
+    hidden_cfg = configs_dir / "hidden_secret.yaml"
+    hidden_cfg.write_text(
+        """type: hidden_secret
+display_name: Hidden Secret
+card_type: movie
+test_only: true
+dataset:
+  adapter: movielens
+signal:
+  positive_threshold: 4.0
+split:
+  strategy: chronological
+model:
+  name: popularity
+""",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(config_mod, "DEFAULT_CONFIGS_DIR", configs_dir)
+
+    app = create_app()
+    with TestClient(app) as client:
+        # 1. GET /v1/types must not contain hidden_secret
+        resp = client.get("/v1/types")
+        assert resp.status_code == 200
+        data = resp.json()
+        returned_ids = [t["id"] for t in data["types"]]
+        assert "hidden_secret" not in returned_ids
+        assert returned_ids == ["articles", "movies", "products"]
+
+        # 2. GET /v1/health must not list hidden_secret
+        resp_health = client.get("/v1/health")
+        assert resp_health.status_code == 200
+        health_data = resp_health.json()
+        assert "hidden_secret" not in health_data["types"]
+
+        # 3. Requesting hidden_secret on public endpoints returns 404 unknown_type
+        resp_rec = client.get("/v1/recommend?type=hidden_secret&user_id=1")
+        assert resp_rec.status_code == 404
+        assert resp_rec.json()["error"]["code"] == "unknown_type"

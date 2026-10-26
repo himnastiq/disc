@@ -80,7 +80,7 @@ def get_health(request: Request) -> HealthResponse:
     artifacts_map = request.app.state.artifacts
 
     types_status: dict[str, HealthTypeStatus] = {}
-    registered_types = [t for t in registry.types() if t != "toy"]
+    registered_types = registry.public_types()
 
     all_available = True
     any_available = False
@@ -121,7 +121,7 @@ def get_health(request: Request) -> HealthResponse:
 def get_types(request: Request) -> TypesResponse:
     """List registered content types with dataset statistics and UI configuration."""
     result: list[TypeInfo] = []
-    registered_types = [t for t in registry.types() if t != "toy"]
+    registered_types = registry.public_types()
 
     for ctype in registered_types:
         spec = load_config(ctype, fast=True)

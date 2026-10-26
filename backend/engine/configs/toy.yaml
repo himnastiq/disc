@@ -1,6 +1,7 @@
 type: toy
 display_name: Toy Synthetic
 card_type: product
+test_only: true
 dataset:
   adapter: toy
   variant: "default"

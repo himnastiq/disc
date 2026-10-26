@@ -94,22 +94,35 @@ def list_registered_models() -> list[str]:
     return sorted(_MODEL_REGISTRY.keys())
 
 
-def list_available_content_types(configs_dir: Path | None = None) -> list[str]:
+def list_available_content_types(
+    configs_dir: Path | None = None, include_test_only: bool = False
+) -> list[str]:
     """Discover available content types from YAML configs in configs_dir.
 
-    Ignores test-only configs such as 'toy'.
+    By default, ignores test-only / hidden configs where spec.test_only is True.
     """
     target_dir = configs_dir or DEFAULT_CONFIGS_DIR
     if not target_dir.exists():
         return []
-    types: list[str] = []
-    for f in target_dir.glob("*.yaml"):
-        if f.stem != "toy":
-            types.append(f.stem)
-    for f in target_dir.glob("*.yml"):
-        if f.stem != "toy" and f.stem not in types:
-            types.append(f.stem)
-    return sorted(types)
+    types_found: list[str] = []
+    candidates = sorted(list(target_dir.glob("*.yaml")) + list(target_dir.glob("*.yml")))
+    for f in candidates:
+        if f.stem not in types_found:
+            if include_test_only:
+                types_found.append(f.stem)
+            else:
+                try:
+                    spec = load_config(f.stem, configs_dir=target_dir)
+                    if not spec.test_only:
+                        types_found.append(f.stem)
+                except Exception:
+                    pass
+    return sorted(types_found)
+
+
+def public_types(configs_dir: Path | None = None) -> list[str]:
+    """Return public content types excluding test_only / hidden ones."""
+    return list_available_content_types(configs_dir=configs_dir, include_test_only=False)
 
 
 # Alias for list_available_content_types (P6.5)
