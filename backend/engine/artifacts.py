@@ -34,8 +34,6 @@ def get_git_sha() -> str:
 
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from engine.schema import ContentTypeSpec
 
 ARTIFACT_SCHEMA_VERSION = "1.0.0"
@@ -257,8 +255,22 @@ def verify_artifacts(
     if not files_dict:
         raise ArtifactCorruptError(str(manifest_path), "Manifest contains no registered files.")
 
+    canonical_artifact_dir = artifact_dir.resolve()
     for rel_path, expected_checksum in files_dict.items():
-        file_path = artifact_dir / rel_path
+        # Validate path containment (F-018)
+        p = Path(rel_path)
+        if p.is_absolute() or ".." in p.parts:
+            raise ArtifactCorruptError(
+                str(manifest_path),
+                f"Path traversal or containment violation: '{rel_path}' is absolute or traverses parent directories.",
+            )
+        file_path = (artifact_dir / rel_path).resolve()
+        if not file_path.is_relative_to(canonical_artifact_dir):
+            raise ArtifactCorruptError(
+                str(manifest_path),
+                f"Path traversal or containment violation: '{rel_path}' resolves outside artifact directory.",
+            )
+
         if not file_path.exists():
             raise ArtifactCorruptError(
                 str(file_path),

@@ -256,3 +256,30 @@ def test_save_artifacts_atomic_failure_preserves_existing_artifacts(
     preserved_loaded = load_artifacts(bundle_dir, verify=True)
     assert len(preserved_loaded.items) == 2
     assert preserved_loaded.items.iloc[0]["item_id"] == "i1"
+
+
+def test_verify_artifacts_rejects_path_traversal_and_absolute_paths(
+    sample_artifact_bundle: tuple[Path, ContentTypeSpec],
+) -> None:
+    """F-018: verify_artifacts must reject absolute paths and parent directory traversal."""
+    bundle_dir, _ = sample_artifact_bundle
+    manifest_path = bundle_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    # 1. Test parent directory traversal
+    manifest_traversal = dict(manifest)
+    manifest_traversal["files"] = dict(manifest["files"])
+    manifest_traversal["files"]["../../escape.txt"] = "0" * 64
+    manifest_path.write_text(json.dumps(manifest_traversal), encoding="utf-8")
+
+    with pytest.raises(ArtifactCorruptError, match=r"Path traversal or containment violation"):
+        verify_artifacts(bundle_dir)
+
+    # 2. Test absolute path
+    manifest_absolute = dict(manifest)
+    manifest_absolute["files"] = dict(manifest["files"])
+    manifest_absolute["files"]["/etc/passwd"] = "0" * 64
+    manifest_path.write_text(json.dumps(manifest_absolute), encoding="utf-8")
+
+    with pytest.raises(ArtifactCorruptError, match=r"Path traversal or containment violation"):
+        verify_artifacts(bundle_dir)
