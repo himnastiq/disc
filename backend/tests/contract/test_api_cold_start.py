@@ -163,3 +163,23 @@ def test_cold_start_signal_out_of_range(api_client: TestClient) -> None:
     )
     assert resp_pos.status_code == 422
     assert resp_pos.json()["error"]["code"] == "validation_error"
+
+
+@pytest.mark.parametrize("content_type", ["movies", "products"])
+def test_cold_start_no_signal_counts_as_liked(api_client: TestClient, content_type: str) -> None:
+    """FIX-32: A history item without signal counts as liked (mode == 'personalized')."""
+    loaded = load_artifacts(get_artifacts_dir() / content_type, verify=False)
+    catalogue = list(loaded.items["item_id"].astype(str))
+    assert len(catalogue) >= 5
+    sample_history = [{"item_id": iid} for iid in catalogue[:5]]
+
+    payload = {
+        "type": content_type,
+        "history": sample_history,
+        "k": 10,
+    }
+    resp = api_client.post("/v1/recommend/cold-start", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["mode"] == "personalized"
+    assert len(data["results"]) > 0

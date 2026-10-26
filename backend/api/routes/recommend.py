@@ -251,7 +251,7 @@ def recommend_cold_start(
         if iid not in catalogue:
             ignored_item_ids.append(iid)
         else:
-            sig = float(h.signal) if h.signal is not None else 1.0
+            sig = float(h.signal) if h.signal is not None else float(spec.signal.positive_threshold)
             valid_history.append((iid, sig))
 
     # 3. Determine serving mode based on positive items count in valid history

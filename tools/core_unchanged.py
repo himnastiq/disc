@@ -61,6 +61,8 @@ ALLOWED_PATTERNS = [
     "backend/pyproject.toml",
     ".gitignore",
     ".gitattributes",
+    ".github/*",
+    ".github/**/*",
 ]
 
 CORE_ENGINE_PREFIXES = [
