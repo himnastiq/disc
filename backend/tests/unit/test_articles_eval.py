@@ -374,3 +374,50 @@ def test_articles_cold_start_curve_protocol_passes_exclude_ids() -> None:
     ), (
         f"cold-start curve failed to pass exclude_ids with seen items: {spy_model.captured_exclude_ids}"
     )
+
+
+def test_articles_eval_detects_real_split_leakage() -> None:
+    """F-015: Articles evaluation must execute real R2 split leakage check and fail on leakage."""
+    import pandas as pd
+
+    from engine.errors import LeakageError
+
+    spec = load_config("articles", fast=True)
+    pop = PopularityModel(spec)
+
+    # Deliberately construct leaked split: train interaction occurs AFTER test interaction
+    train_df = pd.DataFrame(
+        [{"user_id": "u1", "item_id": "N1", "signal": 1.0, "timestamp": 3000, "positive": True}]
+    )
+    test_df = pd.DataFrame(
+        [{"user_id": "u1", "item_id": "N2", "signal": 1.0, "timestamp": 1000, "positive": True}]
+    )
+    items = pd.DataFrame(
+        [
+            {"item_id": "N1", "title": "A1", "categories": ["news"], "text": "A1"},
+            {"item_id": "N2", "title": "A2", "categories": ["news"], "text": "A2"},
+        ]
+    )
+    pop.fit(train_df, items)
+    impressions = [
+        {
+            "impression_id": "imp1",
+            "user_id": "u1",
+            "timestamp": 4000,
+            "history": ["N1"],
+            "candidates": [("N2", 1)],
+        }
+    ]
+
+    with pytest.raises(LeakageError):
+        run_articles_dual_protocol_eval(
+            spec=spec,
+            train_df=train_df,
+            test_df=test_df,
+            items=items,
+            impressions=impressions,
+            models={"popularity": pop},
+            max_test_users=1,
+            max_impressions=1,
+            cold_start_sample_users=1,
+        )

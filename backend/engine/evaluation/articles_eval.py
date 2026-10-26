@@ -23,7 +23,11 @@ import numpy as np
 import pandas as pd
 
 from engine.config import compute_config_hash
-from engine.evaluation.checks import check_r1_data_validity, check_r4_evaluation_validity
+from engine.evaluation.checks import (
+    check_r1_data_validity,
+    check_r2_no_leakage,
+    check_r4_evaluation_validity,
+)
 from engine.evaluation.harness import get_git_sha
 from engine.evaluation.metrics import (
     bootstrap_ci,
@@ -419,6 +423,12 @@ def run_articles_dual_protocol_eval(
         interactions=train_df,
         items=items,
         positive_threshold=spec.signal.positive_threshold,
+    )
+    # R2 Leakage validation (F-015)
+    check_r2_no_leakage(
+        train_df=train_df,
+        test_df=test_df,
+        strategy=spec.split.strategy,
     )
 
     recency_window_cfg = getattr(spec.serving, "recency_window", None) or getattr(
