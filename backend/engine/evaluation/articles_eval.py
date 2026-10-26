@@ -13,6 +13,7 @@ Evaluates news article recommendation under two complementary protocols:
 from __future__ import annotations
 
 import json
+import logging
 import random
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -38,6 +39,8 @@ from engine.evaluation.metrics import (
     recall,
 )
 from engine.models.baselines import PopularityModel, RandomModel
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -430,7 +433,15 @@ def run_articles_dual_protocol_eval(
     )
     test_impressions = [imp for imp in impressions if imp.get("timestamp", 0) > train_max_ts]
     if not test_impressions:
-        test_impressions = impressions
+        logger.error(
+            "Evaluation error: no post-train impressions found (train_max_ts=%s). "
+            "Evaluation on training impressions is prohibited to prevent data leakage.",
+            train_max_ts,
+        )
+        raise ValueError(
+            f"No post-train impressions found (train_max_ts={train_max_ts}). "
+            "Impression evaluation cannot evaluate on training impressions."
+        )
 
     imp_ranking_results = evaluate_impression_ranking(
         impressions=test_impressions,
