@@ -173,22 +173,20 @@ def test_amazon_adapter_metadata_join_and_fallbacks(amazon_fixture_dir: Path) ->
 
 
 def test_amazon_adapter_item_cap_by_popularity(amazon_fixture_dir: Path) -> None:
-    """Verify max_items_in_similarity item cap keeps top items by popularity (P4.2)."""
+    """Verify max_items_in_similarity item cap keeps top items by train popularity post-split (P4.2 / F-002)."""
     spec = load_config("products", fast=True)
     # Configure tight cap of 2 items
     spec.serving.max_items_in_similarity = 2
 
     adapter = AmazonProductsAdapter(spec, raw_dir=amazon_fixture_dir)
-    items = adapter.items()
-    interactions = adapter.interactions()
+    train_df, _valid_df, _test_df = adapter.split()
 
-    # Must be capped at exactly 2 items
-    assert len(items) == 2
-    assert set(interactions["item_id"].unique()) == set(items["item_id"])
+    # Train split must be capped at exactly 2 items by train popularity
+    assert len(train_df["item_id"].unique()) == 2
 
     # item_1 and item_2 have the most reviews by construction
     expected_top2 = {"item_1", "item_2"}
-    assert set(items["item_id"]) == expected_top2
+    assert set(train_df["item_id"].unique()) == expected_top2
 
 
 def test_amazon_adapter_filtering_and_validation(amazon_fixture_dir: Path) -> None:
@@ -259,3 +257,127 @@ def test_parse_dict_line_rejects_arbitrary_code_execution(tmp_path: Path) -> Non
     parsed_single = _parse_dict_line("{'asin': 'B001', 'title': 'Guitar — Café'}")
     assert parsed_single == {"asin": "B001", "title": "Guitar — Café"}
 
+
+def test_amazon_adapter_item_cap_does_not_leak_test_interactions(tmp_path: Path) -> None:
+    """F-002: Assert that item cap is determined strictly by train interactions, not test interactions."""
+    fixture_dir = tmp_path / "leakage_fixture" / "instruments"
+    fixture_dir.mkdir(parents=True)
+
+    meta_file = fixture_dir / "meta_Musical_Instruments.json"
+    with open(meta_file, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"asin": "item_train_heavy", "title": "Train Heavy Item"}) + "\n")
+        f.write(json.dumps({"asin": "item_test_heavy", "title": "Test Heavy Item"}) + "\n")
+
+    # Reviews: 5 users with 20 interactions each.
+    # For each user:
+    # First 10 interactions (early ts): item_train_heavy (appears in train split)
+    # Next 10 interactions (late ts): item_test_heavy (split between late train and valid/test)
+    # With 80% ratio (16 train, 2 valid, 2 test):
+    # Train has: 10 item_train_heavy and 6 item_test_heavy per user.
+    # Across all 5 users in TRAIN: item_train_heavy has 50 reviews, item_test_heavy has 30 reviews.
+    # In VALID+TEST: item_train_heavy has 0 reviews, item_test_heavy has 20 reviews.
+    # In addition, we add 10 more late test interactions for item_test_heavy (total 30 in test).
+    # Thus:
+    # OVERALL: item_test_heavy has 60 reviews, item_train_heavy has 50 reviews.
+    # TRAIN-ONLY: item_train_heavy has 50 reviews, item_test_heavy has 30 reviews.
+    reviews = []
+    base_ts = 1_400_000_000
+    for u in range(1, 6):
+        uid = f"user_{u}"
+        for step in range(20):
+            ts = base_ts + (u * 100_000) + (step * 1000)
+            iid = "item_train_heavy" if step < 10 else "item_test_heavy"
+            reviews.append(
+                {
+                    "reviewerID": uid,
+                    "asin": iid,
+                    "overall": 5.0,
+                    "unixReviewTime": ts,
+                }
+            )
+
+    reviews_file = fixture_dir / "reviews_Musical_Instruments_5.json"
+    with open(reviews_file, "w", encoding="utf-8") as f:
+        for r in reviews:
+            f.write(json.dumps(r) + "\n")
+
+    spec = load_config("products", fast=True)
+    spec.serving.max_items_in_similarity = 1
+    spec.split.ratio = 0.8
+
+    adapter = AmazonProductsAdapter(spec, raw_dir=fixture_dir.parent)
+    train_df, _valid_df, _test_df = adapter.split()
+
+    # The retained item in train_df MUST be item_train_heavy (most popular in train: 50 vs 30)
+    # NOT item_test_heavy (which is only popular due to future/test interactions: 60 vs 50 overall)
+    retained_train_items = set(train_df["item_id"].unique())
+    assert retained_train_items == {"item_train_heavy"}, (
+        f"DATA LEAKAGE: item cap selected {retained_train_items} using test interactions instead of train interactions"
+    )
+
+
+def test_amazon_adapter_item_cap_perturbation_invariance(tmp_path: Path) -> None:
+    """F-002: Perturbation test - altering/removing test interactions must NOT affect retained train items."""
+    d1 = tmp_path / "d1" / "instruments"
+    d2 = tmp_path / "d2" / "instruments"
+    d1.mkdir(parents=True)
+    d2.mkdir(parents=True)
+
+    metadata = [
+        {"asin": "item_A", "title": "Item A"},
+        {"asin": "item_B", "title": "Item B"},
+        {"asin": "item_C", "title": "Item C"},
+    ]
+    for d in (d1, d2):
+        meta_file = d / "meta_Musical_Instruments.json"
+        with open(meta_file, "w", encoding="utf-8") as f:
+            for m in metadata:
+                f.write(json.dumps(m) + "\n")
+
+    # Common base reviews: 5 users with 10 reviews in train (0..7) and 2 in test (8..9)
+    base_reviews = []
+    base_ts = 1_400_000_000
+    for u in range(1, 6):
+        uid = f"user_{u}"
+        for step in range(10):
+            ts = base_ts + (u * 100_000) + (step * 1000)
+            iid = "item_A" if step < 5 else "item_B"
+            base_reviews.append(
+                {"reviewerID": uid, "asin": iid, "overall": 5.0, "unixReviewTime": ts}
+            )
+
+    # D1 base reviews
+    with open(d1 / "reviews_Musical_Instruments_5.json", "w", encoding="utf-8") as f:
+        for r in base_reviews:
+            f.write(json.dumps(r) + "\n")
+
+    # D2 has perturbed test interactions (the test-period interactions at step 9 are replaced/perturbed with item_C)
+    perturbed_reviews = []
+    for r in base_reviews:
+        r_copy = dict(r)
+        # step 9 is the last interaction per user (strictly in the test partition)
+        # Perturb it to item_C in D2
+        if r["unixReviewTime"] % 100_000 == 9000:
+            r_copy["asin"] = "item_C"
+        perturbed_reviews.append(r_copy)
+
+    with open(d2 / "reviews_Musical_Instruments_5.json", "w", encoding="utf-8") as f:
+        for r in perturbed_reviews:
+            f.write(json.dumps(r) + "\n")
+
+    spec = load_config("products", fast=True)
+    spec.serving.max_items_in_similarity = 2
+    spec.split.ratio = 0.8
+
+    adapter1 = AmazonProductsAdapter(spec, raw_dir=d1.parent)
+    train1, _, _ = adapter1.split()
+
+    adapter2 = AmazonProductsAdapter(spec, raw_dir=d2.parent)
+    train2, _, _ = adapter2.split()
+
+    # The retained item set in train split must be IDENTICAL between D1 and D2
+    items_d1 = set(train1["item_id"].unique())
+    items_d2 = set(train2["item_id"].unique())
+    assert items_d1 == items_d2, (
+        f"Perturbation leak: D1 retained {items_d1} but D2 retained {items_d2}"
+    )

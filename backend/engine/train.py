@@ -19,7 +19,6 @@ from engine.artifacts import as_str_list, save_artifacts
 from engine.config import load_config
 from engine.demo_users import select_demo_users_from_dfs
 from engine.evaluation.harness import EvaluationHarness
-from engine.evaluation.splits import split_interactions
 from engine.logging_utils import configure_logging, get_logger, log_event
 from engine.models import sar as _sar_model  # noqa: F401
 from engine.models.baselines import PopularityModel, RandomModel
@@ -162,16 +161,12 @@ def run_pipeline(
         sparsity=report.sparsity,
     )
 
-    # 3. Split interactions into train, valid, test
-    split_ratio = spec.split.ratio
-    test_ratio = (1.0 - split_ratio) / 2.0
-    ratios = (split_ratio, test_ratio, test_ratio)
-    train_df, valid_df, test_df = split_interactions(
-        interactions,
-        strategy=spec.split.strategy,
-        ratios=ratios,
-        run_leakage_check=True,
-    )
+    # 3. Split interactions into train, valid, test via adapter
+    train_df, valid_df, test_df = adapter.split(interactions)
+
+    # Filter items catalogue to items present in the split
+    all_split_items = set(train_df["item_id"]).union(valid_df["item_id"]).union(test_df["item_id"])
+    items = items[items["item_id"].isin(all_split_items)].reset_index(drop=True)
 
     extra_files: dict[str, Any] = {"data_report.json": report.model_dump()}
 
