@@ -381,4 +381,3 @@ def test_tfidf_model_score_candidates_unfitted_raises_runtime_error() -> None:
     model = TfidfProfileModel(spec)
     with pytest.raises(RuntimeError, match=r"TF-IDF model has not been fitted"):
         model._score_candidates(profile=None, k=5, exclusions=set())
-
