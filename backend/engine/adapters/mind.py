@@ -272,14 +272,8 @@ class MindArticlesAdapter(DatasetAdapter):
         self.impression_candidates = parsed_behaviors
 
         # 3. Create interactions conforming to time protocol (P5.3)
-        # Find minimum impression timestamp per user to ensure history occurs before impressions
-        user_min_ts: dict[str, int] = {}
-        for b in parsed_behaviors:
-            uid = b["user_id"]
-            ts = b["timestamp"]
-            if ts > 0 and (uid not in user_min_ts or ts < user_min_ts[uid]):
-                user_min_ts[uid] = ts
-
+        # Track previous impression timestamp per user to prevent backdating
+        user_last_ts: dict[str, int] = {}
         interaction_rows: list[dict[str, Any]] = []
         seen_user_items: dict[str, set[str]] = {}
         missing_cat_items = 0
@@ -291,15 +285,15 @@ class MindArticlesAdapter(DatasetAdapter):
         for b in sorted_behaviors:
             uid = b["user_id"]
             imp_ts = b["timestamp"]
-            min_ts = user_min_ts.get(uid, imp_ts)
+            prev_ts = user_last_ts.get(uid)
             if uid not in seen_user_items:
                 seen_user_items[uid] = set()
 
-            # (A) History interactions (occur before user's first impression)
+            # (A) History interactions (occur before this impression session)
             hist = b["history"]
-            if not hist:
+            if not hist and prev_ts is None:
                 empty_hist_users += 1
-            else:
+            elif hist:
                 n_hist = len(hist)
                 for idx, hid in enumerate(hist):
                     if hid not in catalogue_set:
@@ -308,8 +302,19 @@ class MindArticlesAdapter(DatasetAdapter):
                     if hid in seen_user_items[uid]:
                         continue
                     seen_user_items[uid].add(hid)
-                    # Timestamp strictly before first impression
-                    hist_ts = max(0, min_ts - 86400 - (n_hist - idx) * 60)
+
+                    # Timestamp assignment (F-003):
+                    # If this is the user's first observed session (prev_ts is None),
+                    # history occurred before this impression: max(0, imp_ts - 86400 - (n_hist - idx) * 60)
+                    # If the user already had an earlier session (prev_ts is not None),
+                    # newly observed history occurred BETWEEN prev_ts and imp_ts:
+                    if prev_ts is None:
+                        hist_ts = max(0, imp_ts - 86400 - (n_hist - idx) * 60)
+                    else:
+                        dt = max(1, imp_ts - prev_ts)
+                        fraction = (idx + 1) / (n_hist + 1)
+                        hist_ts = prev_ts + max(1, min(int(dt * fraction), dt - 1))
+
                     interaction_rows.append(
                         {
                             "user_id": uid,
@@ -339,6 +344,8 @@ class MindArticlesAdapter(DatasetAdapter):
                         }
                     )
 
+            user_last_ts[uid] = imp_ts
+
         self.missing_catalogue_items_count = missing_cat_items
         self.empty_history_users_count = empty_hist_users
         self._raw_interactions_count = len(interaction_rows)
@@ -352,10 +359,10 @@ class MindArticlesAdapter(DatasetAdapter):
                 active_u = u_counts[u_counts >= min_u].index
                 df_inter = df_inter[df_inter["user_id"].isin(active_u)].reset_index(drop=True)
 
-            # Deduplicate by (user_id, item_id) keeping latest interaction
+            # Deduplicate by (user_id, item_id) keeping earliest interaction
             df_inter = (
                 df_inter.sort_values(by=["user_id", "timestamp", "item_id"], ascending=True)
-                .drop_duplicates(subset=["user_id", "item_id"], keep="last")
+                .drop_duplicates(subset=["user_id", "item_id"], keep="first")
                 .reset_index(drop=True)
             )
 

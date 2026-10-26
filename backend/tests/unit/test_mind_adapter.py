@@ -170,3 +170,39 @@ def test_missing_catalogue_items_dropped_and_counted(articles_spec) -> None:
     # N_UNKNOWN must not appear in interactions
     assert "N_UNKNOWN" not in set(interactions["item_id"])
     assert adapter.missing_catalogue_items_count >= 1
+
+
+def test_mind_adapter_subsequent_history_not_backdated_before_earlier_sessions(
+    articles_spec,
+) -> None:
+    """F-003: History discovered in later sessions must NOT be backdated before earlier sessions."""
+    adapter = MindArticlesAdapter(articles_spec)
+
+    mock_news = [
+        "N1\tnews\tworld\tArticle 1\tSummary 1\thttps://msn.com\t[]\t[]\n",
+        "N2\tnews\tworld\tArticle 2\tSummary 2\thttps://msn.com\t[]\t[]\n",
+        "N_LATER\tnews\tworld\tLater Article\tSummary Later\thttps://msn.com\t[]\t[]\n",
+    ]
+    # Session 1: Nov 11, 2019 9:00:00 AM
+    # Session 2: Nov 14, 2019 9:00:00 AM (3 days later)
+    # N_LATER only appears in Session 2's history (clicked between session 1 and 2)
+    mock_behaviors = [
+        "1\tU1\t11/11/2019 9:00:00 AM\t\tN1-1\n",
+        "2\tU1\t11/14/2019 9:00:00 AM\tN1 N_LATER\tN2-1\n",
+    ]
+    adapter.load_raw = lambda _: {"news_lines": mock_news, "behavior_lines": mock_behaviors}  # type: ignore[assignment]
+    interactions = adapter.interactions()
+
+    # Find timestamps for N1 and N_LATER
+    ts_n1 = interactions[(interactions["user_id"] == "U1") & (interactions["item_id"] == "N1")][
+        "timestamp"
+    ].iloc[0]
+    ts_later = interactions[
+        (interactions["user_id"] == "U1") & (interactions["item_id"] == "N_LATER")
+    ]["timestamp"].iloc[0]
+
+    # N1 was clicked at Session 1 (Nov 11)
+    # N_LATER was in history of Session 2 (Nov 14), so it must NOT have a timestamp before Session 1!
+    assert ts_later >= ts_n1, (
+        f"DATA LEAKAGE: N_LATER (timestamp {ts_later}) was backdated before Session 1 (timestamp {ts_n1})!"
+    )
