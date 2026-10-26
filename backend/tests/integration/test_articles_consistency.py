@@ -142,8 +142,7 @@ def test_articles_cold_start_native_formats(
 def test_articles_cold_start_consistency_real_mind_fixtures() -> None:
     """Verify consistency on real offline MIND fixtures."""
     spec = load_config("articles", fast=True)
-    adapter = MindArticlesAdapter(spec)
-    adapter.load_raw(FIXTURES_DIR)
+    adapter = MindArticlesAdapter(spec, raw_dir=FIXTURES_DIR)
 
     interactions = adapter.interactions()
     items = adapter.items()

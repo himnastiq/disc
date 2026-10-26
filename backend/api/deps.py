@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 def resolve_loaded_artifacts(request: Request, content_type: str) -> LoadedArtifacts:
     """Validate content type existence and availability, returning loaded artifacts."""
     ctype = content_type.strip().lower()
-    available_types = registry.types()
-    if ctype not in available_types:
+    available_types = [t for t in registry.types() if t != "toy"]
+    if ctype not in available_types or ctype == "toy":
         raise UnknownType(ctype, available=available_types)
 
     if not request.app.state.availability.get(ctype, False):

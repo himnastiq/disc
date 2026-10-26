@@ -70,6 +70,52 @@ def test_types_endpoint_contract(api_client: TestClient) -> None:
         assert t.id == t.id.lower()
 
 
+def test_types_returns_exact_three_and_ignores_toy(
+    api_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify GET /v1/types returns exactly movies, products and articles, and that the loader ignores artifacts/toy."""
+    resp = api_client.get("/v1/types")
+    assert resp.status_code == 200
+    data = resp.json()
+    types_resp = TypesResponse.model_validate(data)
+    type_ids = [t.id for t in types_resp.types]
+
+    # Exactly movies, products and articles
+    assert sorted(type_ids) == ["articles", "movies", "products"]
+    assert len(type_ids) == 3
+    assert "toy" not in type_ids
+
+    # Verify loader ignores artifacts/toy
+    test_artifact_root = tmp_path / "artifacts"
+    test_artifact_root.mkdir()
+    fake_toy = test_artifact_root / "toy"
+    fake_toy.mkdir()
+    (fake_toy / "manifest.json").write_text(
+        '{"type": "toy", "schema_version": "1.0.0"}', encoding="utf-8"
+    )
+
+    monkeypatch.setenv("ARTIFACT_DIR", str(test_artifact_root))
+    isolated_app = create_app()
+    with TestClient(isolated_app) as client:
+        # Loader must ignore artifacts/toy completely
+        assert "toy" not in client.app.state.artifacts
+        assert "toy" not in client.app.state.models
+        assert "toy" not in client.app.state.availability
+        assert "toy" not in client.app.state.unavailable_reasons
+
+        # GET /v1/types strictly returns only movies, products, articles
+        local_resp = client.get("/v1/types")
+        assert local_resp.status_code == 200
+        local_ids = [t["id"] for t in local_resp.json()["types"]]
+        assert "toy" not in local_ids
+        assert set(local_ids) == {"movies", "products", "articles"}
+
+        # Attempting to access toy via /v1/types/toy/users returns 404/unknown_type
+        user_resp = client.get("/v1/types/toy/users")
+        assert user_resp.status_code == 404
+        assert user_resp.json()["error"]["code"] == "unknown_type"
+
+
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
 def test_users_endpoint_contract(api_client: TestClient, content_type: str) -> None:
     """Verify /v1/types/{type}/users contract: demo users first, persona filtering, limit."""

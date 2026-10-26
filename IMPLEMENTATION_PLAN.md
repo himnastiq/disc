@@ -1017,3 +1017,22 @@ cd backend && E:/discover/.venv/Scripts/python.exe -m pytest tests/ -v --tb=shor
 "All checks passed."
 ```
 
+### Session 21: FIX-29 (Enforce Exact Types and Ignore Toy Artifacts)
+- **Completed Fixes (FIX-29):**
+  - **Exact Types Enforcement:** Updated `backend/api/main.py`, `backend/api/routes/metadata.py`, and `backend/api/deps.py` to strictly filter registered types `[t for t in registry.types() if t != "toy"]`.
+  - **Contract Test for Exact Types & Toy Isolation:** Added `test_types_returns_exact_three_and_ignores_toy` in `backend/tests/contract/test_api_metadata.py`. Confirms `GET /v1/types` returns strictly `["articles", "movies", "products"]` (length 3) and that the lifespan loader ignores `artifacts/toy` completely (never loaded into state artifacts, models, availability, or unavailable reasons).
+  - **MIND Fixture Resolution:** Fixed `test_articles_consistency.py` to explicitly initialize `MindArticlesAdapter(spec, raw_dir=FIXTURES_DIR)`, preventing full 92MB dataset iteration during test runs.
+  - **Working Tree Committed:** Included `backend/tests/integration/test_phase7_gate.py` implementing comprehensive P7.13 gate and 5 break-your-own-work rituals.
+- **`make check` Raw Output:**
+```
+cd backend && E:/discover/.venv/Scripts/python.exe -m ruff check .
+All checks passed!
+cd backend && E:/discover/.venv/Scripts/python.exe -m ruff format --check .
+114 files already formatted
+cd backend && E:/discover/.venv/Scripts/python.exe -m mypy engine/ api/
+pyproject.toml: note: unused section(s): module = ['sklearn', 'tests.*']
+Success: no issues found in 44 source files
+cd backend && E:/discover/.venv/Scripts/python.exe -m pytest tests/ -v --tb=short
+============ 409 passed, 1 skipped, 1 warning in 238.88s (0:03:58) ============
+"All checks passed."
+```
