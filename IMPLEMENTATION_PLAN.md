@@ -1416,3 +1416,64 @@ python -m pytest tests -m "not real_data" -q --maxfail=20 -rN
 - **Core Unchanged Check (`python tools/core_unchanged.py`):** PASSED.
 - **Next Steps:** Phase 7 is 100% complete and fully verified. Awaiting human confirmation before starting Phase 8 or MIND.
 
+### Session 26: 2026-10-26, agent session (FIX-45: CI robustness for git-history and network tests)
+- **Completed Tasks & Fixes:**
+  - **CI Workflow Update (.github/workflows/ci.yml):** Configured `actions/checkout@v4` with `fetch-depth: 0` so CI runners have access to full commit history and phase tags.
+  - **Phase Tags & Core Invariance Tooling (tools/core_unchanged.py):**
+    - Created annotated git tags for phase boundaries: `phase-3-end` (6da1d3a), `phase-4-end` (c31af6e), `phase-5-end` (5917c1c), `phase-6-end` (5595b53), and `phase-7-end` (785e9ac).
+    - Removed hardcoded short commit SHAs from `tools/core_unchanged.py`.
+    - Added ref validation using `git cat-file -e <ref>^{commit}`; raises `GitHistoryUnavailable` with an explanatory message if history or tags are missing.
+  - **Consumer Tests Git History Handling:**
+    - Updated `test_core_unchanged.py`, `test_products_gate.py`, `test_extensibility.py`, and `test_articles_gate.py` to catch `GitHistoryUnavailable` and `pytest.skip` cleanly with the reason.
+    - Added unit test `test_shallow_clone_skip_behaviour` in `test_core_unchanged.py` verifying that shallow clones cleanly raise `GitHistoryUnavailable` and trigger test skips.
+  - **Network & TLS Verification Hardening:**
+    - Identified origin of `InsecureRequestWarning`: `backend/scripts/fetch_data.py` previously contained an SSL fallback with `verify=False` and suppressed warnings via `urllib3.disable_warnings`.
+    - Replaced with standard TLS certificate verification using `certifi.where()` across `backend/scripts/fetch_data.py` and vendored `backend/discovery/datasets/download_utils.py`. Added explicit opt-out via `DISCOVERY_INSECURE_SSL=1` or `--insecure`.
+    - Documented changes in `backend/discovery/NOTICE.md`, regenerated `docs/VENDORED_FILES.md`, and recorded architecture decision `D-019` in `docs/DECISIONS.md`.
+  - **Test Suite Network & data/raw Isolation:**
+    - Marked `test_movies_100k_golden_regression` with `@pytest.mark.real_data` so CI `-m "not real_data"` skips downloading MovieLens 100K during fast test runs.
+    - Isolated `test_movielens_adapter.py::test_movielens_adapter_validate_writes_report` using a mock fixture so it executes completely offline without touching `data/raw/` or attempting downloads.
+- **CI Simulation: Shallow Clone (`git clone --depth 1`) Raw Output:**
+```powershell
+git clone --depth 1 file:///e:/discover $env:TEMP\ci_sim_shallow
+cd $env:TEMP\ci_sim_shallow\backend
+python -m pip install -e ".[core,dev]"
+python -m pytest tests -m "not real_data" -q --maxfail=20 -rN
+........................................................................ [ 18%]
+.......................s.s........s..................................... [ 36%]
+...s.................................................................... [ 54%]
+........................................ss.............................. [ 72%]
+........................................................................ [ 90%]
+......................................                                   [100%]
+============================== warnings summary ===============================
+E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
+  E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+392 passed, 6 skipped, 42 deselected, 1 warning in 32.55s
+```
+- **CI Simulation: Full Clone (`git clone`) Raw Output:**
+```powershell
+git clone file:///e:/discover $env:TEMP\ci_sim_full
+cd $env:TEMP\ci_sim_full\backend
+python -m pip install -e ".[core,dev]"
+python -m pytest tests -m "not real_data" -q --maxfail=20 -rN
+........................................................................ [ 18%]
+.........................s.............................................. [ 36%]
+........................................................................ [ 54%]
+........................................................................ [ 72%]
+........................................................................ [ 90%]
+......................................                                   [100%]
+============================== warnings summary ===============================
+E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
+  E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+397 passed, 1 skipped, 42 deselected, 1 warning in 41.81s
+```
+- **Core Unchanged Check (`python tools/core_unchanged.py`):** PASSED.
+- **Next Steps:** CI robustness improvements complete. Ready for human confirmation before proceeding to Phase 8 (Frontend).
+
+
