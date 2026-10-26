@@ -48,14 +48,12 @@ def test_articles_mind_validation_report_and_leakage_passes() -> None:
         check_r2_no_leakage(valid_df, test_df)
 
     # 3. Explicit protocol check: No test impression clicked item used as training positive for that user
-    common_users = set(train_df["user_id"]).intersection(set(test_df["user_id"]))
-    for uid in common_users:
-        u_train_items = set(train_df[train_df["user_id"] == uid]["item_id"])
-        u_test_items = set(test_df[test_df["user_id"] == uid]["item_id"])
-        assert u_train_items.isdisjoint(u_test_items), (
-            f"Leakage detected: User {uid} has test clicked items appearing in training: "
-            f"{u_train_items.intersection(u_test_items)}"
-        )
+    train_pairs = set(zip(train_df["user_id"], train_df["item_id"], strict=False))
+    test_pairs = set(zip(test_df["user_id"], test_df["item_id"], strict=False))
+    leaked_pairs = train_pairs.intersection(test_pairs)
+    assert not leaked_pairs, (
+        f"Leakage detected: (user_id, item_id) pairs appearing in both train and test: {leaked_pairs}"
+    )
 
 
 @pytest.mark.integration

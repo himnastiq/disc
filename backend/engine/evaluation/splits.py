@@ -36,23 +36,28 @@ def check_leakage(
         test_min = test_df.groupby(col_user)[col_timestamp].min()
 
         common_train_test = train_max.index.intersection(test_min.index)
-        for u in common_train_test:
-            if train_max[u] > test_min[u]:
-                leaked_users.append(str(u))
+        if not common_train_test.empty:
+            mask_tt = train_max.loc[common_train_test] > test_min.loc[common_train_test]
+            if mask_tt.any():
+                leaked_users.extend(common_train_test[mask_tt].astype(str).tolist())
 
         if valid_df is not None and not valid_df.empty:
             valid_min = valid_df.groupby(col_user)[col_timestamp].min()
             valid_max = valid_df.groupby(col_user)[col_timestamp].max()
 
             common_train_valid = train_max.index.intersection(valid_min.index)
-            for u in common_train_valid:
-                if train_max[u] > valid_min[u] and str(u) not in leaked_users:
-                    leaked_users.append(str(u))
+            if not common_train_valid.empty:
+                mask_tv = train_max.loc[common_train_valid] > valid_min.loc[common_train_valid]
+                for u in common_train_valid[mask_tv].astype(str):
+                    if u not in leaked_users:
+                        leaked_users.append(u)
 
             common_valid_test = valid_max.index.intersection(test_min.index)
-            for u in common_valid_test:
-                if valid_max[u] > test_min[u] and str(u) not in leaked_users:
-                    leaked_users.append(str(u))
+            if not common_valid_test.empty:
+                mask_vt = valid_max.loc[common_valid_test] > test_min.loc[common_valid_test]
+                for u in common_valid_test[mask_vt].astype(str):
+                    if u not in leaked_users:
+                        leaked_users.append(u)
 
         if leaked_users:
             sample = leaked_users[:5]

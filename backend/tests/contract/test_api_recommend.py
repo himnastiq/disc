@@ -230,3 +230,61 @@ def test_recommend_user_with_fewer_positives_returns_popularity(
     # Popular results should not have personalized explanation reasons
     for r in data["results"]:
         assert r["reason"] is None
+
+
+@pytest.mark.parametrize("content_type", CONTENT_TYPES)
+def test_personalized_recommendations_contain_reasons_across_all_types(
+    api_client: TestClient, content_type: str
+) -> None:
+    """FIX-38: Personalized recommendations must contain faithful attribution reasons across all types."""
+    loaded = load_artifacts(get_artifacts_dir() / content_type, verify=False)
+
+    target_user = None
+    target_data = None
+    for u in loaded.demo_users:
+        uid = str(u["user_id"])
+        resp = api_client.get(f"/v1/recommend?type={content_type}&user_id={uid}&k=10")
+        assert resp.status_code == 200
+        data = resp.json()
+        if data.get("mode") == "personalized":
+            reasons = [r["reason"] for r in data["results"] if r.get("reason") is not None]
+            if len(reasons) > 0:
+                target_user = uid
+                target_data = data
+                break
+
+    assert target_user is not None, (
+        f"Could not find a user with explanation reasons for {content_type}"
+    )
+    assert target_data is not None
+    assert target_data["meta"]["explanation_errors"] == 0
+    reasons = [r["reason"] for r in target_data["results"] if r.get("reason") is not None]
+    assert len(reasons) > 0
+    for reason in reasons:
+        assert isinstance(reason["kind"], str)
+        assert len(reason["kind"]) > 0
+
+
+def test_explanation_exception_logged_and_counted_in_meta(
+    api_client: TestClient, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """FIX-38: When model.explain raises an exception, warning is logged and explanation_errors increments."""
+    loaded = load_artifacts(get_artifacts_dir() / "movies", verify=False)
+    test_user_id = str(loaded.demo_users[0]["user_id"])
+    model = api_client.app.state.models["movies"]
+
+    def _failing_explain(user_id: str, item_id: str) -> Any:
+        raise RuntimeError("Simulated explanation failure in SAR explain")
+
+    monkeypatch.setattr(model, "explain", _failing_explain)
+
+    with caplog.at_level("WARNING"):
+        resp = api_client.get(f"/v1/recommend?type=movies&user_id={test_user_id}&k=5")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["meta"]["explanation_errors"] > 0
+    # Results should have fallen back to None for reasons without failing request
+    for item in data["results"]:
+        assert item["reason"] is None
+    assert "Failed to compute explanation" in caplog.text

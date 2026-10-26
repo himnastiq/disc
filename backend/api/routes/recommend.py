@@ -19,10 +19,12 @@ from api.schemas import (
     SimilarResponse,
 )
 from engine.errors import UnknownItem, UnknownUser
+from engine.logging_utils import get_logger
 
 if TYPE_CHECKING:
     from engine.models.base import RecommenderModel
 
+logger = get_logger("api.routes.recommend")
 router = APIRouter(prefix="/v1", tags=["recommendations"])
 
 
@@ -114,6 +116,7 @@ def get_recommendations(
     raw_scores = [s for _, s in scored_items]
     display_scores = compute_display_scores(raw_scores)
 
+    explanation_errors = 0
     results: list[ScoredItemResponse] = []
     for (iid, score), d_score in zip(scored_items, display_scores, strict=False):
         meta_info = lookups.item_metadata.get(iid, {})
@@ -130,7 +133,15 @@ def get_recommendations(
                         text=exp.text,
                         similarity_score=getattr(exp, "score", None),
                     )
-            except Exception:
+            except Exception as exc:
+                logger.warning(
+                    "Failed to compute explanation for item '%s', user '%s' (%s): %s",
+                    iid,
+                    uid_str,
+                    type,
+                    exc,
+                )
+                explanation_errors += 1
                 reason_obj = None
 
         results.append(
@@ -162,6 +173,7 @@ def get_recommendations(
             "latency_ms": latency_ms,
             "source": source,
             "positive_interactions": user_pos_count,
+            "explanation_errors": explanation_errors,
         },
     )
 
@@ -238,6 +250,7 @@ def recommend_cold_start(
     raw_scores = [s for _, s in scored_items]
     display_scores = compute_display_scores(raw_scores)
 
+    explanation_errors = 0
     results: list[ScoredItemResponse] = []
     for (iid, score), d_score in zip(scored_items, display_scores, strict=False):
         meta_info = lookups.item_metadata.get(iid, {})
@@ -254,7 +267,14 @@ def recommend_cold_start(
                         text=exp.text,
                         similarity_score=getattr(exp, "score", None),
                     )
-            except Exception:
+            except Exception as exc:
+                logger.warning(
+                    "Failed to compute cold-start explanation for item '%s' (%s): %s",
+                    iid,
+                    body.type,
+                    exc,
+                )
+                explanation_errors += 1
                 reason_obj = None
 
         results.append(
@@ -287,6 +307,7 @@ def recommend_cold_start(
             "history_size": len(body.history),
             "valid_history_length": len(valid_history),
             "positive_items_count": pos_items_count,
+            "explanation_errors": explanation_errors,
         },
     )
 
