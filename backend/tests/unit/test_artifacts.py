@@ -207,3 +207,52 @@ def test_cross_platform_crlf_hash_invariance_and_strict_tamper_detection(tmp_pat
     with pytest.raises(ArtifactCorruptError) as exc_info_bin:
         verify_artifacts(test_bundle)
     assert "items.parquet" in str(exc_info_bin.value).lower()
+
+
+def test_save_artifacts_atomic_failure_preserves_existing_artifacts(
+    sample_artifact_bundle: tuple[Path, ContentTypeSpec],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """F-011: Simulated mid-write failure during save_artifacts must leave existing artifact bundle untouched."""
+    bundle_dir, spec = sample_artifact_bundle
+
+    # Record initial manifest and verify it loads
+    old_manifest = verify_artifacts(bundle_dir)
+    old_loaded = load_artifacts(bundle_dir, verify=True)
+    assert len(old_loaded.items) == 2
+
+    # Prepare new artifacts with 10 items
+    new_items = pd.DataFrame(
+        [
+            {"item_id": f"new_{i}", "title": f"New Movie {i}", "categories": ["Action"]}
+            for i in range(10)
+        ]
+    )
+    new_interactions = pd.DataFrame(
+        [{"user_id": "u1", "item_id": "new_1", "signal": 5.0, "timestamp": 500, "positive": True}]
+    )
+    new_users = pd.DataFrame([{"user_id": "u1", "interaction_count": 1, "persona": "mainstream"}])
+
+    # Simulate crash during JSON metadata write (after items have been processed)
+    def fail_write(*args, **kwargs):
+        raise OSError("Simulated disk full mid-save")
+
+    monkeypatch.setattr("engine.artifacts.write_text_file", fail_write)
+
+    with pytest.raises(OSError, match="Simulated disk full mid-save"):
+        save_artifacts(
+            artifact_dir=bundle_dir,
+            spec=spec,
+            items=new_items,
+            interactions=new_interactions,
+            users=new_users,
+            metrics={"test_metric": 0.99},
+            demo_users=[],
+        )
+
+    # Existing bundle must be completely untouched and valid
+    preserved_manifest = verify_artifacts(bundle_dir)
+    assert preserved_manifest["files"] == old_manifest["files"]
+    preserved_loaded = load_artifacts(bundle_dir, verify=True)
+    assert len(preserved_loaded.items) == 2
+    assert preserved_loaded.items.iloc[0]["item_id"] == "i1"
