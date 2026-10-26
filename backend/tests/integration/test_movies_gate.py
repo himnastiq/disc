@@ -241,6 +241,7 @@ def test_gate_seen_items_never_recommended_even_under_popular_fallback(
 
 
 @pytest.mark.integration
+@pytest.mark.real_data
 def test_gate_real_movies_artifacts_integrity() -> None:
     """Verify artifacts/movies directory passes cryptographic manifest check and R1-R5 invariants."""
     artifacts_dir = Path(__file__).resolve().parent.parent.parent.parent / "artifacts" / "movies"

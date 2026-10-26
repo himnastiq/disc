@@ -10,8 +10,9 @@ from engine.config import load_config
 from engine.errors import LeakageError
 from engine.evaluation.checks import check_r1_data_validity, check_r2_no_leakage
 
+pytestmark = [pytest.mark.integration, pytest.mark.real_data]
 
-@pytest.mark.integration
+
 def test_articles_mind_validation_report_and_leakage_passes() -> None:
     """Verify validation report (R1) and impression time split (R2) on MIND data."""
     spec = load_config("articles", fast=True)

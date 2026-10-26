@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,12 @@ from api.schemas import RecommendResponse
 from engine.artifacts import load_artifacts
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+
+
+def get_artifacts_dir() -> Path:
+    return Path(os.environ.get("ARTIFACT_DIR", REPO_ROOT / "artifacts"))
+
+
 CONTENT_TYPES = ["movies", "products", "articles"]
 
 
@@ -86,7 +92,7 @@ def assert_r3_invariants_on_response(
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
 def test_recommend_endpoint_r3_invariants(api_client: TestClient, content_type: str) -> None:
     """Verify /v1/recommend satisfies R3 invariants for standard known users."""
-    loaded = load_artifacts(ARTIFACTS_DIR / content_type, verify=False)
+    loaded = load_artifacts(get_artifacts_dir() / content_type, verify=False)
     catalogue_ids = set(loaded.items["item_id"].astype(str))
 
     # Pick first demo user
@@ -110,7 +116,7 @@ def test_recommend_endpoint_r3_invariants(api_client: TestClient, content_type: 
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
 def test_recommend_with_explicit_exclusions(api_client: TestClient, content_type: str) -> None:
     """Verify that items in exclude disappear from results and trigger live fallback if needed."""
-    loaded = load_artifacts(ARTIFACTS_DIR / content_type, verify=False)
+    loaded = load_artifacts(get_artifacts_dir() / content_type, verify=False)
     catalogue_ids = set(loaded.items["item_id"].astype(str))
     test_user_id = str(loaded.demo_users[0]["user_id"])
     user_seen_ids = set(

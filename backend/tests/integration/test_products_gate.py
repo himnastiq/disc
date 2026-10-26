@@ -244,6 +244,7 @@ def test_gate_seen_items_never_recommended(
 
 
 @pytest.mark.integration
+@pytest.mark.real_data
 def test_gate_real_products_artifacts_integrity() -> None:
     """RITUAL 6: Verify real products artifacts pass cryptographic verification and gate checks."""
     artifacts_dir = REPO_ROOT / "artifacts" / "products"

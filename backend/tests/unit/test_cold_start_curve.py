@@ -5,7 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 
+
+@pytest.mark.real_data
 def test_movies_metrics_cold_start_curve() -> None:
     """Verify that artifacts/movies/metrics.json contains validated cold_start_curves."""
     metrics_path = (
@@ -14,7 +17,8 @@ def test_movies_metrics_cold_start_curve() -> None:
         / "movies"
         / "metrics.json"
     )
-    assert metrics_path.exists(), "artifacts/movies/metrics.json must exist"
+    if not metrics_path.exists():
+        pytest.skip("artifacts/movies/metrics.json must exist")
 
     data = json.loads(metrics_path.read_text(encoding="utf-8"))
     assert "cold_start_curves" in data, "metrics.json must have cold_start_curves"

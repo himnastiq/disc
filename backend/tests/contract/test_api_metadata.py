@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,12 @@ from api.schemas import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+
+
+def get_artifacts_dir() -> Path:
+    return Path(os.environ.get("ARTIFACT_DIR", REPO_ROOT / "artifacts"))
+
+
 CONTENT_TYPES = ["movies", "products", "articles"]
 
 
@@ -262,7 +268,7 @@ def test_metrics_endpoint_contract(api_client: TestClient, content_type: str) ->
     data = resp.json()
 
     # Load disk metrics
-    disk_metrics_path = ARTIFACTS_DIR / content_type / "metrics.json"
+    disk_metrics_path = get_artifacts_dir() / content_type / "metrics.json"
     assert disk_metrics_path.exists()
     disk_data = json.loads(disk_metrics_path.read_text(encoding="utf-8"))
 

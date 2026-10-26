@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,12 @@ from engine.artifacts import load_artifacts
 from engine.config import load_config
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+
+
+def get_artifacts_dir() -> Path:
+    return Path(os.environ.get("ARTIFACT_DIR", REPO_ROOT / "artifacts"))
+
+
 CONTENT_TYPES = ["movies", "products", "articles"]
 
 
@@ -32,7 +38,7 @@ def test_user_profile_matches_direct_pandas_computation(
     api_client: TestClient, content_type: str
 ) -> None:
     """Acceptance requirement: values match a direct pandas computation in tests."""
-    type_dir = ARTIFACTS_DIR / content_type
+    type_dir = get_artifacts_dir() / content_type
     loaded = load_artifacts(type_dir, verify=False)
     spec = load_config(content_type, fast=True)
 

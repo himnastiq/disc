@@ -10,6 +10,8 @@ from engine.errors import LeakageError
 from engine.evaluation.checks import check_r1_data_validity, check_r2_no_leakage
 from engine.evaluation.harness import EvaluationHarness
 
+pytestmark = [pytest.mark.integration, pytest.mark.real_data]
+
 
 @pytest.mark.integration
 def test_products_instruments_validation_report_and_leakage_passes() -> None:

@@ -1,0 +1,42 @@
+[
+  {
+    "user_id": "10",
+    "persona": "casual",
+    "interaction_count": 6,
+    "top_categories": [
+      "Musical Instruments",
+      "Keyboards",
+      "Accessories"
+    ]
+  },
+  {
+    "user_id": "13",
+    "persona": "casual",
+    "interaction_count": 10,
+    "top_categories": [
+      "Musical Instruments",
+      "Microphones",
+      "Keyboards"
+    ]
+  },
+  {
+    "user_id": "16",
+    "persona": "casual",
+    "interaction_count": 9,
+    "top_categories": [
+      "Musical Instruments",
+      "Drums",
+      "Keyboards"
+    ]
+  },
+  {
+    "user_id": "32",
+    "persona": "casual",
+    "interaction_count": 14,
+    "top_categories": [
+      "Musical Instruments",
+      "Accessories",
+      "Guitars"
+    ]
+  }
+]

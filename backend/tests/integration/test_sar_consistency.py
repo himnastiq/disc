@@ -195,6 +195,7 @@ def trained_movielens_sar() -> tuple[SarModel, pd.DataFrame, pd.DataFrame]:
     return model, train_df, items
 
 
+@pytest.mark.real_data
 def test_sar_cold_start_consistency_50_known_users_flat_weighting(
     trained_movielens_sar: tuple[SarModel, pd.DataFrame, pd.DataFrame],
 ) -> None:
@@ -237,6 +238,7 @@ def test_sar_cold_start_consistency_50_known_users_flat_weighting(
     )
 
 
+@pytest.mark.real_data
 def test_sar_cold_start_consistency_timedecay_affinities(
     trained_movielens_sar: tuple[SarModel, pd.DataFrame, pd.DataFrame],
 ) -> None:

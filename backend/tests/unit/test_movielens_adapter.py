@@ -121,6 +121,7 @@ def test_movielens_adapter_mock_pipeline(tmp_path: Path) -> None:
     assert report.unique_items == 3
 
 
+@pytest.mark.real_data
 def test_movielens_adapter_real_100k_data() -> None:
     """Verify MovieLensAdapter loads real downloaded 100K data cleanly with R1 passing."""
     spec = load_config("movies", fast=True)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,12 @@ from api.schemas import ColdStartResponse
 from engine.artifacts import load_artifacts
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+
+
+def get_artifacts_dir() -> Path:
+    return Path(os.environ.get("ARTIFACT_DIR", REPO_ROOT / "artifacts"))
+
+
 CONTENT_TYPES = ["movies", "products", "articles"]
 
 
@@ -28,7 +34,7 @@ def api_client() -> Any:
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
 def test_cold_start_personalized_flow(api_client: TestClient, content_type: str) -> None:
     """Verify personalized cold-start recommendation with valid positive items."""
-    loaded = load_artifacts(ARTIFACTS_DIR / content_type, verify=False)
+    loaded = load_artifacts(get_artifacts_dir() / content_type, verify=False)
     catalogue = list(loaded.items["item_id"].astype(str))
     assert len(catalogue) >= 5
     sample_history = [{"item_id": iid, "signal": 5.0} for iid in catalogue[:5]]

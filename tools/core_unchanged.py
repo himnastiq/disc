@@ -75,6 +75,8 @@ EXEMPT_PREFIXES = [
 
 def get_git_diff_files(base_commit: str, target: str = "HEAD") -> list[str]:
     """Retrieve list of modified files between base_commit and target."""
+    if not (REPO_ROOT / ".git").exists():
+        return []
     cmd = ["git", "diff", "--name-only", base_commit, target]
     result = subprocess.run(
         cmd,

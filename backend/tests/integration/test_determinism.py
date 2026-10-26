@@ -11,19 +11,28 @@ identical evaluation metrics across all supported content domains:
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from engine.train import run_pipeline
 
-if TYPE_CHECKING:
-    from pathlib import Path
+pytestmark = [pytest.mark.integration, pytest.mark.real_data]
 
 
 def _assert_topn_determinism(content_type: str, tmp_path: Path, seed: int = 42) -> None:
     """Helper to execute training twice into isolated directories and assert hash identity."""
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    raw_data_map = {
+        "movies": repo_root / "data" / "raw" / "movielens",
+        "products": repo_root / "data" / "raw" / "amazon",
+        "articles": repo_root / "data" / "raw" / "mind",
+    }
+    raw_path = raw_data_map.get(content_type)
+    if raw_path and not raw_path.exists():
+        pytest.skip(f"Raw data directory for '{content_type}' not found at {raw_path}")
+
     dir1 = tmp_path / f"{content_type}_run1"
     dir2 = tmp_path / f"{content_type}_run2"
 

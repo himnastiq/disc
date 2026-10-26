@@ -1,0 +1,42 @@
+[
+  {
+    "user_id": "10",
+    "persona": "casual",
+    "interaction_count": 11,
+    "top_categories": [
+      "finance",
+      "sports",
+      "technology"
+    ]
+  },
+  {
+    "user_id": "13",
+    "persona": "casual",
+    "interaction_count": 12,
+    "top_categories": [
+      "finance",
+      "science",
+      "sports"
+    ]
+  },
+  {
+    "user_id": "16",
+    "persona": "casual",
+    "interaction_count": 11,
+    "top_categories": [
+      "sports",
+      "technology",
+      "finance"
+    ]
+  },
+  {
+    "user_id": "32",
+    "persona": "casual",
+    "interaction_count": 10,
+    "top_categories": [
+      "science",
+      "finance",
+      "sports"
+    ]
+  }
+]

@@ -15,11 +15,21 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 MAKE_RESULTS_SCRIPT = REPO_ROOT / "tools" / "make_results.py"
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
 DOCS_DIR = REPO_ROOT / "docs"
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+
+pytestmark = [pytest.mark.real_data]
+
+
+@pytest.fixture(autouse=True)
+def _require_real_artifacts() -> None:
+    if not (ARTIFACTS_DIR / "movies" / "metrics.json").exists():
+        pytest.skip("Full real artifacts in artifacts/ not found")
 
 
 def test_make_results_generates_markdown_and_figures(tmp_path: Path) -> None:

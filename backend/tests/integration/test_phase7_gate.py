@@ -26,6 +26,7 @@ invariants (R3, R7, R8, R11, R6):
 
 from __future__ import annotations
 
+import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -49,7 +50,12 @@ from api.schemas import (
 from engine import registry
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+
+
+def get_artifacts_dir() -> Path:
+    return Path(os.environ.get("ARTIFACT_DIR", REPO_ROOT / "artifacts"))
+
+
 CONTENT_TYPES = registry.types()
 
 
@@ -233,7 +239,7 @@ def test_ritual_4_partial_outage_resilience(
     """Ritual 4: Startup with one corrupt artifact dir marks it unavailable while healthy serve 200."""
     # Create isolated copy of artifacts directory
     temp_art_dir = tmp_path / "artifacts"
-    shutil.copytree(ARTIFACTS_DIR, temp_art_dir)
+    shutil.copytree(get_artifacts_dir(), temp_art_dir)
 
     # Deliberately corrupt the 'movies' artifact directory by deleting items.parquet
     movies_items = temp_art_dir / "movies" / "items.parquet"

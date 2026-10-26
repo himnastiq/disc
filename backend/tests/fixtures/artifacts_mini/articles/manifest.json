@@ -1,0 +1,25 @@
+{
+  "artifact_schema_version": "1.0.0",
+  "content_type": "articles",
+  "model_name": "tfidf_profile",
+  "config_hash": "b9ac2896202a7b3417d2eaeebf3d4a219d6676497c6ab6faefb4dfef12c791e5",
+  "git_sha": "785e9acc2aab294c763ae28bb195b3b61273946c",
+  "dataset_variant": "small",
+  "dataset_name": "MIND",
+  "section_heading": "Articles (MIND + TF-IDF Content Model)",
+  "created_at": "2026-10-26T02:28:18.548321+00:00",
+  "files": {
+    "demo_users.json": "7c6149a735bce5cfee1214ff7e143f4a04ba4ce23e920b8d6838d970eaabc65b",
+    "interactions.parquet": "076fbb279b48828cc7cf38251e88470fa8836ebb2023a34c83e6761c8ea39a7e",
+    "items.parquet": "6f94b1c14fa3b7c1ab680855c3328b1b1c07f96bfd4c3b3e4ebb356cd53e6785",
+    "metrics.json": "1a1b227c604c2be9ce555ad253fb7c7a7cd9759c6635c14fa2fb3d5ae00fdbce",
+    "model/idf.npy": "bbec272b537f6af5d5c976338a67c84542feae2e11de345a3ab9ad4bf44b2b2f",
+    "model/item_ids.json": "3d41ead3fcc4fd562e272ace44d8f169a06e337ea7ee9a202a40808a6dcbe8a8",
+    "model/item_titles.json": "3c1121700b97f488ef34e5f5f432a8be97827528403943644605db5bfe06b33c",
+    "model/model_meta.json": "3668610c2fdc85cfc78963dcacd752383e96e9d92852be597910361987ec36b4",
+    "model/tfidf_matrix.npz": "51472665d1b70255a8b6ce2c23f3b33bdf04a43431aff324b083fee9073a46c8",
+    "model/vocabulary.json": "f70673bd7a4fd281bbdfc70cee8afabdcda645b3472da2b6dd8725547aefb2d1",
+    "topn.parquet": "4eafdea3f9d5247669b44a42328d92c9dd982abde875e50fd7a29e2e0593d411",
+    "users.parquet": "bbea41f9534354f57b454435282c211cf630dbd53d002f9391e43c105a804de3"
+  }
+}

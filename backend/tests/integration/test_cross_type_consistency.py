@@ -18,6 +18,7 @@ Verifies that:
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -28,7 +29,10 @@ from engine.artifacts import load_artifacts
 from engine.config import load_config
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+
+
+def get_artifacts_dir() -> Path:
+    return Path(os.environ.get("ARTIFACT_DIR", REPO_ROOT / "artifacts"))
 
 
 def _assert_r3_invariants(
@@ -88,7 +92,7 @@ def _assert_r3_invariants(
 @pytest.mark.parametrize("content_type", registry.types())
 def test_cross_type_artifacts_loader(content_type: str) -> None:
     """All registered artifact bundles load cleanly through load_artifacts with verified manifest."""
-    art_dir = ARTIFACTS_DIR / content_type
+    art_dir = get_artifacts_dir() / content_type
     assert art_dir.exists(), f"Artifact directory missing: {art_dir}"
 
     loaded = load_artifacts(art_dir, verify=True)
@@ -125,7 +129,7 @@ def test_cross_type_artifacts_loader(content_type: str) -> None:
 @pytest.mark.parametrize("content_type", registry.types())
 def test_cross_type_r3_invariant_suite(content_type: str) -> None:
     """All models pass identical R3 invariant suite across all registered content types."""
-    art_dir = ARTIFACTS_DIR / content_type
+    art_dir = get_artifacts_dir() / content_type
     loaded = load_artifacts(art_dir, verify=True)
     catalogue = set(loaded.items["item_id"].astype(str))
 

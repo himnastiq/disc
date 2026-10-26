@@ -15,7 +15,10 @@ if TYPE_CHECKING:
     import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-REAL_ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+
+
+def get_artifacts_dir() -> Path:
+    return Path(os.environ.get("ARTIFACT_DIR", REPO_ROOT / "artifacts"))
 
 
 def test_api_environment_thread_isolation() -> None:
@@ -48,7 +51,7 @@ def test_api_startup_with_corrupt_artifact_dir(
 ) -> None:
     """Acceptance test: app starts even if one artifact directory is corrupted, marking it unavailable."""
     temp_artifacts = tmp_path / "artifacts"
-    shutil.copytree(REAL_ARTIFACTS_DIR, temp_artifacts)
+    shutil.copytree(get_artifacts_dir(), temp_artifacts)
 
     # Deliberately corrupt the movies artifact directory: alter topn.parquet byte payload
     corrupt_file = temp_artifacts / "movies" / "topn.parquet"

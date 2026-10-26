@@ -61,6 +61,7 @@ markers = [
     "integration: marks integration tests",
     "property: marks property-based tests",
     "contract: marks API contract tests",
+    "real_data: marks tests that require full/real datasets or trained artifacts",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:discovery.*",

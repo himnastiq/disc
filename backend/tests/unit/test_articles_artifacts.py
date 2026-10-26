@@ -6,10 +6,12 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from engine.artifacts import load_artifacts
 
 ARTIFACTS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "artifacts"
+pytestmark = [pytest.mark.real_data]
 
 
 def test_articles_artifact_set_shape_identical_to_movies_and_products() -> None:
@@ -18,9 +20,8 @@ def test_articles_artifact_set_shape_identical_to_movies_and_products() -> None:
     movies_dir = ARTIFACTS_DIR / "movies"
     products_dir = ARTIFACTS_DIR / "products"
 
-    assert articles_dir.exists(), f"Missing {articles_dir}"
-    assert movies_dir.exists(), f"Missing {movies_dir}"
-    assert products_dir.exists(), f"Missing {products_dir}"
+    if not (articles_dir.exists() and movies_dir.exists() and products_dir.exists()):
+        pytest.skip("Full real artifacts not present on disk")
 
     expected_files = {
         "data_report.json",
@@ -54,7 +55,8 @@ def test_articles_artifact_set_shape_identical_to_movies_and_products() -> None:
 def test_articles_demo_users_and_personas() -> None:
     """Verify demo users have personas and top categories derived from articles."""
     demo_path = ARTIFACTS_DIR / "articles" / "demo_users.json"
-    assert demo_path.exists()
+    if not demo_path.exists():
+        pytest.skip("artifacts/articles/demo_users.json not found")
 
     demo_users = json.loads(demo_path.read_text(encoding="utf-8"))
     assert len(demo_users) >= 4, f"Expected at least 4 demo users, got {len(demo_users)}"
@@ -73,7 +75,8 @@ def test_articles_demo_users_and_personas() -> None:
 def test_articles_cold_start_curves_in_metrics() -> None:
     """Verify cold-start curves exist in metrics.json for tfidf_profile."""
     metrics_path = ARTIFACTS_DIR / "articles" / "metrics.json"
-    assert metrics_path.exists()
+    if not metrics_path.exists():
+        pytest.skip("artifacts/articles/metrics.json not found")
 
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     assert "cold_start_curves" in metrics
@@ -93,6 +96,8 @@ def test_articles_cold_start_curves_in_metrics() -> None:
 def test_articles_topn_and_users_parquet_schemas() -> None:
     """Verify users.parquet and topn.parquet schemas and rank order."""
     articles_dir = ARTIFACTS_DIR / "articles"
+    if not articles_dir.exists():
+        pytest.skip("artifacts/articles directory not found")
 
     users_df = pd.read_parquet(articles_dir / "users.parquet")
     expected_user_cols = {

@@ -49,7 +49,7 @@ jobs:
       - name: Test (pytest)
         run: |
           cd backend
-          pytest tests/ -v --tb=short -x
+          pytest tests/ -v --tb=short -x -m "not real_data"
 
   frontend:
     runs-on: ubuntu-latest

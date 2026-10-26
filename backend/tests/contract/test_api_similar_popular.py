@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,12 @@ from api.schemas import PopularResponse, SimilarResponse
 from engine.artifacts import load_artifacts
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+
+
+def get_artifacts_dir() -> Path:
+    return Path(os.environ.get("ARTIFACT_DIR", REPO_ROOT / "artifacts"))
+
+
 CONTENT_TYPES = ["movies", "products", "articles"]
 
 
@@ -86,7 +92,7 @@ def test_get_similar_success_and_never_returns_query_item(
     api_client: TestClient, content_type: str
 ) -> None:
     """Test /v1/similar returns valid similar items and NEVER returns the query item."""
-    loaded = load_artifacts(ARTIFACTS_DIR / content_type, verify=False)
+    loaded = load_artifacts(get_artifacts_dir() / content_type, verify=False)
     catalogue_ids = list(loaded.items["item_id"].astype(str))
     assert len(catalogue_ids) >= 3
 

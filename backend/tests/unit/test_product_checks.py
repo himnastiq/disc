@@ -166,6 +166,7 @@ def test_similar_alternatives_spot_check_fails_on_disjoint_categories() -> None:
     assert check["shared_category_rate"] == 0.0
 
 
+@pytest.mark.real_data
 def test_real_products_artifacts_contain_valid_checks() -> None:
     """Verify saved products metrics.json contains product_specific_checks meeting all gates."""
     import json

@@ -1,0 +1,42 @@
+[
+  {
+    "user_id": "10",
+    "persona": "casual",
+    "interaction_count": 11,
+    "top_categories": [
+      "Drama",
+      "Action",
+      "Animation"
+    ]
+  },
+  {
+    "user_id": "13",
+    "persona": "casual",
+    "interaction_count": 7,
+    "top_categories": [
+      "Action",
+      "Thriller",
+      "Drama"
+    ]
+  },
+  {
+    "user_id": "16",
+    "persona": "casual",
+    "interaction_count": 9,
+    "top_categories": [
+      "Action",
+      "Drama",
+      "Animation"
+    ]
+  },
+  {
+    "user_id": "32",
+    "persona": "casual",
+    "interaction_count": 13,
+    "top_categories": [
+      "Sci-Fi",
+      "Action",
+      "Drama"
+    ]
+  }
+]

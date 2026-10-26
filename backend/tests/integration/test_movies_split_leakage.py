@@ -11,6 +11,8 @@ from engine.errors import LeakageError
 from engine.evaluation.checks import check_r2_no_leakage
 from engine.evaluation.harness import EvaluationHarness
 
+pytestmark = [pytest.mark.integration, pytest.mark.real_data]
+
 
 def test_movies_100k_chronological_split_leakage_passes() -> None:
     """Verify chronological per-user split on real MovieLens 100K data satisfies R2 no-leakage."""
