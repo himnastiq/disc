@@ -527,7 +527,104 @@ Eliminates `InsecureRequestWarning` across all environments. Downloads from `fil
 
 ---
 
+## D-020: Post-split train-only item cap for Amazon products adapter (2026-10-26)
+
+**Context:**
+The Phase 1 audit identified data leakage in `AmazonProductsAdapter.prepare()` (`F-002`): the item cap was applied to the raw dataframe before temporal train/test splitting, causing test-set interactions to influence which items were retained in the training and similarity sets.
+
+**Options considered:**
+1. Leave the pre-split cap in place and document it as an operational approximation.
+2. Filter the item vocabulary post-split strictly on `train_df`, dropping interactions for out-of-vocabulary items in both splits.
+3. Compute the popularity cap strictly within `AmazonProductsAdapter.split()` from `train_df`, filter `train_df` and `test_df` to keep only train-top items, and ensure zero test rows contribute to item ranking or inclusion.
+
+**Decision:**
+Option 3. The item cap is computed strictly on training interactions inside `split()`. Test interactions are filtered to the capped vocabulary derived solely from training data. Verified with a perturbation test asserting that modifying test interactions produces an identical fitted item vocabulary and item set.
+
+**Consequences:**
+Eliminates test-set leakage in the products pipeline. R2 non-leakage verified with perturbation tests.
+
+**Related tasks:** F-002, P4.2, P4.3, R2
+
+---
+
+## D-021: Strict chronological anchoring and deduplication of MIND history (2026-10-26)
+
+**Context:**
+The Phase 1 audit identified temporal leakage and invalid ordering in `MindArticlesAdapter` (`F-003`): subsequent history articles observed in later sessions were arbitrarily backdated to `first_imp_ts - 2 days`, placing them before the user's initial impressions, and deduplication with `keep="last"` discarded earlier historical interactions.
+
+**Options considered:**
+1. Assign all history items to `first_imp_ts - timedelta(days=1)` regardless of when observed.
+2. Anchor newly observed history items strictly between the prior session impression timestamp (`prev_ts`) and the current impression timestamp (`imp_ts`), maintaining monotonic temporal order, and deduplicate with `keep="first"` to preserve earliest interaction timestamps.
+
+**Decision:**
+Option 2. If a user reveals new history items at session timestamp $T_k$, those items occurred between $T_{k-1}$ and $T_k$ and are stamped accordingly. Deduplication preserves earliest interaction timestamps via `keep="first"`.
+
+**Consequences:**
+Preserves chronological validity of interaction histories and prevents backdating future historical records prior to earlier evaluation impressions. R2 non-leakage holds on real MIND data.
+
+**Related tasks:** F-003, P5.2, P5.3, R2
+
+---
+
+## D-022: Atomic artifact persistence with pre-population and rollback protection (2026-10-26)
+
+**Context:**
+The Phase 1 audit (`F-011`) reported non-atomic artifact writing in `engine/artifacts.py`: artifacts were saved directly into `artifacts/<type>/` sequentially. A failure during training left partial or corrupted artifact directories that prevented startup.
+
+**Options considered:**
+1. Write files in-place and catch exceptions with manual deletion.
+2. Write all artifacts to a temporary directory `.tmp_<type>_<uuid>` in the same filesystem, pre-populate auxiliary directories (e.g. `model/` saved prior to `save_artifacts()`), `fsync` manifest, rename existing directory to a backup, rename staging directory to final target, and remove the backup.
+
+**Decision:**
+Option 2. Implemented atomic stage-and-swap directory writing in `save_artifacts()`. On Windows and POSIX, stages in `.tmp_<name>_<id>`, copies existing unmanaged subdirectories (`model/`), swaps directory pointers, and rolls back cleanly on any filesystem error.
+
+**Consequences:**
+Guarantees all-or-nothing artifact persistence. Corrupted training runs never overwrite valid serving artifacts.
+
+**Related tasks:** F-011, P2.10, R8
+
+---
+
+## D-023: Decoupling search total match count from limit in ItemSearchIndex (2026-10-26)
+
+**Context:**
+The Phase 1 audit (`F-014`) reported that `ItemSearchIndex.search()` returned a list of matches sliced by `limit`, and `/items/search` reported `total_matches = len(matches)`. This caused total match counts to be artificially capped by the pagination limit.
+
+**Options considered:**
+1. Perform two search queries (one for count, one for pagination).
+2. Have `ItemSearchIndex.search()` return a tuple `(results, total_matches)` where `total_matches` is the length of the matched candidates prior to slicing.
+
+**Decision:**
+Option 2. `search()` ranks and counts all matched items, slices the top `limit` for `results`, and returns the total candidate count. Exposed public O(1) lookups `get_popularity_rank()` and `get_entry()` to eliminate private attribute scans.
+
+**Consequences:**
+`/items/search` accurately reports total available catalog matches regardless of requested limit. API contract preserved.
+
+**Related tasks:** F-014, F-019, P7.3
+
+---
+
+## D-024: CI test isolation for split leakage and determinism without external datasets (2026-10-26)
+
+**Context:**
+The Phase 1 audit (`F-013`) reported that 42 real-data tests (including split leakage and determinism verification) were gated behind `@pytest.mark.real_data` and never executed in CI, leaving core invariant checks unverified on pull requests.
+
+**Options considered:**
+1. Download full external datasets in CI on every run.
+2. Commit small synthetic fixtures exercising the exact split leakage and determinism pipelines in default CI runs (`not real_data`), while reserving large real-data verification tests for extended/local test runs (`make gates`).
+
+**Decision:**
+Option 2. Decoupled fixture tests from `real_data` in `test_articles_split_leakage.py` (`test_articles_mind_fixture_split_leakage`) and `test_determinism.py` (`test_pipeline_determinism_toy`). Default CI runs verify R2 non-leakage and pipeline determinism without requiring network downloads.
+
+**Consequences:**
+CI suite tests split leakage and pipeline determinism on every push without external dependencies. Real-data tests remain runnable via `pytest -m real_data`.
+
+**Related tasks:** F-013, P5.3, P6.3, CI
+
+---
+
 <!-- Add new entries above this line -->
+
 
 
 

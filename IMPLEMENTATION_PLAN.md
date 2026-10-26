@@ -33,22 +33,22 @@
 <!-- PROGRESS:START -->
 | Phase | Name | Done | In progress | Blocked | Total | % |
 |---|---|---|---|---|---|---|
-| 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
+| 0 | Scaffolding and tooling | 10 | 0 | 1 | 11 | 90% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
-| 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
-| 5 | Articles pipeline (MIND + TF-IDF content model) | 10 | 0 | 1 | 12 | 83% |
-| 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
+| 4 | Products pipeline (Amazon + SAR) | 7 | 1 | 0 | 8 | 87% |
+| 5 | Articles pipeline (MIND + TF-IDF content model) | 11 | 0 | 1 | 12 | 91% |
+| 6 | Cross-type hardening and evidence | 7 | 1 | 0 | 8 | 87% |
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **85** | | | **129** | **65%** |
+| | **Overall** | **83** | | | **129** | **64%** |
 
-`[#############-------] 65%  (85/129 tasks)`
+`[############--------] 64%  (83/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -323,7 +323,8 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 
 - [x] **P0.1** Initialise git, add `.gitignore` (Python, Node, `data/`, `artifacts/` big files, `.env*`, IDE files), add the project `LICENSE` (MIT unless the owner says otherwise). *Acceptance:* clean first commit.
 - [x] **P0.2** Create the directory layout from section 5 (empty packages with `__init__.py`, placeholder READMEs where useful). *Acceptance:* tree matches section 5.
-- [x] **P0.3** Backend environment: Python 3.11, `pyproject.toml` with extras `core` (numpy, pandas, scipy, scikit-learn, pyarrow, pydantic, pyyaml, tqdm, requests, fastapi, uvicorn, joblib), `dev` (pytest, pytest-cov, hypothesis, httpx, ruff, mypy, pip-audit), `deep` (placeholder for Phase 12). Lock versions (uv lock or pinned requirements). *Acceptance:* a fresh virtualenv installs `core,dev` with one command.
+- [!] **P0.3** Backend environment: Python 3.11, `pyproject.toml` with extras `core` (numpy, pandas, scipy, scikit-learn, pyarrow, pydantic, pyyaml, tqdm, requests, fastapi, uvicorn, joblib), `dev` (pytest, pytest-cov, hypothesis, httpx, ruff, mypy, pip-audit), `deep` (placeholder for Phase 12). Lock versions (uv lock or pinned requirements). *Acceptance:* a fresh virtualenv installs `core,dev` with one command.
+  *Note:* Lockfile generation blocked on external network execution in sandbox: run `cd backend && uv lock` to generate committed uv.lock (F-012, audit FAIL). Dependencies configured in pyproject.toml.
 - [x] **P0.4** `Makefile` targets: `setup`, `data`, `train` (all types), `train-fast`, `eval`, `api`, `web`, `test`, `lint`, `check`, `gates`, `progress`, `clean`. *Acceptance:* each target exists and fails gracefully with a clear message if its prerequisite is missing.
 - [x] **P0.5** Linting and typing config: ruff, mypy (strict for `engine/` and `api/`, lenient for `discovery/`), pre-commit hooks. *Acceptance:* `make lint` passes on the skeleton.
 - [x] **P0.6** Write `tools/progress.py`: parses this file, counts `[x]` / total tasks per `## PHASE n` section, rewrites the dashboard between the `PROGRESS:START/END` markers (table with phase name, done/total, percentage, and an overall bar). Must be idempotent. *Acceptance:* running it twice changes nothing the second time; unit test included in `backend/tests/unit/test_progress.py`.
@@ -400,7 +401,8 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 **Gates:** R1 to R6, plus "core unchanged" check.
 
 - [x] **P4.1** Inspect what `discovery.datasets.amazon_reviews` actually provides (category, item metadata, titles, categories, images). Decide the dataset: use the loader's data if it has usable product metadata, else one mid-size Amazon 5-core category plus metadata. Record the decision and license notes in `docs/DATASETS.md` and `docs/DECISIONS.md`. If a manual download is required, mark `[!]`, tell the human exactly what to place where, and continue with Phase 5. *Acceptance:* decision recorded.
-- [x] **P4.2** Implement `AmazonProductsAdapter`: ids to strings, signal rule from config (positive if rating >= threshold), timestamps, metadata join (title, brand, categories, price, image URL when present), missing-metadata fallbacks (title = id, flagged and counted), item cap by popularity to respect `max_items_in_similarity`. *Acceptance:* adapter tests on a small fixture; cap behaviour tested.
+- [~] **P4.2** Implement `AmazonProductsAdapter`: ids to strings, signal rule from config (positive if rating >= threshold), timestamps, metadata join (title, brand, categories, price, image URL when present), missing-metadata fallbacks (title = id, flagged and counted), item cap by popularity to respect `max_items_in_similarity`. *Acceptance:* adapter tests on a small fixture; cap behaviour tested.
+  *Note:* Item cap test-set leakage resolved in F-002; positive column schema alignment pending Author Decision Q2 in F-005.
 - [x] **P4.3** Validation report (R1) and chronological split with leakage test (R2). *Acceptance:* report and test pass.
 - [x] **P4.4** Add `configs/products.yaml` reusing `SarModel` (no new model code unless a documented need appears). Check memory usage of the similarity structure and keep the budget in R8. *Acceptance:* peak memory during training and serving recorded.
 - [x] **P4.5** Tune on validation, train, evaluate against baselines, cold-start curve, precompute artifacts, select demo users (same procedure as Phase 3). *Acceptance:* same artifact set as movies; R4 sanity results recorded honestly.
@@ -417,7 +419,8 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 
 - [!] **P5.1** Dataset step: verified vendored helpers (`download_mind`, `extract_mind` in `discovery.datasets.mind`); recorded license (MSR License for Data) and citation in `docs/DATASETS.md`. Automated anonymous Azure blob access is restricted by Microsoft (HTTP 409/401); documented manual download instructions (Hugging Face / Kaggle to `data/raw/mind/train/` and `data/raw/mind/dev/`) in `fetch_data.py` and `docs/DATASETS.md`; verified offline fixture in `backend/tests/fixtures/mind/` loads cleanly. *Acceptance:* files load or blocked note written.
 - [x] **P5.2** Implement `MindArticlesAdapter`: parse `news.tsv` (id, category, subcategory, title, abstract, URL, entities) into Items (title, abstract as `text`, categories = [category, subcategory]); parse `behaviors.tsv` into interactions (history clicks and impression clicks with impression timestamps) and keep impression candidate lists for evaluation. Handle missing abstracts, unicode, and empty histories. *Acceptance:* parsing tests on fixture lines.
-- [ ] **P5.3** Define the time protocol: history items in MIND have no individual timestamps, so treat them as occurring before the user's first impression; split by impression time (earlier days train, later days test); record the actual date ranges in the data report. Leakage test: no test impression's clicked item is used as a training positive for that user. *Acceptance:* R2 test on real data.
+- [x] **P5.3** Define the time protocol: history items in MIND have no individual timestamps, so treat them as occurring before the user's first impression; split by impression time (earlier days train, later days test); record the actual date ranges in the data report. Leakage test: no test impression's clicked item is used as a training positive for that user. *Acceptance:* R2 test on real data.
+  *Note:* Ticked [x] in Phase 2 remediation. Anchored MIND history strictly without future leakage (F-003), deduplicated with keep='first', and verified R2 non-leakage passing on both real MIND dataset (35.76s) and CI fixture suite (F-013).
 - [x] **P5.4** Implement `TfidfProfileModel` using the vendored TF-IDF utilities (verify the class and its cleaning/tokenising helpers) over `title + abstract + category tokens`: fit vocabulary on train-period articles only; store sparse matrix and vocabulary as scipy npz and json. User profile = weighted mean of clicked article vectors (more recent clicks weigh more; weighting scheme from config); score = cosine similarity to candidates. *Acceptance:* unit tests (profile of identical history equals that article's vector direction; empty history gives popularity).
 - [x] **P5.5** Freshness: candidates restricted to the config `recency_window` (for demo: articles that appear in the most recent impressions period); popularity baseline = click count within the window. Document the window choice and its effect. *Acceptance:* recommendations never include articles outside the window (R3 extension).
 - [x] **P5.6** Cold start is native (`recommend_history` builds a profile from given article ids). Add a consistency test as in P3.6. *Acceptance:* test passes.
@@ -439,7 +442,8 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 - [x] **P6.2** Extensibility proof: add a synthetic fourth type `toy` (test-only adapter and config in `tests/`) and a test that registers it, trains it, and serves recommendations **without editing any file in `engine/` core or `api/`**. *Acceptance:* test passes in CI.
 - [x] **P6.3** Determinism: retrain each type twice in `--fast` mode and compare `topn.parquet` hashes. *Acceptance:* identical, or differences explained and eliminated.
 - [x] **P6.4** Clean-room rebuild: from a fresh clone and fresh virtualenv run `make setup data train-fast eval`; record wall-clock times and any manual steps. *Acceptance:* works using only README commands (update the README if not).
-- [x] **P6.5** Cross-type consistency checks: all three artifact sets load through the same loader; all models pass the same R3 invariant suite via one parametrised test over registered types. *Acceptance:* parametrised test over `registry.types()`.
+- [~] **P6.5** Cross-type consistency checks: all three artifact sets load through the same loader; all models pass the same R3 invariant suite via one parametrised test over registered types. *Acceptance:* parametrised test over `registry.types()`.
+  *Note:* Artifacts load through shared loader and pass R3 invariant suite; products interactions positive column schema pending Author Decision Q2 in F-005.
 - [x] **P6.6** Statistical honesty: for each type and headline metric, compute a bootstrap confidence interval over users (at least 200 resamples) and report whether the model's advantage over popularity is outside the interval. *Acceptance:* intervals in `metrics.json` and shown in RESULTS.md.
 - [x] **P6.7** Failure-mode review: write `docs/DECISIONS.md` entries for known limitations (popularity bias, cold-start items not in training, domain shift, short histories, news freshness, offline-versus-online gap, dataset licences). *Acceptance:* each limitation has a measured or observed example where possible.
 - [x] **P6.8** Phase 6 Gate and "break your own work" ritual (include: shuffled-label test: training on shuffled user-item pairs must give metrics near Random; if not, the evaluation is leaking).
@@ -1475,5 +1479,66 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
 ```
 - **Core Unchanged Check (`python tools/core_unchanged.py`):** PASSED.
 - **Next Steps:** CI robustness improvements complete. Ready for human confirmation before proceeding to Phase 8 (Frontend).
+
+### Session 27: 2026-10-26, agent session (Phase 2 Remediation: Evidence-driven resolution of audited findings)
+- **Completed Tasks & Remediated Findings:**
+  - Resolved 18 of 20 audited findings across 6 batches with granular atomic commits:
+    - **Batch 1 (Security & Data Leakage):**
+      - `F-001` (eb731d3): Replaced `eval()` with `ast.literal_eval` in `amazon.py`; added SHA-256 download checksum verification in `fetch_data.py`. Added test `test_parse_dict_line_rejects_arbitrary_code_execution`.
+      - `F-002` (d542a9e): Removed pre-split item cap; implemented post-split train-only popularity cap inside `AmazonProductsAdapter.split()`. Added test `test_amazon_adapter_item_cap_does_not_leak_test_interactions` + test perturbation test.
+      - `F-003` (b193e92): Anchored MIND history strictly between `prev_ts` and `imp_ts`; deduplicated with `keep="first"`. Added test `test_mind_adapter_subsequent_history_not_backdated_before_earlier_sessions`.
+      - `F-005`: Marked `BLOCKED-ON-HUMAN` pending Author Decision Q2 on products positive column schema.
+    - **Batch 2 (Evaluation Integrity & Reproducibility):**
+      - `F-006` (42a84cf): Derived validation positives dynamically from `valid_df["signal"] >= thresh` in `tuning.py`. Added test `test_tuning_validation_positives_derived_from_trial_threshold`.
+      - `F-007` (164cb76): Removed train-impression fallback in `articles_eval.py`; raised explicit `ValueError` when post-train impressions missing. Added test `test_articles_eval_rejects_train_impression_fallback`.
+      - `F-008` (834faef): Replaced built-in `hash()` with `hashlib.sha256()` in `articles_eval.py`. Added multi-process `PYTHONHASHSEED` test `test_articles_random_baseline_deterministic_across_processes`.
+      - `F-009` (d1ec719): Enforced `exclude_ids=exclude_seen` when `allow_repeat=False` and filtered ground-truth positives to `cs_pos_test` in `articles_eval.py`. Added test `test_articles_cold_start_curve_protocol_passes_exclude_ids`.
+      - `F-015` (f2e7607): Replaced hardcoded `leakage_check_passed: True` with computed `check_r2_no_leakage()` in `articles_eval.py`. Added test `test_articles_eval_detects_real_split_leakage`.
+    - **Batch 3 (Core Reproducibility, Robustness & Durability):**
+      - `F-010` (58c8a43): Reconstructed tuned `similarity_type` and `timedecay_formula` in `resolve_serving_config()`; added `ConfigError` for malformed `tuning.json`. Added tests in `test_config.py`.
+      - `F-011` (4f7405e, 91a493f): Implemented atomic stage-and-swap directory writes in `save_artifacts()`, pre-populating existing auxiliary folders (`model/`) with rollback protection. Added test in `test_artifacts.py`.
+      - `F-018` (fca869f): Enforced path containment in `verify_artifacts()` by rejecting absolute paths and directory traversal (`..`). Added test in `test_artifacts.py`.
+      - `F-020` (cc57111, 03440a9): Replaced bare `assert` statements in `amazon.py`, `mind.py`, and `tfidf.py` with explicit `RuntimeError` checks. Added tests across all three modules.
+    - **Batch 4 (API Contract & Search Lookups):**
+      - `F-014` (d63f3a4): Returned pre-limit candidate match count in `SearchResponse.total_matches` in `search.py` and `routes/metadata.py`. Added test `test_search_total_matches_independent_of_limit` in `test_api_metadata.py`.
+      - `F-019` (c1f2a0c): Exposed public O(1) `get_popularity_rank()` and `get_entry()` methods on `ItemSearchIndex`; eliminated private `_entries` linear scan. Added test `test_item_detail_does_not_access_private_entries`.
+    - **Batch 5 (CI & Dependency Management):**
+      - `F-013` (33cb8f3): Decoupled fixture split leakage and determinism tests from `real_data` marker in `test_articles_split_leakage.py` and `test_determinism.py`, allowing them to run in CI default suite.
+      - `F-012`: Tested `uv lock --offline`; failed due to network disabled. Marked `BLOCKED-ON-HUMAN` per Rule 1.8 with exact command: `cd backend && uv lock`.
+    - **Batch 6 (Documentation Integrity & Bookkeeping):**
+      - `F-016` (94a60cd): Corrected articles training command in `docs/DATASETS.md:72` to `cd backend && python -m engine.train --type articles`.
+      - `F-017` (a26f72e): Clarified dynamic interaction split computation in `docs/ARCHITECTURE.md:37`.
+      - `F-004` (1f4e5fc): Aligned `docs/CONFORMANCE.md` with verified pipeline metrics, verified R2 non-leakage, corrected attribution and manifest links, and updated R11 to constant-time `hmac.compare_digest`.
+    - **Metrics & Goldens:**
+      - Re-ran fast pipelines across all three types (`movies`, `products`, `articles`).
+      - Regenerated `docs/RESULTS.md` and figures via `tools/make_results.py` (commit `e31b360`).
+  - **Decisions Recorded:** `D-020`, `D-021`, `D-022`, `D-023`, `D-024` in `docs/DECISIONS.md`.
+  - **Plan Markers Updated:**
+    - `P5.3` ticked `[x]` (verified on real MIND data in 35.76s and CI fixture suite).
+    - `P0.3` marked `[!]` (blocked on human running `cd backend && uv lock` with network access).
+    - `P4.2` marked `[~]` (item cap leakage fixed, positive column schema pending Author Decision Q2).
+    - `P6.5` marked `[~]` (products positive schema pending Author Decision Q2).
+- **Break-Your-Own-Work Hypotheses & Outcomes:**
+  1. *Hypothesis:* Post-split item cap in Amazon adapter might still alter items if test interactions leak through metadata joins.
+     *Check:* Added perturbation test modifying test interaction rows; asserted item list and similarity candidates are strictly identical. Outcome: PASSED.
+  2. *Hypothesis:* Atomic directory swap in `save_artifacts` might drop pre-existing model files staged by `train.py`.
+     *Check:* Tested end-to-end toy pipeline training; caught missing `model/popularity_model.json`; fixed by pre-populating staging dir from existing target before swapping. Outcome: PASSED.
+  3. *Hypothesis:* Random baseline seeded by SHA-256 might vary across Python processes or OS environments.
+     *Check:* Spawned subprocesses with different `PYTHONHASHSEED` values in `test_articles_random_baseline_deterministic_across_processes`. Outcome: PASSED.
+  4. *Hypothesis:* Search `total_matches` might return 0 or wrong count when query matches multiple tokens.
+     *Check:* Tested queries with varying `limit` (limit=1 vs limit=100); asserted `total_matches` remains constant and accurate. Outcome: PASSED.
+  5. *Hypothesis:* MIND history timestamp anchoring might produce overlapping or out-of-order impressions.
+     *Check:* Asserted monotonically increasing timestamps between `prev_ts` and `imp_ts` with `keep="first"` across real MIND data. Outcome: PASSED.
+- **Verification Status:**
+  - Fast test suite: 416 passed, 1 skipped in 44.57s.
+  - Lint: `ruff check backend/` clean (0 errors).
+  - Format: `ruff format --check backend/` clean (0 errors).
+  - Type-check: `mypy --config-file backend/pyproject.toml backend/engine backend/api` clean (0 errors across 45 source files).
+  - Purity: Zero deep-learning imports in `engine/` or `api/`.
+- **Next Steps:**
+  - Await human response to Author Decision Q2 (`F-005`).
+  - Await human execution of `cd backend && uv lock` with network access (`F-012`).
+  - Human review of branch `fix/audit-findings`.
+
 
 
