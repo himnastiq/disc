@@ -493,6 +493,7 @@ def run_articles_dual_protocol_eval(
 
     eval_k = min(10, max(spec.evaluation.k or [10]))
     pos_test = test_df[test_df["signal"] >= spec.signal.positive_threshold]
+    cs_pos_test = pos_test[pos_test["user_id"].astype(str).isin(cs_users)]
 
     for name, model in models.items():
         if not getattr(model, "supports_cold_start", False):
@@ -504,8 +505,15 @@ def run_articles_dual_protocol_eval(
             for uid in cs_users:
                 full_hist = user_train_hist.get(uid, [])
                 hist_sample = full_hist[:size]
+                exclude_seen = (
+                    {item for item, _ in full_hist} if not spec.model.allow_repeat else set()
+                )
                 try:
-                    recs = model.recommend_history(history=hist_sample, k=eval_k)
+                    recs = model.recommend_history(
+                        history=hist_sample,
+                        k=eval_k,
+                        exclude_ids=exclude_seen,
+                    )
                     for r in recs:
                         cs_preds_rows.append(
                             {
@@ -515,7 +523,13 @@ def run_articles_dual_protocol_eval(
                                 "rank": r.rank,
                             }
                         )
-                except Exception:
+                except Exception as e:
+                    logger.warning(
+                        "recommend_history failed for user %s at cold-start size %s: %s",
+                        uid,
+                        size,
+                        e,
+                    )
                     continue
 
             cs_preds_df = (
@@ -525,9 +539,9 @@ def run_articles_dual_protocol_eval(
             )
 
             curve_for_model[str(size)] = {
-                f"hit_rate@{eval_k}": hit_rate(pos_test, cs_preds_df, k=eval_k),
-                f"ndcg@{eval_k}": ndcg(pos_test, cs_preds_df, k=eval_k),
-                f"recall@{eval_k}": recall(pos_test, cs_preds_df, k=eval_k),
+                f"hit_rate@{eval_k}": hit_rate(cs_pos_test, cs_preds_df, k=eval_k),
+                f"ndcg@{eval_k}": ndcg(cs_pos_test, cs_preds_df, k=eval_k),
+                f"recall@{eval_k}": recall(cs_pos_test, cs_preds_df, k=eval_k),
             }
 
         cold_start_curves[name] = curve_for_model
