@@ -201,12 +201,14 @@ def tune_sar_on_validation(
         candidate_spec.signal.positive_threshold = float(params["positive_threshold"])
         candidate_spec.serving.top_neighbors_per_item = int(params["top_neighbors_per_item"])
 
-        # Determine ground-truth positive validation interactions for this threshold
+        # Determine ground-truth positive validation interactions for this candidate threshold (F-006)
         thresh = candidate_spec.signal.positive_threshold
-        if "positive" in valid_df.columns:
+        if "signal" in valid_df.columns:
+            pos_valid = valid_df[valid_df["signal"] >= thresh]
+        elif "positive" in valid_df.columns:
             pos_valid = valid_df[valid_df["positive"] == True]  # noqa: E712
         else:
-            pos_valid = valid_df[valid_df["signal"] >= thresh]
+            pos_valid = valid_df
 
         # Fit model on training split
         model = SarModel(candidate_spec)
