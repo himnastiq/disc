@@ -12,6 +12,7 @@ Evaluates news article recommendation under two complementary protocols:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import random
@@ -117,11 +118,12 @@ def evaluate_impression_ranking(
                 )
                 scores = [float(counts.get(c, 0)) for c in cands]
             elif isinstance(model, RandomModel) or name == "random":
-                # Deterministic pseudo-random scoring per impression candidate
+                # Deterministic pseudo-random scoring per impression candidate using SHA-256 (F-008)
                 scores = []
                 for c in cands:
-                    ctx = f"imp:{imp_id}:{user_id}:{c}:{seed}"
-                    h_val = int(abs(hash(ctx))) % 10000000
+                    ctx_bytes = f"imp:{imp_id}:{user_id}:{c}:{seed}".encode()
+                    digest = hashlib.sha256(ctx_bytes).hexdigest()
+                    h_val = int(digest[:8], 16) % 10000000
                     scores.append(float(h_val) / 10000000.0)
             else:
                 scores = [0.0 for _ in cands]

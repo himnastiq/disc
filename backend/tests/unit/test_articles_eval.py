@@ -278,3 +278,35 @@ def test_articles_eval_rejects_train_impression_fallback() -> None:
             max_test_users=5,
             max_impressions=5,
         )
+
+
+def test_articles_random_baseline_deterministic_across_processes() -> None:
+    """F-008: Articles random baseline must produce identical metrics across processes with different PYTHONHASHSEED."""
+    import json
+    import os
+    import subprocess
+    import sys
+
+    code = (
+        "import json, sys; sys.path.insert(0, 'backend'); "
+        "from engine.evaluation.articles_eval import evaluate_impression_ranking; "
+        "cands = [(f'c{i}', 1 if i % 3 == 0 else 0) for i in range(10)]; "
+        "imps = [{'impression_id': 'imp1', 'user_id': 'u1', 'timestamp': 1000, 'history': [], 'candidates': cands}]; "
+        "res = evaluate_impression_ranking(imps, {'random': None}, seed=42); "
+        "print(json.dumps(res['models']['random']))"
+    )
+
+    out1 = subprocess.check_output(
+        [sys.executable, "-c", code],
+        env=dict(os.environ, PYTHONHASHSEED="12345"),
+        text=True,
+    ).strip()
+    out2 = subprocess.check_output(
+        [sys.executable, "-c", code],
+        env=dict(os.environ, PYTHONHASHSEED="67890"),
+        text=True,
+    ).strip()
+
+    assert json.loads(out1) == json.loads(out2), (
+        f"Random baseline metrics differ across processes with different PYTHONHASHSEED: {out1} vs {out2}"
+    )
