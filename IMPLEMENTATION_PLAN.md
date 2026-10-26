@@ -40,15 +40,15 @@
 | 4 | Products pipeline (Amazon + SAR) | 8 | 0 | 0 | 8 | 100% |
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 10 | 0 | 1 | 12 | 83% |
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
-| 7 | FastAPI backend | 12 | 0 | 0 | 13 | 92% |
+| 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **84** | | | **129** | **65%** |
+| | **Overall** | **85** | | | **129** | **65%** |
 
-`[#############-------] 65%  (84/129 tasks)`
+`[#############-------] 65%  (85/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -251,7 +251,7 @@ The vendored package is derived from Recommenders under the MIT license. The pro
 - [x] **P7.10** Contract and property tests: parametrise every endpoint over `registry.types()`; invariants from R3; fuzz with hypothesis (random k, random strings, random id lists); run schemathesis against the OpenAPI schema if it can be installed. *Acceptance:* zero 500 responses across the fuzz run.
 - [x] **P7.11** Performance and memory: `scripts/bench_api.py` (warm-up, 500 requests per endpoint, report p50/p95/p99 and RSS). Meet R8 budgets or document why not. *Acceptance:* results appended to `docs/RESULTS.md` (generated section).
 - [x] **P7.12** Runtime purity test: start the app in a subprocess, hit all endpoints, then assert that `tensorflow`, `pyspark`, `torch`, and `cornac` were never imported (read `sys.modules` via a test-only debug hook or run with an import blocker). *Acceptance:* test passes.
-- [ ] **P7.13** Phase 7 Gate and "break your own work" ritual (include: recommend for a user then add one of the results to `exclude`: it must disappear; changing `k` must not reorder the common prefix; concurrent requests give identical results).
+- [x] **P7.13** Phase 7 Gate and "break your own work" ritual (include: recommend for a user then add one of the results to `exclude`: it must disappear; changing `k` must not reorder the common prefix; concurrent requests give identical results).
 
 ---
 
@@ -1065,3 +1065,26 @@ cd backend && E:/discover/.venv/Scripts/python.exe -m pytest tests/ -v --tb=shor
 "All checks passed."
 ```
 
+### Session 23: Phase 7 Gate and Break-Your-Own-Work Ritual (P7.13 Complete)
+- **Completed Tasks:**
+  - **P7.13 (Phase 7 Gate & 5 Break Rituals):** Certified comprehensive API integration, resilience, thread safety, security, and invariant preservation in `backend/tests/integration/test_phase7_gate.py`.
+- **Five Break-Your-Own-Work Rituals Verified:**
+  1. **Live Exclusion Invariant:** Requesting `/v1/recommend`, then injecting the top returned recommendation ID into the `exclude` query parameter strictly eliminates it from subsequent results across all content types (`movies`, `products`, `articles`).
+  2. **Prefix Stability Under Changing k:** Changing requested `k` (k=5 vs k=10) strictly preserves common prefix item ranking without rank permutation or score distortion.
+  3. **Concurrent Request Invariance (Thread Safety):** 20 concurrent parallel requests submitted across 8 worker threads under contention return bit-for-bit identical recommendations, ordering, and scores.
+  4. **Partial Outage Resilience:** When one artifact domain (`movies`) is corrupted by removing `items.parquet`, the app starts cleanly, reports `status: "degraded"` in `/v1/health`, returns 503 `type_unavailable` on the corrupted domain, and continues serving healthy domains (`products`, `articles`) with 200 OK.
+  5. **Security Envelope & Malformed Input Isolation:** Unauthenticated requests, non-ASCII header bytes (`café_invalid`), oversized payloads (> 1MB), unknown users, and unknown items consistently return clean 4xx structured errors without uncaught 500 exceptions or leaked stack traces.
+- **`make check` Raw Output:**
+```
+cd backend && E:/discover/.venv/Scripts/python.exe -m ruff check .
+All checks passed!
+cd backend && E:/discover/.venv/Scripts/python.exe -m ruff format --check .
+114 files already formatted
+cd backend && E:/discover/.venv/Scripts/python.exe -m mypy engine/ api/
+pyproject.toml: note: unused section(s): module = ['sklearn', 'tests.*']
+Success: no issues found in 44 source files
+cd backend && E:/discover/.venv/Scripts/python.exe -m pytest tests/ -v --tb=short
+============ 409 passed, 1 skipped, 1 warning in 235.60s (0:03:55) ============
+"All checks passed."
+```
+- **Next Steps:** Phase 7 is 100% complete (13/13 tasks). Proceed to Phase 8: Frontend scaffolding (P8.1 Next.js app in `frontend/`).
