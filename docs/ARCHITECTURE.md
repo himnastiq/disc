@@ -34,7 +34,7 @@
 artifacts/<type>/
   manifest.json         # version, checksums, metadata
   items.parquet          # item catalogue
-  interactions.parquet   # train + test interactions (flagged)
+  interactions.parquet   # canonical interactions (train/test splits dynamically derived via adapter)
   users.parquet          # precomputed user stats and personas
   model/                 # model-specific files (sparse neighbours, TF-IDF, etc.)
   topn.parquet           # precomputed top-50 per known user
