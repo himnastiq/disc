@@ -549,15 +549,18 @@ class SarModel(RecommenderModel):
             "item_counts": {str(k): int(v) for k, v in self.item_counts.items()},
             "user_seen": {k: list(v) for k, v in self.user_seen.items()},
         }
-        (dir_path / "model_meta.json").write_text(
-            json.dumps(meta, indent=2, default=_json_default), encoding="utf-8"
-        )
-        (dir_path / "index2item.json").write_text(
-            json.dumps(self.sar.index2item, indent=2, default=_json_default), encoding="utf-8"
-        )
-        (dir_path / "index2user.json").write_text(
-            json.dumps(self.sar.index2user, indent=2, default=_json_default), encoding="utf-8"
-        )
+        for p, s in [
+            (dir_path / "model_meta.json", json.dumps(meta, indent=2, default=_json_default)),
+            (
+                dir_path / "index2item.json",
+                json.dumps(self.sar.index2item, indent=2, default=_json_default),
+            ),
+            (
+                dir_path / "index2user.json",
+                json.dumps(self.sar.index2user, indent=2, default=_json_default),
+            ),
+        ]:
+            p.write_bytes((s.replace("\r\n", "\n") + "\n").encode("utf-8"))
 
         # 2. Save sparse matrices
         if isinstance(self.sar.item_similarity, sparse.spmatrix):

@@ -57,7 +57,7 @@ def export_openapi(output_path: Path = DEFAULT_OUTPUT_PATH, check_only: bool = F
         return 1
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(formatted_json, encoding="utf-8")
+    output_path.write_bytes(formatted_json.replace("\r\n", "\n").encode("utf-8"))
     print(
         f"[SUCCESS] Exported OpenAPI schema ({len(formatted_json.encode('utf-8'))} bytes) to {output_path}"
     )

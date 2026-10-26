@@ -150,3 +150,60 @@ def test_bit_flip_corruption_raises_artifact_corrupt_error(
 
     assert "checksum mismatch" in exc_info.value.reason.lower()
     assert "metrics.json" in exc_info.value.reason
+
+
+def test_cross_platform_crlf_hash_invariance_and_strict_tamper_detection(tmp_path: Path) -> None:
+    """FIX-44: Assert text files converted to CRLF still verify and load,
+
+    while actual byte mutations in binary files or content edits in text files
+    continue to strictly raise ArtifactCorruptError.
+    """
+    import shutil
+
+    from engine.artifacts import TEXT_EXTENSIONS
+
+    mini_src = Path(__file__).resolve().parent.parent / "fixtures" / "artifacts_mini" / "movies"
+    assert mini_src.exists(), f"Mini fixture not found at {mini_src}"
+
+    test_bundle = tmp_path / "movies_crlf"
+    shutil.copytree(mini_src, test_bundle)
+
+    # 1. Convert every text file to CRLF
+    for p in test_bundle.rglob("*"):
+        if p.is_file() and p.suffix.lower() in TEXT_EXTENSIONS:
+            content = p.read_bytes()
+            # Replace LF with CRLF (ensuring no double-CRLF)
+            crlf_content = content.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+            p.write_bytes(crlf_content)
+
+    # Assert artifacts still verify and load without error
+    manifest = verify_artifacts(test_bundle)
+    assert manifest["content_type"] == "movies"
+    loaded = load_artifacts(test_bundle, verify=True)
+    assert len(loaded.items) > 0
+    assert len(loaded.demo_users) > 0
+
+    # 2. Assert a real content edit in a JSON file raises ArtifactCorruptError
+    demo_path = test_bundle / "demo_users.json"
+    demo_bytes = demo_path.read_bytes()
+    tampered_json = demo_bytes.replace(b"persona", b"personX")
+    assert tampered_json != demo_bytes
+    demo_path.write_bytes(tampered_json)
+
+    with pytest.raises(ArtifactCorruptError) as exc_info:
+        verify_artifacts(test_bundle)
+    assert "demo_users.json" in str(exc_info.value).lower()
+
+    # Restore valid demo_users.json
+    demo_path.write_bytes(demo_bytes)
+    verify_artifacts(test_bundle)
+
+    # 3. Assert a changed byte in a binary file raises ArtifactCorruptError
+    items_parquet = test_bundle / "items.parquet"
+    parquet_bytes = bytearray(items_parquet.read_bytes())
+    parquet_bytes[50] ^= 0x55
+    items_parquet.write_bytes(parquet_bytes)
+
+    with pytest.raises(ArtifactCorruptError) as exc_info_bin:
+        verify_artifacts(test_bundle)
+    assert "items.parquet" in str(exc_info_bin.value).lower()

@@ -36,14 +36,33 @@ if TYPE_CHECKING:
     from engine.schema import ContentTypeSpec
 
 ARTIFACT_SCHEMA_VERSION = "1.0.0"
+TEXT_EXTENSIONS = {".json", ".md", ".txt", ".csv", ".yaml", ".yml"}
+
+
+def write_text_file(path: Path, content: str) -> None:
+    """Write text content to file ensuring LF (\\n) line endings across all platforms."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    normalized = content.replace("\r\n", "\n")
+    if not normalized.endswith("\n"):
+        normalized += "\n"
+    path.write_bytes(normalized.encode("utf-8"))
 
 
 def compute_file_sha256(file_path: Path) -> str:
-    """Compute the SHA-256 hex digest of a file reading in 64KB blocks."""
+    """Compute SHA-256 digest of a file.
+
+    For text files (.json, .md, .txt, .csv, .yaml, .yml), line endings are normalized
+    (b'\\r\\n' -> b'\\n') prior to hashing so checksums are invariant to CRLF/LF conversions.
+    Binary files (.parquet, .npz, .npy, etc.) are hashed as raw bytes.
+    """
     hasher = hashlib.sha256()
-    with file_path.open("rb") as f:
-        while chunk := f.read(65536):
-            hasher.update(chunk)
+    if file_path.suffix.lower() in TEXT_EXTENSIONS:
+        raw = file_path.read_bytes()
+        hasher.update(raw.replace(b"\r\n", b"\n"))
+    else:
+        with file_path.open("rb") as f:
+            while chunk := f.read(65536):
+                hasher.update(chunk)
     return hasher.hexdigest()
 
 
@@ -99,10 +118,8 @@ def save_artifacts(
         topn.to_parquet(artifact_dir / "topn.parquet", index=False)
 
     # 2. Write JSON metadata
-    (artifact_dir / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
-    (artifact_dir / "demo_users.json").write_text(
-        json.dumps(demo_users, indent=2), encoding="utf-8"
-    )
+    write_text_file(artifact_dir / "metrics.json", json.dumps(metrics, indent=2))
+    write_text_file(artifact_dir / "demo_users.json", json.dumps(demo_users, indent=2))
 
     # 3. Write extra files if specified
     if extra_files:
@@ -110,11 +127,15 @@ def save_artifacts(
             out_p = artifact_dir / rel_name
             out_p.parent.mkdir(parents=True, exist_ok=True)
             if isinstance(content, (dict, list)):
-                out_p.write_text(json.dumps(content, indent=2), encoding="utf-8")
+                write_text_file(out_p, json.dumps(content, indent=2))
             elif isinstance(content, bytes):
                 out_p.write_bytes(content)
             else:
-                out_p.write_text(str(content), encoding="utf-8")
+                s_val = str(content)
+                if out_p.suffix.lower() in TEXT_EXTENSIONS:
+                    write_text_file(out_p, s_val)
+                else:
+                    out_p.write_text(s_val, encoding="utf-8")
 
     # 4. Compute file checksums across all files (excluding manifest.json itself)
     file_checksums: dict[str, str] = {}
@@ -160,7 +181,7 @@ def save_artifacts(
     }
 
     manifest_path = artifact_dir / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
+    write_text_file(manifest_path, json.dumps(manifest_data, indent=2))
     return manifest_path
 
 

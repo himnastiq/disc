@@ -710,15 +710,17 @@ class TfidfProfileModel(RecommenderModel):
         sparse.save_npz(dir_path / "tfidf_matrix.npz", self.tfidf_matrix)
 
         vocab = {str(k): int(v) for k, v in self.vectorizer.vocabulary_.items()}
-        (dir_path / "vocabulary.json").write_text(json.dumps(vocab, indent=2), encoding="utf-8")
+        (dir_path / "vocabulary.json").write_bytes(
+            (json.dumps(vocab, indent=2).replace("\r\n", "\n") + "\n").encode("utf-8")
+        )
 
         np.save(dir_path / "idf.npy", self.vectorizer.idf_)
 
-        (dir_path / "item_ids.json").write_text(
-            json.dumps(self.item_ids, indent=2), encoding="utf-8"
+        (dir_path / "item_ids.json").write_bytes(
+            (json.dumps(self.item_ids, indent=2).replace("\r\n", "\n") + "\n").encode("utf-8")
         )
-        (dir_path / "item_titles.json").write_text(
-            json.dumps(self.item_titles, indent=2), encoding="utf-8"
+        (dir_path / "item_titles.json").write_bytes(
+            (json.dumps(self.item_titles, indent=2).replace("\r\n", "\n") + "\n").encode("utf-8")
         )
 
         meta = {
@@ -741,7 +743,9 @@ class TfidfProfileModel(RecommenderModel):
                 "stop_words": self.vectorizer.stop_words,
             },
         }
-        (dir_path / "model_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        (dir_path / "model_meta.json").write_bytes(
+            (json.dumps(meta, indent=2).replace("\r\n", "\n") + "\n").encode("utf-8")
+        )
 
     def load(self, dir_path: Path) -> None:
         """Load model parameters and representations from directory."""
