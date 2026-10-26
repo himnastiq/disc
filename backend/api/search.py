@@ -85,7 +85,7 @@ class ItemSearchIndex:
                 }
             )
 
-    def search(self, query: str, limit: int = 20) -> list[SearchItem]:
+    def search(self, query: str, limit: int = 20) -> tuple[list[SearchItem], int]:
         """Execute normalized search with hierarchical match-type ranking.
 
         Ranking hierarchy:
@@ -94,10 +94,14 @@ class ItemSearchIndex:
           3. Word-start match (any word in title starts with query)
           4. Contains match (query is substring of title)
         Ties are broken by popularity rank (lower number = higher popularity), then item_id.
+
+        Returns:
+            Tuple of (ranked_results, total_matches) where total_matches reflects
+            the total number of matching items across all tiers prior to limit truncation.
         """
         norm_query = normalize_text(query)
         if not norm_query:
-            return []
+            return [], 0
 
         query_no_art = strip_article(norm_query)
 
@@ -206,4 +210,10 @@ class ItemSearchIndex:
                 )
             )
 
-        return results
+        total_matches = (
+            len(exact_matches)
+            + len(prefix_matches)
+            + len(word_start_matches)
+            + len(contains_matches)
+        )
+        return results, total_matches

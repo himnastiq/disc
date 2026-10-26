@@ -225,6 +225,22 @@ def test_search_endpoint_contract(api_client: TestClient, content_type: str) -> 
         )
 
 
+def test_search_total_matches_independent_of_limit(api_client: TestClient) -> None:
+    """F-014: total_matches must reflect total pre-limit matches, independent of limit."""
+    resp1 = api_client.get("/v1/items/search?type=movies&q=a&limit=1")
+    assert resp1.status_code == 200
+    data1 = resp1.json()
+
+    resp5 = api_client.get("/v1/items/search?type=movies&q=a&limit=5")
+    assert resp5.status_code == 200
+    data5 = resp5.json()
+
+    assert data1["total_matches"] == data5["total_matches"]
+    assert data1["total_matches"] > 1
+    assert len(data1["results"]) == 1
+    assert len(data5["results"]) == 5
+
+
 def test_search_hierarchical_ranking_and_normalization(api_client: TestClient) -> None:
     """Verify search normalization: lowercase, accent stripping, article handling, ties by popularity."""
     # Movie query: "matrix"

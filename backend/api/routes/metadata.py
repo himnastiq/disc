@@ -244,12 +244,12 @@ def search_items(
         search_indexes[type] = ItemSearchIndex(loaded.items, loaded.interactions)
 
     index: ItemSearchIndex = search_indexes[type]
-    results = index.search(query=q, limit=limit)
+    results, total_matches = index.search(query=q, limit=limit)
 
     return SearchResponse(
         content_type=type,
         query=q,
-        total_matches=len(results),
+        total_matches=total_matches,
         results=results,
     )
 
