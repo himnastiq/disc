@@ -115,6 +115,24 @@ def save_artifacts(
     stage_dir.mkdir(parents=True, exist_ok=True)
 
     try:
+        # Pre-populate staging directory with existing auxiliary artifacts (e.g. model/ or extra files)
+        if artifact_dir.exists():
+            for child in artifact_dir.iterdir():
+                if child.name in (
+                    "items.parquet",
+                    "interactions.parquet",
+                    "users.parquet",
+                    "topn.parquet",
+                    "metrics.json",
+                    "demo_users.json",
+                    "manifest.json",
+                ):
+                    continue
+                if child.is_dir():
+                    shutil.copytree(child, stage_dir / child.name, dirs_exist_ok=True)
+                elif child.is_file():
+                    shutil.copy2(child, stage_dir / child.name)
+
         # 1. Write core Parquet tables into staging directory
         items.to_parquet(stage_dir / "items.parquet", index=False)
         interactions.to_parquet(stage_dir / "interactions.parquet", index=False)
