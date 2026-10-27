@@ -11,6 +11,7 @@ and the expected file paths.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
 import os
 import shutil
@@ -28,6 +29,18 @@ if str(BACKEND_DIR) not in sys.path:
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] [%(levelname)s] %(message)s")
 logger = logging.getLogger("fetch_data")
+
+# Known SHA-256 hashes for verified third-party datasets
+DATASET_SHA256: dict[str, str] = {
+    # MovieLens
+    "ml-100k.zip": "50d2a982c66986937beb9ffb3aa76efe955bf3d5c6b761f4e3a7cd717c6a3229",
+    "ml-1m.zip": "a6898adb50b9ca05aa231689da44c217cb524e7ebd39d264c56e2832f2c54e20",
+    # Amazon Snap 2014
+    "reviews_Musical_Instruments_5.json.gz": "03f9cc27ae13a454cb4ea6cb620fb10546cc1194ef921441d1c5f34addff2748",
+    "meta_Musical_Instruments.json.gz": "9ef838f5d971d3a7f52f0bbc1cc971082cddd8d6b1049ec3c4940e28293bfd85",
+    "reviews_Video_Games_5.json.gz": "035690169fa2bba30cd0ae0c3e7dbf7bc58efde65fc1742a9ce85986e283b09c",
+    "meta_Video_Games.json.gz": "b7bf4c724632874b931056e48957775822c6f0c9092f5bbf2d449694bec36180",
+}
 
 
 DATASETS: dict[str, dict[str, str]] = {
@@ -67,13 +80,26 @@ DATASETS: dict[str, dict[str, str]] = {
 }
 
 
-def download_url(url: str, dest_path: Path) -> bool:
-    """Download url to dest_path with SSL verification fallback and progress reporting."""
+def download_url(url: str, dest_path: Path, expected_sha256: str | None = None) -> bool:
+    """Download url to dest_path with SSL verification fallback, SHA-256 check, and progress reporting."""
     import requests
 
     if dest_path.exists() and dest_path.stat().st_size > 0:
-        logger.info("File already exists: %s", dest_path)
-        return True
+        if expected_sha256:
+            file_hasher = hashlib.sha256()
+            with open(dest_path, "rb") as f:
+                while chunk := f.read(65536):
+                    file_hasher.update(chunk)
+            if file_hasher.hexdigest().lower() != expected_sha256.lower():
+                logger.warning(
+                    "Existing file %s failed SHA-256 check; re-downloading...", dest_path
+                )
+            else:
+                logger.info("File already exists and verified (SHA-256 match): %s", dest_path)
+                return True
+        else:
+            logger.info("File already exists: %s", dest_path)
+            return True
 
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = dest_path.with_suffix(dest_path.suffix + ".tmp")
@@ -96,23 +122,37 @@ def download_url(url: str, dest_path: Path) -> bool:
         r.raise_for_status()
         total_size = int(r.headers.get("content-length", 0))
         downloaded = 0
+        stream_hasher = hashlib.sha256() if expected_sha256 else None
 
         with open(temp_path, "wb") as f:
             for chunk in r.iter_content(chunk_size=65536):
                 if chunk:
                     f.write(chunk)
                     downloaded += len(chunk)
+                    if stream_hasher is not None:
+                        stream_hasher.update(chunk)
 
         if total_size > 0 and downloaded < total_size:
             raise OSError(f"Truncated download: expected {total_size} bytes, got {downloaded}")
 
+        if expected_sha256:
+            assert stream_hasher is not None
+            actual_sha256 = stream_hasher.hexdigest()
+            if actual_sha256.lower() != expected_sha256.lower():
+                raise ValueError(
+                    f"SHA-256 mismatch for {dest_path.name}: expected {expected_sha256}, got {actual_sha256}"
+                )
+
         temp_path.replace(dest_path)
-        logger.info("Successfully downloaded: %s (%d bytes)", dest_path.name, downloaded)
+        logger.info(
+            "Successfully downloaded and verified: %s (%d bytes)", dest_path.name, downloaded
+        )
         return True
     except Exception as e:
         if temp_path.exists():
             temp_path.unlink(missing_ok=True)
         logger.error("Download failed for %s: %s", url, e)
+
         return False
 
 
@@ -129,7 +169,7 @@ def fetch_movielens(target_dir: Path, variant: str = "both") -> bool:
         url = f"{base_url}{zip_name}"
 
         logger.info("Fetching MovieLens %s from %s...", v.upper(), url)
-        if not download_url(url, zip_path):
+        if not download_url(url, zip_path, expected_sha256=DATASET_SHA256.get(zip_name)):
             print(f"\n[!] Automatic download failed for MovieLens {v.upper()}.")
             print(f"    Manual step: Download {url} and save to {zip_path}\n")
             all_success = False
@@ -204,8 +244,16 @@ def fetch_amazon(target_dir: Path, variant: str = "both") -> bool:
         meta_filename = f"meta_{cat_name}.json.gz"
 
         logger.info("Fetching Amazon %s (%s)...", v, cat_name)
-        s1 = download_url(f"{base_url}/{reviews_filename}", v_dir / reviews_filename)
-        s2 = download_url(f"{base_url}/{meta_filename}", v_dir / meta_filename)
+        s1 = download_url(
+            f"{base_url}/{reviews_filename}",
+            v_dir / reviews_filename,
+            expected_sha256=DATASET_SHA256.get(reviews_filename),
+        )
+        s2 = download_url(
+            f"{base_url}/{meta_filename}",
+            v_dir / meta_filename,
+            expected_sha256=DATASET_SHA256.get(meta_filename),
+        )
 
         if not (s1 and s2):
             logger.error("Failed downloading Amazon %s dataset files.", v)

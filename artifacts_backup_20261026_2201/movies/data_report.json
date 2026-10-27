@@ -1,0 +1,23 @@
+{
+  "total_interactions": 999611,
+  "unique_users": 6040,
+  "unique_items": 3416,
+  "sparsity": 0.951552,
+  "min_timestamp": 956703932,
+  "max_timestamp": 1046454590,
+  "positive_interactions": 575066,
+  "filtered_users": 0,
+  "filtered_items": 290,
+  "details": {
+    "variant": "1m",
+    "min_user_interactions": 5,
+    "min_item_interactions": 5,
+    "raw_total_interactions": 1000209,
+    "raw_unique_users": 6040,
+    "raw_unique_items": 3706,
+    "retained_interactions": 999611,
+    "retained_users": 6040,
+    "retained_items": 3416,
+    "timestamp_range_seconds": 89750658
+  }
+}

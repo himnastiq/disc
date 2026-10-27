@@ -69,7 +69,7 @@
   - **Articles (`news.tsv`):** Curated 15 synthetic news items spanning finance, technology, sports, and lifestyle categories with distinct titles, abstracts, subcategories, and Wikipedia entity IDs matching the official MIND 8-column schema.
   - **Behaviors (`behaviors.tsv`):** Synthesized user impression sessions with timestamps, user IDs, interaction history lists, and impression candidates (1 positive click, 4 unclicked negative impressions per session). Timestamps are ordered chronologically to enforce the R2 temporal split invariant ($t_{max}^{train} \le t_{min}^{test}$).
 - **Provenance & Quality Notice:** Artifacts in `artifacts/articles/` produced from this data are labelled `"SYNTHETIC FIXTURE (not MIND)"`. **Results evaluated on this fixture are not evidence of real-world recommendation quality.**
-- **Production Switch:** When genuine MIND-small dataset files are placed in `data/raw/mind/train/` and `data/raw/mind/dev/`, running `python backend/scripts/train.py --type articles` automatically trains on real MIND data.
+- **Production Switch:** When genuine MIND-small dataset files are placed in `data/raw/mind/train/` and `data/raw/mind/dev/`, running `cd backend && python -m engine.train --type articles` (or `make train TYPE=articles`) automatically trains on real MIND data.
 
 ---
 

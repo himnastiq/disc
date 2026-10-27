@@ -46,12 +46,7 @@ def _parse_dict_line(line: str) -> dict[str, Any] | None:
             res = ast.literal_eval(line)
             return res if isinstance(res, dict) else None
         except Exception:
-            try:
-                # Last resort fallback
-                res = eval(line)
-                return res if isinstance(res, dict) else None
-            except Exception:
-                return None
+            return None
 
 
 @register_adapter("amazon_products")
@@ -239,14 +234,6 @@ class AmazonProductsAdapter(DatasetAdapter):
             active_items = i_counts[i_counts >= min_item].index
             df_inter = df_inter[df_inter["item_id"].isin(active_items)]
 
-        # Item cap by popularity to respect max_items_in_similarity (P4.2)
-        max_items = self.spec.serving.max_items_in_similarity
-        if max_items and not df_inter.empty:
-            item_counts = df_inter["item_id"].value_counts()
-            if len(item_counts) > max_items:
-                capped_items = set(item_counts.head(max_items).index)
-                df_inter = df_inter[df_inter["item_id"].isin(capped_items)]
-
         # Filter items_df to only items that survived filtering
         surviving_items = set(df_inter["item_id"].unique()) if not df_inter.empty else set()
         items_df = items_df[items_df["item_id"].isin(surviving_items)].reset_index(drop=True)
@@ -258,13 +245,17 @@ class AmazonProductsAdapter(DatasetAdapter):
     def items(self) -> pd.DataFrame:
         """Return canonical catalogue items DataFrame conforming to schema."""
         self._prepare_data()
-        assert self._items_df is not None
+        if self._items_df is None:
+            raise RuntimeError("Amazon items DataFrame is uninitialized after _prepare_data()")
         return self._items_df
 
     def interactions(self) -> pd.DataFrame:
         """Return canonical interactions DataFrame conforming to schema."""
         self._prepare_data()
-        assert self._interactions_df is not None
+        if self._interactions_df is None:
+            raise RuntimeError(
+                "Amazon interactions DataFrame is uninitialized after _prepare_data()"
+            )
         return self._interactions_df
 
     def validate(self) -> ValidationReport:
@@ -293,15 +284,27 @@ class AmazonProductsAdapter(DatasetAdapter):
         self,
         interactions: pd.DataFrame | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        """Perform chronological per-user split."""
+        """Perform chronological per-user split, then cap items in similarity by train-only popularity."""
         df = interactions if interactions is not None else self.interactions()
         split_ratio = self.spec.split.ratio
         test_ratio = (1.0 - split_ratio) / 2.0
         ratios = (split_ratio, test_ratio, test_ratio)
 
-        return split_interactions(
+        train_df, valid_df, test_df = split_interactions(
             df,
             strategy=self.spec.split.strategy,
             ratios=ratios,
             run_leakage_check=True,
         )
+
+        # Cap items in similarity by train-only popularity (P4.2 / F-002)
+        max_items = self.spec.serving.max_items_in_similarity
+        if max_items and not train_df.empty:
+            item_counts = train_df["item_id"].value_counts()
+            if len(item_counts) > max_items:
+                capped_items = set(item_counts.head(max_items).index)
+                train_df = train_df[train_df["item_id"].isin(capped_items)].reset_index(drop=True)
+                valid_df = valid_df[valid_df["item_id"].isin(capped_items)].reset_index(drop=True)
+                test_df = test_df[test_df["item_id"].isin(capped_items)].reset_index(drop=True)
+
+        return train_df, valid_df, test_df

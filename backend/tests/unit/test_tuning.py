@@ -190,3 +190,55 @@ def test_shuffled_label_sanity_test_near_random(
     assert abs(rec_shuffled - rec_random) < 0.25, (
         f"Recall@10 shuffled not near random: shuffled={rec_shuffled:.4f}, random={rec_random:.4f}"
     )
+
+
+def test_tuning_validation_positives_derived_from_trial_threshold(
+    tuning_fixture: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame],
+    tmp_path: Path,
+) -> None:
+    """F-006: Validation positives must be evaluated against candidate trial threshold, not pre-existing positive boolean."""
+    train_df, _, items = tuning_fixture
+    spec = load_config("movies", fast=True)
+
+    # Construct validation set where signal is 3.5, but positive is False (e.g. from 4.0 threshold)
+    valid_rows = []
+    for u in range(1, 15):
+        uid = f"user_{u}"
+        valid_rows.append(
+            {
+                "user_id": uid,
+                "item_id": f"movie_{((u * 3 + 7) % 20) + 1}",
+                "signal": 3.5,
+                "timestamp": 2000,
+                "positive": False,  # Pre-existing label at 4.0 threshold
+            }
+        )
+    valid_df = pd.DataFrame(valid_rows)
+
+    grid = [
+        {
+            "similarity_type": "jaccard",
+            "timedecay_formula": False,
+            "time_decay_coefficient": None,
+            "positive_threshold": 3.5,  # Trial tests threshold 3.5
+            "top_neighbors_per_item": 20,
+        }
+    ]
+
+    out_file = tmp_path / "tuning_threshold_test.json"
+    results = tune_sar_on_validation(
+        spec=spec,
+        train_df=train_df,
+        valid_df=valid_df,
+        items=items,
+        grid=grid,
+        max_eval_users=50,
+        output_path=out_file,
+    )
+
+    trial = results["trials"][0]
+    # Under trial threshold 3.5, signal 3.5 is positive, so validation evaluation must evaluate positive users
+    assert trial["evaluated_users"] > 0, (
+        "Tuning failed to evaluate validation users because it filtered by static positive==True "
+        "rather than trial positive_threshold!"
+    )

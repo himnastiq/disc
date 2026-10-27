@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
@@ -31,8 +34,6 @@ def get_git_sha() -> str:
 
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from engine.schema import ContentTypeSpec
 
 ARTIFACT_SCHEMA_VERSION = "1.0.0"
@@ -107,82 +108,127 @@ def save_artifacts(
     Returns:
         Path: Path to the generated manifest.json file.
     """
-    artifact_dir.mkdir(parents=True, exist_ok=True)
+    # Atomic write pattern: Stage into a temporary sibling directory, then swap (F-011)
+    artifact_dir.parent.mkdir(parents=True, exist_ok=True)
+    stage_id = uuid.uuid4().hex[:8]
+    stage_dir = artifact_dir.parent / f".tmp_{artifact_dir.name}_{stage_id}"
+    stage_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Write core Parquet tables
-    items.to_parquet(artifact_dir / "items.parquet", index=False)
-    interactions.to_parquet(artifact_dir / "interactions.parquet", index=False)
-    users.to_parquet(artifact_dir / "users.parquet", index=False)
+    try:
+        # Pre-populate staging directory with existing auxiliary artifacts (e.g. model/ or extra files)
+        if artifact_dir.exists():
+            for child in artifact_dir.iterdir():
+                if child.name in (
+                    "items.parquet",
+                    "interactions.parquet",
+                    "users.parquet",
+                    "topn.parquet",
+                    "metrics.json",
+                    "demo_users.json",
+                    "manifest.json",
+                ):
+                    continue
+                if child.is_dir():
+                    shutil.copytree(child, stage_dir / child.name, dirs_exist_ok=True)
+                elif child.is_file():
+                    shutil.copy2(child, stage_dir / child.name)
 
-    if topn is not None and not topn.empty:
-        topn.to_parquet(artifact_dir / "topn.parquet", index=False)
+        # 1. Write core Parquet tables into staging directory
+        items.to_parquet(stage_dir / "items.parquet", index=False)
+        interactions.to_parquet(stage_dir / "interactions.parquet", index=False)
+        users.to_parquet(stage_dir / "users.parquet", index=False)
 
-    # 2. Write JSON metadata
-    write_text_file(artifact_dir / "metrics.json", json.dumps(metrics, indent=2))
-    write_text_file(artifact_dir / "demo_users.json", json.dumps(demo_users, indent=2))
+        if topn is not None and not topn.empty:
+            topn.to_parquet(stage_dir / "topn.parquet", index=False)
 
-    # 3. Write extra files if specified
-    if extra_files:
-        for rel_name, content in extra_files.items():
-            out_p = artifact_dir / rel_name
-            out_p.parent.mkdir(parents=True, exist_ok=True)
-            if isinstance(content, (dict, list)):
-                write_text_file(out_p, json.dumps(content, indent=2))
-            elif isinstance(content, bytes):
-                out_p.write_bytes(content)
-            else:
-                s_val = str(content)
-                if out_p.suffix.lower() in TEXT_EXTENSIONS:
-                    write_text_file(out_p, s_val)
+        # 2. Write JSON metadata
+        write_text_file(stage_dir / "metrics.json", json.dumps(metrics, indent=2))
+        write_text_file(stage_dir / "demo_users.json", json.dumps(demo_users, indent=2))
+
+        # 3. Write extra files if specified
+        if extra_files:
+            for rel_name, content in extra_files.items():
+                out_p = stage_dir / rel_name
+                out_p.parent.mkdir(parents=True, exist_ok=True)
+                if isinstance(content, (dict, list)):
+                    write_text_file(out_p, json.dumps(content, indent=2))
+                elif isinstance(content, bytes):
+                    out_p.write_bytes(content)
                 else:
-                    out_p.write_text(s_val, encoding="utf-8")
+                    s_val = str(content)
+                    if out_p.suffix.lower() in TEXT_EXTENSIONS:
+                        write_text_file(out_p, s_val)
+                    else:
+                        out_p.write_text(s_val, encoding="utf-8")
 
-    # 4. Compute file checksums across all files (excluding manifest.json itself)
-    file_checksums: dict[str, str] = {}
-    for p in sorted(artifact_dir.rglob("*")):
-        if p.is_file() and p.name != "manifest.json":
-            rel_path = p.relative_to(artifact_dir).as_posix()
-            file_checksums[rel_path] = compute_file_sha256(p)
+        # 4. Compute file checksums across all files in staging directory (excluding manifest.json itself)
+        file_checksums: dict[str, str] = {}
+        for p in sorted(stage_dir.rglob("*")):
+            if p.is_file() and p.name != "manifest.json":
+                rel_path = p.relative_to(stage_dir).as_posix()
+                file_checksums[rel_path] = compute_file_sha256(p)
 
-    # Derive dataset_name and section_heading
-    dataset_name = spec.dataset.variant
-    if spec.type == "movies":
-        dataset_name = (
-            "MovieLens 1M" if spec.dataset.variant == "1m" else f"MovieLens {spec.dataset.variant}"
-        )
-    elif spec.type == "products":
-        variant_title = spec.dataset.variant.replace("_", " ").title()
-        dataset_name = f"Amazon {variant_title}"
-    elif spec.type == "articles":
-        dataset_name = (
-            spec.dataset.variant if "SYNTHETIC" in spec.dataset.variant.upper() else "MIND"
-        )
+        # Derive dataset_name and section_heading
+        dataset_name = spec.dataset.variant
+        if spec.type == "movies":
+            dataset_name = (
+                "MovieLens 1M"
+                if spec.dataset.variant == "1m"
+                else f"MovieLens {spec.dataset.variant}"
+            )
+        elif spec.type == "products":
+            variant_title = spec.dataset.variant.replace("_", " ").title()
+            dataset_name = f"Amazon {variant_title}"
+        elif spec.type == "articles":
+            dataset_name = (
+                spec.dataset.variant if "SYNTHETIC" in spec.dataset.variant.upper() else "MIND"
+            )
 
-    model_display = spec.model.name.upper()
-    if spec.model.name == "tfidf_profile":
-        model_display = "TF-IDF Content Model"
-    elif spec.model.name == "sar":
-        model_display = "SAR"
+        model_display = spec.model.name.upper()
+        if spec.model.name == "tfidf_profile":
+            model_display = "TF-IDF Content Model"
+        elif spec.model.name == "sar":
+            model_display = "SAR"
 
-    section_heading = f"{spec.display_name} ({dataset_name} + {model_display})"
+        section_heading = f"{spec.display_name} ({dataset_name} + {model_display})"
 
-    # 5. Build and write manifest.json
-    manifest_data: dict[str, Any] = {
-        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
-        "content_type": spec.type,
-        "model_name": spec.model.name,
-        "config_hash": compute_config_hash(spec),
-        "git_sha": get_git_sha(),
-        "dataset_variant": spec.dataset.variant,
-        "dataset_name": dataset_name,
-        "section_heading": section_heading,
-        "created_at": datetime.now(UTC).isoformat(),
-        "files": file_checksums,
-    }
+        # 5. Build and write manifest.json
+        manifest_data: dict[str, Any] = {
+            "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+            "content_type": spec.type,
+            "model_name": spec.model.name,
+            "config_hash": compute_config_hash(spec),
+            "git_sha": get_git_sha(),
+            "dataset_variant": spec.dataset.variant,
+            "dataset_name": dataset_name,
+            "section_heading": section_heading,
+            "created_at": datetime.now(UTC).isoformat(),
+            "files": file_checksums,
+        }
 
-    manifest_path = artifact_dir / "manifest.json"
-    write_text_file(manifest_path, json.dumps(manifest_data, indent=2))
-    return manifest_path
+        manifest_path = stage_dir / "manifest.json"
+        write_text_file(manifest_path, json.dumps(manifest_data, indent=2))
+
+        # 6. Atomic swap into place (F-011)
+        backup_dir: Path | None = None
+        try:
+            if artifact_dir.exists():
+                backup_dir = artifact_dir.parent / f".bak_{artifact_dir.name}_{stage_id}"
+                artifact_dir.rename(backup_dir)
+            stage_dir.rename(artifact_dir)
+            if backup_dir and backup_dir.exists():
+                shutil.rmtree(backup_dir, ignore_errors=True)
+        except Exception:
+            if backup_dir and backup_dir.exists() and not artifact_dir.exists():
+                backup_dir.rename(artifact_dir)
+            raise
+
+    except Exception:
+        # On failure, clean up staging directory and leave artifact_dir untouched
+        shutil.rmtree(stage_dir, ignore_errors=True)
+        raise
+
+    return artifact_dir / "manifest.json"
 
 
 def verify_artifacts(
@@ -227,8 +273,22 @@ def verify_artifacts(
     if not files_dict:
         raise ArtifactCorruptError(str(manifest_path), "Manifest contains no registered files.")
 
+    canonical_artifact_dir = artifact_dir.resolve()
     for rel_path, expected_checksum in files_dict.items():
-        file_path = artifact_dir / rel_path
+        # Validate path containment (F-018)
+        p = Path(rel_path)
+        if p.is_absolute() or ".." in p.parts:
+            raise ArtifactCorruptError(
+                str(manifest_path),
+                f"Path traversal or containment violation: '{rel_path}' is absolute or traverses parent directories.",
+            )
+        file_path = (artifact_dir / rel_path).resolve()
+        if not file_path.is_relative_to(canonical_artifact_dir):
+            raise ArtifactCorruptError(
+                str(manifest_path),
+                f"Path traversal or containment violation: '{rel_path}' resolves outside artifact directory.",
+            )
+
         if not file_path.exists():
             raise ArtifactCorruptError(
                 str(file_path),

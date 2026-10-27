@@ -216,3 +216,67 @@ fast:
                 spec = resolve_serving_config(ctype, art_dir)
                 manifest = json.loads((art_dir / "manifest.json").read_text(encoding="utf-8"))
                 assert compute_config_hash(spec) == manifest["config_hash"]
+
+    def test_resolve_serving_config_reconstructs_tuned_similarity_and_timedecay(self, tmp_path):
+        """F-010: resolve_serving_config must reconstruct tuned similarity_type and timedecay_formula."""
+        import json
+
+        from engine.config import compute_config_hash, load_config, resolve_serving_config
+
+        type_dir = tmp_path / "tuned_movies"
+        type_dir.mkdir()
+
+        # Build expected spec matching tuned parameters
+        tuned_spec = load_config("movies", fast=True)
+        tuned_spec.model.params["similarity_type"] = "lift"
+        tuned_spec.model.params["timedecay_formula"] = True
+        tuned_spec.model.params["time_decay_coefficient"] = 45.0
+        tuned_spec.signal.positive_threshold = 3.5
+        tuned_spec.serving.top_neighbors_per_item = 50
+        expected_hash = compute_config_hash(tuned_spec)
+
+        manifest = {
+            "artifact_schema_version": "1.0.0",
+            "content_type": "movies",
+            "dataset_variant": "100k",
+            "config_hash": expected_hash,
+        }
+        (type_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+        tuning_data = {
+            "best_params": {
+                "similarity_type": "lift",
+                "timedecay_formula": True,
+                "time_decay_coefficient": 45.0,
+                "positive_threshold": 3.5,
+                "top_neighbors_per_item": 50,
+            }
+        }
+        (type_dir / "tuning.json").write_text(json.dumps(tuning_data), encoding="utf-8")
+
+        reconstructed = resolve_serving_config("movies", type_dir)
+        assert reconstructed.model.params["similarity_type"] == "lift"
+        assert reconstructed.model.params["timedecay_formula"] is True
+        assert reconstructed.model.params["time_decay_coefficient"] == 45.0
+        assert compute_config_hash(reconstructed) == expected_hash
+
+    def test_resolve_serving_config_corrupt_tuning_json_raises_loudly(self, tmp_path):
+        """F-010: Corrupt tuning.json must fail loudly with ConfigError instead of silent pass."""
+        import json
+
+        from engine.config import resolve_serving_config
+
+        type_dir = tmp_path / "corrupt_tuning_movies"
+        type_dir.mkdir()
+
+        manifest = {
+            "artifact_schema_version": "1.0.0",
+            "content_type": "movies",
+            "dataset_variant": "100k",
+            "config_hash": "deadbeef" * 8,
+        }
+        (type_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        (type_dir / "tuning.json").write_text("NOT_VALID_JSON{", encoding="utf-8")
+
+        with pytest.raises(ConfigError, match=r"Failed to parse tuning\.json"):
+            resolve_serving_config("movies", type_dir)

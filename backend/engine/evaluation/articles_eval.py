@@ -12,7 +12,9 @@ Evaluates news article recommendation under two complementary protocols:
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import random
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -21,7 +23,11 @@ import numpy as np
 import pandas as pd
 
 from engine.config import compute_config_hash
-from engine.evaluation.checks import check_r1_data_validity, check_r4_evaluation_validity
+from engine.evaluation.checks import (
+    check_r1_data_validity,
+    check_r2_no_leakage,
+    check_r4_evaluation_validity,
+)
 from engine.evaluation.harness import get_git_sha
 from engine.evaluation.metrics import (
     bootstrap_ci,
@@ -38,6 +44,8 @@ from engine.evaluation.metrics import (
     recall,
 )
 from engine.models.baselines import PopularityModel, RandomModel
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -114,11 +122,12 @@ def evaluate_impression_ranking(
                 )
                 scores = [float(counts.get(c, 0)) for c in cands]
             elif isinstance(model, RandomModel) or name == "random":
-                # Deterministic pseudo-random scoring per impression candidate
+                # Deterministic pseudo-random scoring per impression candidate using SHA-256 (F-008)
                 scores = []
                 for c in cands:
-                    ctx = f"imp:{imp_id}:{user_id}:{c}:{seed}"
-                    h_val = int(abs(hash(ctx))) % 10000000
+                    ctx_bytes = f"imp:{imp_id}:{user_id}:{c}:{seed}".encode()
+                    digest = hashlib.sha256(ctx_bytes).hexdigest()
+                    h_val = int(digest[:8], 16) % 10000000
                     scores.append(float(h_val) / 10000000.0)
             else:
                 scores = [0.0 for _ in cands]
@@ -415,6 +424,12 @@ def run_articles_dual_protocol_eval(
         items=items,
         positive_threshold=spec.signal.positive_threshold,
     )
+    # R2 Leakage validation (F-015)
+    check_r2_no_leakage(
+        train_df=train_df,
+        test_df=test_df,
+        strategy=spec.split.strategy,
+    )
 
     recency_window_cfg = getattr(spec.serving, "recency_window", None) or getattr(
         spec.evaluation, "recency_window", None
@@ -430,7 +445,15 @@ def run_articles_dual_protocol_eval(
     )
     test_impressions = [imp for imp in impressions if imp.get("timestamp", 0) > train_max_ts]
     if not test_impressions:
-        test_impressions = impressions
+        logger.error(
+            "Evaluation error: no post-train impressions found (train_max_ts=%s). "
+            "Evaluation on training impressions is prohibited to prevent data leakage.",
+            train_max_ts,
+        )
+        raise ValueError(
+            f"No post-train impressions found (train_max_ts={train_max_ts}). "
+            "Impression evaluation cannot evaluate on training impressions."
+        )
 
     imp_ranking_results = evaluate_impression_ranking(
         impressions=test_impressions,
@@ -480,6 +503,7 @@ def run_articles_dual_protocol_eval(
 
     eval_k = min(10, max(spec.evaluation.k or [10]))
     pos_test = test_df[test_df["signal"] >= spec.signal.positive_threshold]
+    cs_pos_test = pos_test[pos_test["user_id"].astype(str).isin(cs_users)]
 
     for name, model in models.items():
         if not getattr(model, "supports_cold_start", False):
@@ -491,8 +515,15 @@ def run_articles_dual_protocol_eval(
             for uid in cs_users:
                 full_hist = user_train_hist.get(uid, [])
                 hist_sample = full_hist[:size]
+                exclude_seen = (
+                    {item for item, _ in full_hist} if not spec.model.allow_repeat else set()
+                )
                 try:
-                    recs = model.recommend_history(history=hist_sample, k=eval_k)
+                    recs = model.recommend_history(
+                        history=hist_sample,
+                        k=eval_k,
+                        exclude_ids=exclude_seen,
+                    )
                     for r in recs:
                         cs_preds_rows.append(
                             {
@@ -502,7 +533,13 @@ def run_articles_dual_protocol_eval(
                                 "rank": r.rank,
                             }
                         )
-                except Exception:
+                except Exception as e:
+                    logger.warning(
+                        "recommend_history failed for user %s at cold-start size %s: %s",
+                        uid,
+                        size,
+                        e,
+                    )
                     continue
 
             cs_preds_df = (
@@ -512,9 +549,9 @@ def run_articles_dual_protocol_eval(
             )
 
             curve_for_model[str(size)] = {
-                f"hit_rate@{eval_k}": hit_rate(pos_test, cs_preds_df, k=eval_k),
-                f"ndcg@{eval_k}": ndcg(pos_test, cs_preds_df, k=eval_k),
-                f"recall@{eval_k}": recall(pos_test, cs_preds_df, k=eval_k),
+                f"hit_rate@{eval_k}": hit_rate(cs_pos_test, cs_preds_df, k=eval_k),
+                f"ndcg@{eval_k}": ndcg(cs_pos_test, cs_preds_df, k=eval_k),
+                f"recall@{eval_k}": recall(cs_pos_test, cs_preds_df, k=eval_k),
             }
 
         cold_start_curves[name] = curve_for_model

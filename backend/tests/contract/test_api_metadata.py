@@ -203,6 +203,22 @@ def test_item_detail_unknown_type(api_client: TestClient) -> None:
     assert data["error"]["code"] == "unknown_type"
 
 
+def test_item_detail_does_not_access_private_entries(api_client: TestClient) -> None:
+    """F-019: /v1/items/{item_id} must use public lookup without accessing _entries."""
+    api_client.get("/v1/items/search?type=movies&q=a&limit=1")
+    search_indexes = api_client.app.state.search_indexes  # type: ignore[attr-defined]
+    orig_entries = search_indexes["movies"]._entries
+    try:
+        search_indexes["movies"]._entries = None
+        resp = api_client.get("/v1/items/1?type=movies")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["item_id"] == "1"
+        assert data["popularity_rank"] is not None
+    finally:
+        search_indexes["movies"]._entries = orig_entries
+
+
 @pytest.mark.parametrize("content_type", CONTENT_TYPES)
 def test_search_endpoint_contract(api_client: TestClient, content_type: str) -> None:
     """Verify /v1/items/search contract: normalized query, match ranking."""
@@ -223,6 +239,22 @@ def test_search_endpoint_contract(api_client: TestClient, content_type: str) -> 
         assert tiers[i] <= tiers[i + 1], (
             f"Match type ordering inverted: {s_resp.results[i].match_type} before {s_resp.results[i + 1].match_type}"
         )
+
+
+def test_search_total_matches_independent_of_limit(api_client: TestClient) -> None:
+    """F-014: total_matches must reflect total pre-limit matches, independent of limit."""
+    resp1 = api_client.get("/v1/items/search?type=movies&q=a&limit=1")
+    assert resp1.status_code == 200
+    data1 = resp1.json()
+
+    resp5 = api_client.get("/v1/items/search?type=movies&q=a&limit=5")
+    assert resp5.status_code == 200
+    data5 = resp5.json()
+
+    assert data1["total_matches"] == data5["total_matches"]
+    assert data1["total_matches"] > 1
+    assert len(data1["results"]) == 1
+    assert len(data5["results"]) == 5
 
 
 def test_search_hierarchical_ranking_and_normalization(api_client: TestClient) -> None:

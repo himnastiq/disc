@@ -226,3 +226,198 @@ def test_run_articles_dual_protocol_eval_end_to_end() -> None:
     assert isinstance(metrics["sanity_checks"]["all_bounds_valid"], bool)
     assert isinstance(metrics["sanity_checks"]["popularity_beats_random"], bool)
     assert isinstance(metrics["sanity_checks"]["model_beats_popularity"], bool)
+
+
+def test_articles_eval_rejects_train_impression_fallback() -> None:
+    """F-007: Impression evaluation must NOT fall back to training impressions when post-train impressions are absent."""
+    import pandas as pd
+
+    spec = load_config("articles", fast=True)
+    train_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "N1", "signal": 1.0, "timestamp": 1000, "positive": True},
+            {"user_id": "u2", "item_id": "N2", "signal": 1.0, "timestamp": 1050, "positive": True},
+        ]
+    )
+    test_df = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "N3", "signal": 1.0, "timestamp": 2000, "positive": True},
+        ]
+    )
+    items = pd.DataFrame(
+        [
+            {"item_id": "N1", "title": "Article 1", "categories": ["news"], "text": "Content 1"},
+            {"item_id": "N2", "title": "Article 2", "categories": ["news"], "text": "Content 2"},
+            {"item_id": "N3", "title": "Article 3", "categories": ["news"], "text": "Content 3"},
+        ]
+    )
+
+    pop = PopularityModel(spec)
+    pop.fit(train_df, items)
+    models = {"popularity": pop}
+
+    # Construct impressions that all occurred BEFORE or AT train_max_ts (1050)
+    train_only_impressions = [
+        {
+            "impression_id": "imp_train_1",
+            "user_id": "u1",
+            "timestamp": 1020,  # Training period impression
+            "history": ["N1"],
+            "candidates": [("N2", 1), ("N3", 0)],
+        }
+    ]
+
+    with pytest.raises(ValueError, match="No post-train impressions found"):
+        run_articles_dual_protocol_eval(
+            spec=spec,
+            train_df=train_df,
+            test_df=test_df,
+            items=items,
+            impressions=train_only_impressions,
+            models=models,
+            max_test_users=5,
+            max_impressions=5,
+        )
+
+
+def test_articles_random_baseline_deterministic_across_processes() -> None:
+    """F-008: Articles random baseline must produce identical metrics across processes with different PYTHONHASHSEED."""
+    import json
+    import os
+    import subprocess
+    import sys
+
+    code = (
+        "import json, sys; sys.path.insert(0, 'backend'); "
+        "from engine.evaluation.articles_eval import evaluate_impression_ranking; "
+        "cands = [(f'c{i}', 1 if i % 3 == 0 else 0) for i in range(10)]; "
+        "imps = [{'impression_id': 'imp1', 'user_id': 'u1', 'timestamp': 1000, 'history': [], 'candidates': cands}]; "
+        "res = evaluate_impression_ranking(imps, {'random': None}, seed=42); "
+        "print(json.dumps(res['models']['random']))"
+    )
+
+    out1 = subprocess.check_output(
+        [sys.executable, "-c", code],
+        env=dict(os.environ, PYTHONHASHSEED="12345"),
+        text=True,
+    ).strip()
+    out2 = subprocess.check_output(
+        [sys.executable, "-c", code],
+        env=dict(os.environ, PYTHONHASHSEED="67890"),
+        text=True,
+    ).strip()
+
+    assert json.loads(out1) == json.loads(out2), (
+        f"Random baseline metrics differ across processes with different PYTHONHASHSEED: {out1} vs {out2}"
+    )
+
+
+def test_articles_cold_start_curve_protocol_passes_exclude_ids() -> None:
+    """F-009: Articles cold-start curve must pass exclude_ids with seen items."""
+    import pandas as pd
+
+    from engine.schema import ScoredItem
+
+    spec = load_config("articles", fast=True)
+    spec.model.allow_repeat = False
+
+    class ColdStartSpyModel:
+        supports_cold_start = True
+        captured_exclude_ids: set[str] | None = None
+
+        def recommend_history(
+            self,
+            history: list[tuple[str, float]],
+            k: int = 10,
+            exclude_ids: set[str] | None = None,
+        ) -> list[ScoredItem]:
+            self.captured_exclude_ids = exclude_ids
+            return [ScoredItem(item_id="N_REC", score=1.0, rank=1)]
+
+    spy_model = ColdStartSpyModel()
+    train_df = pd.DataFrame(
+        [{"user_id": "u1", "item_id": "N_SEEN", "signal": 1.0, "timestamp": 1000, "positive": True}]
+    )
+    test_df = pd.DataFrame(
+        [{"user_id": "u1", "item_id": "N_REC", "signal": 1.0, "timestamp": 2000, "positive": True}]
+    )
+    items = pd.DataFrame(
+        [
+            {"item_id": "N_SEEN", "title": "Seen", "categories": ["news"], "text": "Seen"},
+            {"item_id": "N_REC", "title": "Rec", "categories": ["news"], "text": "Rec"},
+        ]
+    )
+    impressions = [
+        {
+            "impression_id": "imp1",
+            "user_id": "u1",
+            "timestamp": 2000,
+            "history": ["N_SEEN"],
+            "candidates": [("N_REC", 1)],
+        }
+    ]
+
+    run_articles_dual_protocol_eval(
+        spec=spec,
+        train_df=train_df,
+        test_df=test_df,
+        items=items,
+        impressions=impressions,
+        models={"spy": spy_model},  # type: ignore[dict-item]
+        max_test_users=1,
+        max_impressions=1,
+        cold_start_sample_users=1,
+    )
+
+    assert (
+        spy_model.captured_exclude_ids is not None and "N_SEEN" in spy_model.captured_exclude_ids
+    ), (
+        f"cold-start curve failed to pass exclude_ids with seen items: {spy_model.captured_exclude_ids}"
+    )
+
+
+def test_articles_eval_detects_real_split_leakage() -> None:
+    """F-015: Articles evaluation must execute real R2 split leakage check and fail on leakage."""
+    import pandas as pd
+
+    from engine.errors import LeakageError
+
+    spec = load_config("articles", fast=True)
+    pop = PopularityModel(spec)
+
+    # Deliberately construct leaked split: train interaction occurs AFTER test interaction
+    train_df = pd.DataFrame(
+        [{"user_id": "u1", "item_id": "N1", "signal": 1.0, "timestamp": 3000, "positive": True}]
+    )
+    test_df = pd.DataFrame(
+        [{"user_id": "u1", "item_id": "N2", "signal": 1.0, "timestamp": 1000, "positive": True}]
+    )
+    items = pd.DataFrame(
+        [
+            {"item_id": "N1", "title": "A1", "categories": ["news"], "text": "A1"},
+            {"item_id": "N2", "title": "A2", "categories": ["news"], "text": "A2"},
+        ]
+    )
+    pop.fit(train_df, items)
+    impressions = [
+        {
+            "impression_id": "imp1",
+            "user_id": "u1",
+            "timestamp": 4000,
+            "history": ["N1"],
+            "candidates": [("N2", 1)],
+        }
+    ]
+
+    with pytest.raises(LeakageError):
+        run_articles_dual_protocol_eval(
+            spec=spec,
+            train_df=train_df,
+            test_df=test_df,
+            items=items,
+            impressions=impressions,
+            models={"popularity": pop},
+            max_test_users=1,
+            max_impressions=1,
+            cold_start_sample_users=1,
+        )

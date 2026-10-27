@@ -373,3 +373,11 @@ def test_set_fresh_candidates_explicitly(
 
     recs_sim = model.similar_items("N003", k=5)
     assert all(r.item_id in {"N004", "N005"} for r in recs_sim)
+
+
+def test_tfidf_model_score_candidates_unfitted_raises_runtime_error() -> None:
+    """F-020: TF-IDF _score_candidates must raise RuntimeError when unfitted."""
+    spec = load_config("articles", fast=True)
+    model = TfidfProfileModel(spec)
+    with pytest.raises(RuntimeError, match=r"TF-IDF model has not been fitted"):
+        model._score_candidates(profile=None, k=5, exclusions=set())

@@ -1,0 +1,82 @@
+[
+  {
+    "user_id": "210",
+    "persona": "heavy",
+    "interaction_count": 110,
+    "top_categories": [
+      "Action",
+      "Thriller",
+      "Adventure"
+    ]
+  },
+  {
+    "user_id": "18",
+    "persona": "heavy",
+    "interaction_count": 305,
+    "top_categories": [
+      "Action",
+      "Drama",
+      "Adventure"
+    ]
+  },
+  {
+    "user_id": "318",
+    "persona": "mainstream",
+    "interaction_count": 21,
+    "top_categories": [
+      "Drama",
+      "Comedy",
+      "Children's"
+    ]
+  },
+  {
+    "user_id": "144",
+    "persona": "mainstream",
+    "interaction_count": 32,
+    "top_categories": [
+      "Drama",
+      "Sci-Fi",
+      "Action"
+    ]
+  },
+  {
+    "user_id": "57",
+    "persona": "niche",
+    "interaction_count": 64,
+    "top_categories": [
+      "Comedy",
+      "Drama",
+      "Action"
+    ]
+  },
+  {
+    "user_id": "50",
+    "persona": "niche",
+    "interaction_count": 43,
+    "top_categories": [
+      "Drama",
+      "Comedy",
+      "Action"
+    ]
+  },
+  {
+    "user_id": "273",
+    "persona": "heavy",
+    "interaction_count": 187,
+    "top_categories": [
+      "Comedy",
+      "Action",
+      "Drama"
+    ]
+  },
+  {
+    "user_id": "225",
+    "persona": "heavy",
+    "interaction_count": 507,
+    "top_categories": [
+      "Drama",
+      "Comedy",
+      "Thriller"
+    ]
+  }
+]

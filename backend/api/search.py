@@ -44,6 +44,7 @@ class ItemSearchIndex:
 
     def __init__(self, items_df: pd.DataFrame, interactions_df: pd.DataFrame | None = None) -> None:
         self._entries: list[dict[str, Any]] = []
+        self._items_by_id: dict[str, dict[str, Any]] = {}
 
         # Compute popularity ranks (1 = highest interaction count)
         pop_ranks: dict[str, int] = {}
@@ -70,22 +71,31 @@ class ItemSearchIndex:
 
             pop_rank = pop_ranks.get(item_id, default_rank)
 
-            self._entries.append(
-                {
-                    "item_id": item_id,
-                    "title": title,
-                    "subtitle": subtitle,
-                    "categories": categories,
-                    "year": year,
-                    "image_url": image_url,
-                    "popularity_rank": pop_rank,
-                    "norm_title": norm_title,
-                    "norm_no_art": norm_no_art,
-                    "words": words,
-                }
-            )
+            entry = {
+                "item_id": item_id,
+                "title": title,
+                "subtitle": subtitle,
+                "categories": categories,
+                "year": year,
+                "image_url": image_url,
+                "popularity_rank": pop_rank,
+                "norm_title": norm_title,
+                "norm_no_art": norm_no_art,
+                "words": words,
+            }
+            self._entries.append(entry)
+            self._items_by_id[item_id] = entry
 
-    def search(self, query: str, limit: int = 20) -> list[SearchItem]:
+    def get_entry(self, item_id: str) -> dict[str, Any] | None:
+        """Return raw search index entry for item_id, or None if not indexed."""
+        return self._items_by_id.get(str(item_id))
+
+    def get_popularity_rank(self, item_id: str) -> int | None:
+        """Return precomputed popularity rank for item_id, or None if not indexed."""
+        entry = self._items_by_id.get(str(item_id))
+        return entry["popularity_rank"] if entry is not None else None
+
+    def search(self, query: str, limit: int = 20) -> tuple[list[SearchItem], int]:
         """Execute normalized search with hierarchical match-type ranking.
 
         Ranking hierarchy:
@@ -94,10 +104,14 @@ class ItemSearchIndex:
           3. Word-start match (any word in title starts with query)
           4. Contains match (query is substring of title)
         Ties are broken by popularity rank (lower number = higher popularity), then item_id.
+
+        Returns:
+            Tuple of (ranked_results, total_matches) where total_matches reflects
+            the total number of matching items across all tiers prior to limit truncation.
         """
         norm_query = normalize_text(query)
         if not norm_query:
-            return []
+            return [], 0
 
         query_no_art = strip_article(norm_query)
 
@@ -206,4 +220,10 @@ class ItemSearchIndex:
                 )
             )
 
-        return results
+        total_matches = (
+            len(exact_matches)
+            + len(prefix_matches)
+            + len(word_start_matches)
+            + len(contains_matches)
+        )
+        return results, total_matches

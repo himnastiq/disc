@@ -441,7 +441,8 @@ class TfidfProfileModel(RecommenderModel):
         exclusions: set[str],
     ) -> list[ScoredItem]:
         """Compute cosine similarities between profile and catalogue items, ranking top-k."""
-        assert self.tfidf_matrix is not None
+        if self.tfidf_matrix is None:
+            raise RuntimeError("TF-IDF model has not been fitted; tfidf_matrix is None.")
         # profile shape: (1, D), tfidf_matrix shape: (N, D)
         scores_mat = self.tfidf_matrix.dot(profile.T)  # (N, 1)
         scores_arr = np.asarray(scores_mat.toarray()).flatten()
