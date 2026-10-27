@@ -1,0 +1,19 @@
+{
+  "total_interactions": 28,
+  "unique_users": 7,
+  "unique_items": 15,
+  "sparsity": 0.733333,
+  "min_timestamp": 1573376280,
+  "max_timestamp": 1573825500,
+  "positive_interactions": 0,
+  "filtered_users": 0,
+  "filtered_items": 0,
+  "details": {
+    "min_date": "2019-11-10 08:58:00 UTC",
+    "max_date": "2019-11-15 13:45:00 UTC",
+    "missing_abstracts_count": 0,
+    "missing_catalogue_items_count": 0,
+    "empty_history_users_count": 1,
+    "raw_interactions_count": 29
+  }
+}

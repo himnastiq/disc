@@ -1,0 +1,79 @@
+{
+  "protocol": {
+    "split_strategy": "chronological",
+    "split_ratio": 0.8,
+    "allow_repeat": false,
+    "positive_threshold": 4.0,
+    "total_interactions": 180,
+    "total_items": 25,
+    "evaluated_test_users": 15
+  },
+  "seeds": {
+    "split_seed": 42,
+    "model_seed": 42
+  },
+  "config_hash": "fb25531ee0b233ba50ba7c1101328a41ba2919bea3fd5d4829c8298786cb47c8",
+  "git_sha": "7a4ea400a2beeabc6ce9a2a068caa5e684ca85ec",
+  "created_at": "2026-10-24T14:02:34.432681+00:00",
+  "content_type": "toy",
+  "dataset_variant": "default",
+  "k_values": [
+    5,
+    10
+  ],
+  "models": {
+    "popularity": {
+      "5": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "ndcg": 0.0,
+        "map": 0.0,
+        "hit_rate": 0.0,
+        "coverage": 0.6,
+        "novelty": 4.209392715082651,
+        "diversity": 0.5999999999999999,
+        "personalisation": 0.7898337112622827
+      },
+      "10": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "ndcg": 0.0,
+        "map": 0.0,
+        "hit_rate": 0.0,
+        "coverage": 0.8,
+        "novelty": 4.672604466930614,
+        "diversity": 0.5407407407407407,
+        "personalisation": 0.6139761674923108
+      }
+    }
+  },
+  "cold_start_curves": {
+    "popularity": {
+      "0": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "1": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "3": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "5": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      }
+    }
+  },
+  "sanity_checks": {
+    "all_bounds_valid": true,
+    "popularity_beats_random": true,
+    "model_beats_popularity": true
+  }
+}

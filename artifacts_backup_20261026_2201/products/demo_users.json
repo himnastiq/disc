@@ -1,0 +1,82 @@
+[
+  {
+    "user_id": "A119Q9NFGVOEJZ",
+    "persona": "heavy",
+    "interaction_count": 96,
+    "top_categories": [
+      "Video Games",
+      "Games",
+      "More Systems"
+    ]
+  },
+  {
+    "user_id": "A114TMHW9GRMPB",
+    "persona": "heavy",
+    "interaction_count": 141,
+    "top_categories": [
+      "Video Games",
+      "Games",
+      "PlayStation 3"
+    ]
+  },
+  {
+    "user_id": "A11XB83K6SDSO9",
+    "persona": "mainstream",
+    "interaction_count": 16,
+    "top_categories": [
+      "Video Games",
+      "Games",
+      "PlayStation 3"
+    ]
+  },
+  {
+    "user_id": "A1187K7PTO0C3D",
+    "persona": "mainstream",
+    "interaction_count": 27,
+    "top_categories": [
+      "Video Games",
+      "Games",
+      "PlayStation 3"
+    ]
+  },
+  {
+    "user_id": "A117GJYXI844FX",
+    "persona": "niche",
+    "interaction_count": 13,
+    "top_categories": [
+      "Video Games",
+      "Games",
+      "PC"
+    ]
+  },
+  {
+    "user_id": "A10WET3ZP50AFG",
+    "persona": "niche",
+    "interaction_count": 11,
+    "top_categories": [
+      "Video Games",
+      "PC",
+      "Games"
+    ]
+  },
+  {
+    "user_id": "A11HWSN9XT3229",
+    "persona": "casual",
+    "interaction_count": 9,
+    "top_categories": [
+      "Video Games",
+      "Wii",
+      "Games"
+    ]
+  },
+  {
+    "user_id": "A10FEGI2FQD7L9",
+    "persona": "casual",
+    "interaction_count": 7,
+    "top_categories": [
+      "Video Games",
+      "PC",
+      "Games"
+    ]
+  }
+]
