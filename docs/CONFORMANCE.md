@@ -77,13 +77,13 @@ Every requirement is audited and categorized into:
 | Gate | Title | Invariant / Acceptance Criterion | Status | Primary Enforcement & Test Verification |
 |---|---|---|---|---|
 | **R1** | **Data Validity** | Sparsity in [0, 1]; no duplicate interaction rows; no null IDs; valid timestamps; catalogue membership; bijective mapping | **PASS** | [`engine/evaluation/checks.py:21-117`](../backend/engine/evaluation/checks.py#L21-L117), [`tests/unit/test_checks.py`](../backend/tests/unit/test_checks.py) |
-| **R2** | **No Leakage** | `max(train.timestamp) <= min(test.timestamp)`; train-only popularity cap, session non-backdating, computed R2 split verification | **PASS** | [`engine/evaluation/splits.py:11-63`](../backend/engine/evaluation/splits.py#L11-L63). Temporal boundary verified across splits. Dataset variants: movies: `100k`, products: `instruments`, articles: `small`. |
+| **R2** | **No Leakage** | `max(train.timestamp) <= min(test.timestamp)`; train-only popularity cap, session non-backdating, computed R2 split verification | **PASS** | [`engine/evaluation/splits.py:11-63`](../backend/engine/evaluation/splits.py#L11-L63). Temporal boundary verified across splits. Dataset variants: movies: `1m`, products: `video_games`, articles: `small`. |
 | **R3** | **Model Invariants** | Length <= k; no duplicates; no excluded/seen items; monotonic scores; cold-start consistency; faithful explanations | **PASS** | [`engine/evaluation/checks.py:138-215`](../backend/engine/evaluation/checks.py#L138-L215), [`tests/contract/test_api_recommend.py`](../backend/tests/contract/test_api_recommend.py) |
-| **R4** | **Evaluation Validity** | Identical split & candidate protocol for baselines; Random < Popularity <= Model sanity; diversity & novelty reported | **FAIL** | [`engine/evaluation/harness.py:35-180`](../backend/engine/evaluation/harness.py#L35-L180). Sanity ordering failed for variants: movies: `100k`, products: `instruments`, articles: `small`. |
+| **R4** | **Evaluation Validity** | Identical split & candidate protocol for baselines; Random < Popularity <= Model sanity; diversity & novelty reported | **FAIL** | [`engine/evaluation/harness.py:35-180`](../backend/engine/evaluation/harness.py#L35-L180). Sanity ordering failed for variants: movies: `1m`, products: `video_games`, articles: `small`. |
 | **R5** | **Cold-Start Behaviour** | History sizes 0..20 evaluated; size 0 falls back to popularity mode; duplicates rejected (422); unknown IDs ignored | **PASS** | [`engine/coldstart.py:40-120`](../backend/engine/coldstart.py#L40-L120), [`tests/contract/test_api_cold_start.py`](../backend/tests/contract/test_api_cold_start.py) |
 | **R6** | **Reproducibility** | Fixed random seeds (seed 42); retraining produces identical hashes; clean checkout builds; locked dependencies | **FAIL** | [`engine/train.py:25-35`](../backend/engine/train.py#L25-L35), [`tests/integration/test_determinism.py`](../backend/tests/integration/test_determinism.py). Determinism tests present in `backend/tests/integration/test_determinism.py`, but dependencies not locked (F-012): `backend/uv.lock` is missing. |
 | **R7** | **API Contract & Edge Cases** | All endpoints tested across all types; k in 1..50; error shape consistent; no stack traces leaked; no TensorFlow in sys.modules | **PASS** | [`tests/contract/`](../backend/tests/contract/), [`tests/integration/test_api_runtime_purity.py`](../backend/tests/integration/test_api_runtime_purity.py). OpenAPI schema matches freshly generated schema; contract test suite present; runtime purity verified. |
-| **R8** | **Performance & Resources** | Latency p95 GET /recommend < 150 ms; API RSS < 2 GB with all domains loaded | **NOT-VERIFIED** | [`scripts/bench_api.py`](../backend/scripts/bench_api.py). Benchmark output file (`docs/benchmark_results.json`) missing. Run `python backend/scripts/bench_api.py` to measure latency & RSS. |
+| **R8** | **Performance & Resources** | Latency p95 GET /recommend < 150 ms; API RSS < 2 GB with all domains loaded | **FAIL** | [`scripts/bench_api.py`](../backend/scripts/bench_api.py). Benchmark exceeded budget: worst p95 530.62 ms (budget 150.0 ms), RSS 2302.3 MB. |
 | **R9** | **Frontend Robustness** | TypeScript strict clean, zod runtime validation, responsive layouts, failure injection | **PENDING** | Scheduled for Phases 8–10 (Frontend implementation not yet built). |
 | **R10**| **Licensing & Attribution** | MIT license preserved; NOTICE.md and ATTRIBUTION.md current; no `import recommenders` in codebase; citations present | **PASS** | [`backend/discovery/NOTICE.md`](../backend/discovery/NOTICE.md), [`docs/ATTRIBUTION.md`](ATTRIBUTION.md), [`backend/tests/unit/test_vendored_manifest.py`](../backend/tests/unit/test_vendored_manifest.py). MIT license preserved; `NOTICE.md` and `ATTRIBUTION.md` current; zero `import recommenders` in engine/api; vendored manifest verified. |
 | **R11**| **Security Basics** | Constant-time API key check on bytes (`hmac.compare_digest`); CORS from env; 1MB body limit; no secrets in repo | **PASS** | [`api/security.py:20-60`](../backend/api/security.py#L20-L60), [`tests/unit/test_api_security.py`](../backend/tests/unit/test_api_security.py). Constant-time API key check on bytes (`hmac.compare_digest`); CORS from env; 1MB body limit; security test suite verified. |
@@ -94,9 +94,9 @@ Every requirement is audited and categorized into:
 
 - **Total Requirements Audited:** 48
 - **PASS:** 42
-- **FAIL:** 2
-- **NOT-VERIFIED:** 1
+- **FAIL:** 3
+- **NOT-VERIFIED:** 0
 - **PENDING:** 1
 - **MANUAL:** 2
 
-**Audit Verdict:** **NON-CONFORMANT** (2 FAIL, 1 NOT-VERIFIED). 42 PASS, 2 FAIL, 1 NOT-VERIFIED, 1 PENDING, 2 MANUAL (Total: 48).
+**Audit Verdict:** **NON-CONFORMANT** (3 FAIL, 0 NOT-VERIFIED). 42 PASS, 3 FAIL, 0 NOT-VERIFIED, 1 PENDING, 2 MANUAL (Total: 48).

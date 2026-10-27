@@ -75,3 +75,26 @@ def test_api_startup_with_corrupt_artifact_dir(
         assert app.state.availability.get("articles") is True
         assert "products" in app.state.models
         assert "articles" in app.state.models
+
+
+def test_recommend_known_user_not_in_model_falls_back_to_popularity() -> None:
+    """Verify that when a user exists in lookups but not in model history, recommendations fall back to popularity."""
+    app = create_app()
+    with TestClient(app) as client:
+        # A user in lookups without training history (or with topn cache miss) falls back to popularity
+        lookups = app.state.lookups["articles"]
+        if "U29223" in lookups.user_ids:
+            target_uid = "U29223"
+        else:
+            # Synthetic user in lookups
+            target_uid = "GHOST_LOOKUP_USER_99"
+            lookups.user_ids.add(target_uid)
+            lookups.user_positive_count[target_uid] = 5
+
+        resp = client.get(
+            "/v1/recommend", params={"type": "articles", "user_id": target_uid, "k": 5}
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["mode"] == "popularity"
+        assert len(data["results"]) == 5

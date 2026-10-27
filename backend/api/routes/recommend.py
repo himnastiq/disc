@@ -104,10 +104,17 @@ def get_recommendations(
 
         # Live computation fallback if topn was insufficient
         if not scored_items:
-            source = "live_model"
-            model_results = model.recommend_user(user_id=uid_str, k=k, exclude_ids=exclusions)
-            for item in model_results:
-                scored_items.append((str(item.item_id), float(item.score)))
+            try:
+                source = "live_model"
+                model_results = model.recommend_user(user_id=uid_str, k=k, exclude_ids=exclusions)
+                for item in model_results:
+                    scored_items.append((str(item.item_id), float(item.score)))
+            except UnknownUser:
+                source = "popularity"
+                serving_mode = "popularity"
+                pop_results = model.popular(k=k, exclude_ids=exclusions)
+                for item in pop_results:
+                    scored_items.append((str(item.item_id), float(item.score)))
 
     # Ensure k items returned
     scored_items = scored_items[:k]

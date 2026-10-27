@@ -164,9 +164,12 @@ def run_pipeline(
     # 3. Split interactions into train, valid, test via adapter
     train_df, valid_df, test_df = adapter.split(interactions)
 
-    # Filter items catalogue to items present in the split
+    # Filter items catalogue and interactions to items present in the split
     all_split_items = set(train_df["item_id"]).union(valid_df["item_id"]).union(test_df["item_id"])
     items = items[items["item_id"].isin(all_split_items)].reset_index(drop=True)
+    interactions = interactions[interactions["item_id"].isin(all_split_items)].reset_index(
+        drop=True
+    )
 
     extra_files: dict[str, Any] = {"data_report.json": report.model_dump()}
 

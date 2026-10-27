@@ -1,0 +1,182 @@
+{
+  "timestamp": 1793075751.2562206,
+  "target_p95_ms": 150.0,
+  "summary": {
+    "p50_topn_ms": 47.33140000007552,
+    "p95_topn_ms": 530.6155600002054,
+    "p95_cold_ms": 87.64428000049516,
+    "worst_p95_ms": 530.6155600002054,
+    "peak_rss_mb": 2302.28515625,
+    "all_passed": false
+  },
+  "endpoints": [
+    {
+      "endpoint": "GET /v1/health",
+      "requests": 500,
+      "p50_ms": 17.165549999845098,
+      "p95_ms": 21.2086199991063,
+      "p99_ms": 38.19377799922222,
+      "mean_ms": 17.82929520003745,
+      "max_ms": 53.836799999771756,
+      "rss_mb": 2302.16796875,
+      "meets_budget": true,
+      "label": "GET /v1/health"
+    },
+    {
+      "endpoint": "GET /v1/types",
+      "requests": 500,
+      "p50_ms": 28.50250000028609,
+      "p95_ms": 34.10244000087913,
+      "p99_ms": 43.0923610004356,
+      "mean_ms": 29.042017000021588,
+      "max_ms": 62.21670000013546,
+      "rss_mb": 2302.28515625,
+      "meets_budget": true,
+      "label": "GET /v1/types"
+    },
+    {
+      "endpoint": "GET /v1/about",
+      "requests": 500,
+      "p50_ms": 3.277749999142543,
+      "p95_ms": 3.944325000975368,
+      "p99_ms": 4.663755999627026,
+      "mean_ms": 5.17763620005644,
+      "max_ms": 911.734899998919,
+      "rss_mb": 2270.2890625,
+      "meets_budget": true,
+      "label": "GET /v1/about"
+    },
+    {
+      "endpoint": "GET /v1/items/search",
+      "requests": 500,
+      "p50_ms": 25.660499999503372,
+      "p95_ms": 30.517574999248605,
+      "p99_ms": 41.208197998821554,
+      "mean_ms": 26.154364400037593,
+      "max_ms": 66.58609999976761,
+      "rss_mb": 2254.30078125,
+      "meets_budget": true,
+      "label": "GET /v1/items/search (movies)"
+    },
+    {
+      "endpoint": "GET /v1/users/{id}/profile",
+      "requests": 500,
+      "p50_ms": 18.996200000401586,
+      "p95_ms": 23.61011999955734,
+      "p99_ms": 30.643238000557165,
+      "mean_ms": 19.401857000015298,
+      "max_ms": 53.81130000023404,
+      "rss_mb": 2239.26171875,
+      "meets_budget": true,
+      "label": "GET /v1/users/{id}/profile (movies, 200 users)"
+    },
+    {
+      "endpoint": "GET /v1/recommend",
+      "requests": 500,
+      "p50_ms": 47.33140000007552,
+      "p95_ms": 107.95753500060526,
+      "p99_ms": 135.53818599890286,
+      "mean_ms": 55.39700319998883,
+      "max_ms": 166.96760000013455,
+      "rss_mb": 2245.51171875,
+      "meets_budget": true,
+      "label": "GET /v1/recommend (movies, 200 users)"
+    },
+    {
+      "endpoint": "POST /v1/recommend/cold-start",
+      "requests": 500,
+      "p50_ms": 33.09204999914073,
+      "p95_ms": 38.41152999893891,
+      "p99_ms": 48.874187001038074,
+      "mean_ms": 33.66196059999129,
+      "max_ms": 55.11119999937364,
+      "rss_mb": 2245.64453125,
+      "meets_budget": true,
+      "label": "POST /v1/recommend/cold-start (movies)"
+    },
+    {
+      "endpoint": "GET /v1/popular",
+      "requests": 500,
+      "p50_ms": 33.093449999796576,
+      "p95_ms": 37.286435001260536,
+      "p99_ms": 51.81647200095539,
+      "mean_ms": 33.71322579995467,
+      "max_ms": 93.05520000089018,
+      "rss_mb": 2245.6875,
+      "meets_budget": true,
+      "label": "GET /v1/popular (movies)"
+    },
+    {
+      "endpoint": "GET /v1/similar",
+      "requests": 500,
+      "p50_ms": 34.23724999993283,
+      "p95_ms": 50.7472400008737,
+      "p99_ms": 63.31190100005185,
+      "mean_ms": 36.20229399998425,
+      "max_ms": 116.22639999950479,
+      "rss_mb": 2245.69140625,
+      "meets_budget": true,
+      "label": "GET /v1/similar (movies)"
+    },
+    {
+      "endpoint": "GET /v1/recommend",
+      "requests": 500,
+      "p50_ms": 36.694950001219695,
+      "p95_ms": 44.55189000054815,
+      "p99_ms": 62.03752499988694,
+      "mean_ms": 37.69530840001971,
+      "max_ms": 79.50370000071416,
+      "rss_mb": 2204.8671875,
+      "meets_budget": true,
+      "label": "GET /v1/recommend (products, 200 users)"
+    },
+    {
+      "endpoint": "POST /v1/recommend/cold-start",
+      "requests": 500,
+      "p50_ms": 33.207149999725516,
+      "p95_ms": 40.602375000435124,
+      "p99_ms": 58.44182000138969,
+      "mean_ms": 34.21308300001692,
+      "max_ms": 76.69560000067577,
+      "rss_mb": 2205.34765625,
+      "meets_budget": true,
+      "label": "POST /v1/recommend/cold-start (products)"
+    },
+    {
+      "endpoint": "GET /v1/similar",
+      "requests": 500,
+      "p50_ms": 33.2662499986327,
+      "p95_ms": 40.00810500074294,
+      "p99_ms": 55.1618239999334,
+      "mean_ms": 34.261917400024686,
+      "max_ms": 98.63980000045558,
+      "rss_mb": 2205.34765625,
+      "meets_budget": true,
+      "label": "GET /v1/similar (products)"
+    },
+    {
+      "endpoint": "GET /v1/recommend",
+      "requests": 500,
+      "p50_ms": 156.14339999956428,
+      "p95_ms": 530.6155600002054,
+      "p99_ms": 1110.7935359987457,
+      "mean_ms": 273.6855474000331,
+      "max_ms": 38207.31060000071,
+      "rss_mb": 2222.66796875,
+      "meets_budget": false,
+      "label": "GET /v1/recommend (articles, 200 users)"
+    },
+    {
+      "endpoint": "POST /v1/recommend/cold-start",
+      "requests": 500,
+      "p50_ms": 39.45070000099804,
+      "p95_ms": 87.64428000049516,
+      "p99_ms": 168.16431600083877,
+      "mean_ms": 48.13425180003833,
+      "max_ms": 322.49770000089484,
+      "rss_mb": 1971.4140625,
+      "meets_budget": true,
+      "label": "POST /v1/recommend/cold-start (articles)"
+    }
+  ]
+}

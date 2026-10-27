@@ -165,6 +165,8 @@ Measured using `tools/measure_sparsification.py` on identical chronological trai
 
 ## D-011: MovieLens 1M SAR evaluation and baseline comparison (2026-10-25)
 
+> *Note (2026-10-27):* Figures above are from the pre-fix runs; current figures are generated in `docs/RESULTS.md`.
+
 **Context:** Task P3.9 requires training the final MovieLens model on MovieLens 1M (`data/raw/movielens/ml-1m`), evaluating against Popularity and Random baselines under the identical candidate protocol (strictly excluding training interactions for each user), evaluating cold-start curves and R4 metrics, and recording the findings honestly.
 
 **Evaluation Protocol & Hyperparameter Tuning:**
@@ -230,6 +232,8 @@ We needed to decide on:
 ---
 
 ## D-013: Amazon Products SAR Model Reuse, Memory Usage, and Serving Budget (P4.4)
+
+> *Note (2026-10-27):* Figures above are from the pre-fix runs; current figures are generated in `docs/RESULTS.md`.
 
 **Date:** 2026-10-25
 **Status:** Approved
@@ -538,7 +542,7 @@ The Phase 1 audit identified data leakage in `AmazonProductsAdapter.prepare()` (
 3. Compute the popularity cap strictly within `AmazonProductsAdapter.split()` from `train_df`, filter `train_df` and `test_df` to keep only train-top items, and ensure zero test rows contribute to item ranking or inclusion.
 
 **Decision:**
-Option 3. The item cap is computed strictly on training interactions inside `split()`. Test interactions are filtered to the capped vocabulary derived solely from training data. Verified with a perturbation test asserting that modifying test interactions produces an identical fitted item vocabulary and item set.
+Option 3. The item cap is computed strictly on training interactions inside `split()`. Test interactions are filtered to the capped vocabulary derived solely from training data. Test rows for items outside the train-only cap are dropped from evaluation (so metrics describe the capped catalogue). Verified with a perturbation test asserting that modifying test interactions produces an identical fitted item vocabulary and item set.
 
 **Consequences:**
 Eliminates test-set leakage in the products pipeline. R2 non-leakage verified with perturbation tests.

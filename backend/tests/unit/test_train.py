@@ -54,3 +54,41 @@ def test_train_pipeline_toy(tmp_path: Path) -> None:
     assert (artifacts_dir / "users.parquet").exists()
     assert (artifacts_dir / "topn.parquet").exists()
     assert (artifacts_dir / "metrics.json").exists()
+
+
+def test_train_pipeline_aligns_interactions_with_split_items(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify run_pipeline filters interactions to all_split_items when an adapter prunes items during split."""
+    import pandas as pd
+
+    from engine.adapters.toy import ToyAdapter
+    from engine.registry import _ADAPTER_REGISTRY
+
+    class PruningToyAdapter(ToyAdapter):
+        def split(
+            self,
+            interactions: pd.DataFrame | None = None,
+        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+            train_df, valid_df, test_df = super().split(interactions)
+            # Prune out item 'toy_item_0' from all splits to simulate popularity cap pruning
+            train_df = train_df[train_df["item_id"] != "toy_item_0"].reset_index(drop=True)
+            valid_df = valid_df[valid_df["item_id"] != "toy_item_0"].reset_index(drop=True)
+            test_df = test_df[test_df["item_id"] != "toy_item_0"].reset_index(drop=True)
+            return train_df, valid_df, test_df
+
+    monkeypatch.setitem(_ADAPTER_REGISTRY, "toy", PruningToyAdapter)
+
+    artifacts_dir = tmp_path / "pruned_toy_artifacts"
+    metrics = run_pipeline(
+        content_type="toy",
+        fast=True,
+        seed=42,
+        artifacts_dir=artifacts_dir,
+    )
+    assert metrics is not None
+
+    saved_inter = pd.read_parquet(artifacts_dir / "interactions.parquet")
+    saved_items = pd.read_parquet(artifacts_dir / "items.parquet")
+    assert "toy_item_0" not in set(saved_inter["item_id"])
+    assert set(saved_inter["item_id"]).issubset(set(saved_items["item_id"]))
