@@ -43,6 +43,10 @@ jobs:
         run: |
           python tools/vendored_manifest.py --check
 
+      - name: Verify conformance document
+        run: |
+          python tools/check_conformance.py --check
+
       - name: Verify progress dashboard
         run: |
           python tools/progress.py

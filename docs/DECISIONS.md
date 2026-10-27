@@ -34,7 +34,7 @@
 
 ## D-003: Portable Makefile (2026-10-24)
 
-**Context:** The previous session wrote a Makefile with hardcoded Windows absolute paths (`e:\discover\.venv\Scripts\python.exe` etc.), which cannot work on macOS or Linux.
+**Context:** The previous session wrote a Makefile with hardcoded Windows absolute paths (`<drive>:\discover\.venv\Scripts\python.exe` etc.), which cannot work on macOS or Linux.
 
 **Decision:** Rewrote all tool references to use `python3` / `pip` (overridable via `PYTHON ?=` / `PIP ?=`). Commands use `python -m <tool>` pattern to work in any activated venv on any OS.
 
