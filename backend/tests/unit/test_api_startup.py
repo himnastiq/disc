@@ -5,14 +5,11 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING
 
+import pytest
 from fastapi.testclient import TestClient
 
 from api.main import create_app
-
-if TYPE_CHECKING:
-    import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -77,24 +74,57 @@ def test_api_startup_with_corrupt_artifact_dir(
         assert "articles" in app.state.models
 
 
-def test_recommend_known_user_not_in_model_falls_back_to_popularity() -> None:
-    """Verify that when a user exists in lookups but not in model history, recommendations fall back to popularity."""
+@pytest.mark.parametrize("content_type", ["movies", "products", "articles"])
+def test_recommend_known_user_not_in_model_falls_back_to_popularity(content_type: str) -> None:
+    """FIX-55: When user exists in lookups but model raises UnknownUser, return mode 'popularity' with popular list & reason."""
     app = create_app()
     with TestClient(app) as client:
-        # A user in lookups without training history (or with topn cache miss) falls back to popularity
-        lookups = app.state.lookups["articles"]
-        if "U29223" in lookups.user_ids:
-            target_uid = "U29223"
-        else:
-            # Synthetic user in lookups
-            target_uid = "GHOST_LOOKUP_USER_99"
-            lookups.user_ids.add(target_uid)
-            lookups.user_positive_count[target_uid] = 5
+        lookups = app.state.lookups[content_type]
+        target_uid = f"GHOST_LOOKUP_USER_FIX55_{content_type.upper()}"
+        lookups.user_ids.add(target_uid)
+        lookups.user_positive_count[target_uid] = (
+            10  # Ensure it qualifies for personalization if known
+        )
 
         resp = client.get(
-            "/v1/recommend", params={"type": "articles", "user_id": target_uid, "k": 5}
+            "/v1/recommend", params={"type": content_type, "user_id": target_uid, "k": 5}
         )
         assert resp.status_code == 200
         data = resp.json()
         assert data["mode"] == "popularity"
         assert len(data["results"]) == 5
+
+        # Check popular list and popular reason
+        pop_resp = client.get("/v1/popular", params={"type": content_type, "k": 5})
+        assert pop_resp.status_code == 200
+        expected_items = [r["item_id"] for r in pop_resp.json()["results"]]
+        actual_items = [r["item_id"] for r in data["results"]]
+        assert actual_items == expected_items
+
+        for item in data["results"]:
+            assert item["reason"] is not None
+            assert item["reason"]["kind"] == "popular"
+            assert item["reason"]["item_id"] is None
+            assert "Popular" in item["reason"]["text"]
+
+
+@pytest.mark.parametrize("content_type", ["movies", "products", "articles"])
+def test_types_users_endpoint_lists_only_modelled_users(content_type: str) -> None:
+    """FIX-55: GET /v1/types/{type}/users returns only users known and modelled by the serving model."""
+    app = create_app()
+    with TestClient(app) as client:
+        model = app.state.models[content_type]
+        modelled_uids = model.get_modelled_user_ids()
+        assert len(modelled_uids) > 0, f"Expected non-empty modelled users for {content_type}"
+
+        resp = client.get(f"/v1/types/{content_type}/users", params={"limit": 100})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] > 0
+        assert len(data["users"]) > 0
+
+        for user in data["users"]:
+            uid = str(user["user_id"])
+            assert uid in modelled_uids, (
+                f"User {uid} returned in /v1/types/{content_type}/users is not in modelled users"
+            )

@@ -629,3 +629,9 @@ class SarModel(RecommenderModel):
         self.sar.item_frequencies = np.load(dir_path / "item_frequencies.npy")
 
         self._is_fitted = True
+
+    def get_modelled_user_ids(self) -> set[str]:
+        """Return set of user IDs known and modelled by SAR (FIX-55)."""
+        if self._is_fitted and self.sar is not None and hasattr(self.sar, "user2index"):
+            return set(self.sar.user2index.keys())
+        return set()

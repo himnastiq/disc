@@ -806,3 +806,9 @@ class TfidfProfileModel(RecommenderModel):
         self.vectorizer.idf_ = idf
 
         self._is_fitted = True
+
+    def get_modelled_user_ids(self) -> set[str]:
+        """Return set of user IDs with history in TF-IDF profile model (FIX-55)."""
+        if self._is_fitted and hasattr(self, "user_history"):
+            return set(self.user_history.keys())
+        return set()

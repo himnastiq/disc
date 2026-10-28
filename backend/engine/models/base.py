@@ -166,3 +166,7 @@ class RecommenderModel(ABC):
         Args:
             dir_path: Source directory path containing saved model artifacts.
         """
+
+    def get_modelled_user_ids(self) -> set[str]:
+        """Return the set of user IDs known and modelled by this model (FIX-55)."""
+        return set()

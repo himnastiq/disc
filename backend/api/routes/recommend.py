@@ -150,6 +150,13 @@ def get_recommendations(
                 )
                 explanation_errors += 1
                 reason_obj = None
+        elif serving_mode == "popularity":
+            reason_obj = RecommendationReason(
+                kind="popular",
+                item_id=None,
+                text="Popular across all users in the catalog",
+                similarity_score=None,
+            )
 
         results.append(
             ScoredItemResponse(
