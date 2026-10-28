@@ -52,6 +52,10 @@ jobs:
           python tools/progress.py
           git diff --exit-code IMPLEMENTATION_PLAN.md
 
+      - name: Check tracked files hygiene
+        run: |
+          python tools/check_tracked_files.py
+
       - name: Test (pytest)
         run: |
           cd backend
