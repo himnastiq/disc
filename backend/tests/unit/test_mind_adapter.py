@@ -217,3 +217,58 @@ def test_mind_adapter_uninitialized_state_raises_runtime_error(tmp_path: Path) -
         adapter.items()
     with pytest.raises(RuntimeError, match=r"MIND interactions DataFrame is uninitialized"):
         adapter.interactions()
+
+
+def test_mind_adapter_records_dataset_source(articles_spec) -> None:
+    """Task C: MindArticlesAdapter must record dataset_source from loaded files."""
+    fixture_dir = Path(__file__).resolve().parent.parent / "fixtures" / "mind"
+    adapter_fix = MindArticlesAdapter(articles_spec, raw_dir=fixture_dir)
+    adapter_fix.items()
+    assert getattr(adapter_fix, "dataset_source", None) == "fixture"
+
+    real_dir = Path(__file__).resolve().parent.parent.parent.parent / "data" / "raw" / "mind"
+    if (real_dir / "train" / "news.tsv").exists():
+        adapter_real = MindArticlesAdapter(articles_spec, raw_dir=real_dir)
+        adapter_real.load_raw(real_dir)
+        assert getattr(adapter_real, "dataset_source", None) == "mind-small"
+
+
+def test_make_results_banner_and_verdict_derived_from_manifest() -> None:
+    """Task C: make_results must derive SYNTHETIC DEMO banner and No verdict from manifest dataset_source."""
+    import json
+    import sys
+
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from tools.make_results import build_markdown_report
+
+    art_dir = repo_root / "artifacts"
+    movies_metrics = json.loads((art_dir / "movies" / "metrics.json").read_text(encoding="utf-8"))
+    products_metrics = json.loads(
+        (art_dir / "products" / "metrics.json").read_text(encoding="utf-8")
+    )
+    articles_metrics = json.loads(
+        (art_dir / "articles" / "metrics.json").read_text(encoding="utf-8")
+    )
+
+    # Case 1: fixture manifest -> must contain SYNTHETIC DEMO banner and No verdict
+    fixture_manifest = {"dataset_source": "fixture", "dataset_name": "MIND"}
+    md_fixture = build_markdown_report(
+        movies_metrics=movies_metrics,
+        products_metrics=products_metrics,
+        articles_metrics=articles_metrics,
+        articles_manifest=fixture_manifest,
+    )
+    assert "SYNTHETIC DEMO (not MIND)" in md_fixture
+    assert "No verdict (synthetic" in md_fixture
+
+    # Case 2: real source manifest -> must NOT contain SYNTHETIC DEMO banner
+    real_manifest = {"dataset_source": "mind-small", "dataset_name": "MIND"}
+    md_real = build_markdown_report(
+        movies_metrics=movies_metrics,
+        products_metrics=products_metrics,
+        articles_metrics=articles_metrics,
+        articles_manifest=real_manifest,
+    )
+    assert "SYNTHETIC DEMO (not MIND)" not in md_real

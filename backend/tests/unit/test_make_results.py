@@ -212,7 +212,8 @@ def test_articles_provenance_synthetic_banner() -> None:
     p_dict = json.loads((ARTIFACTS_DIR / "products" / "metrics.json").read_text(encoding="utf-8"))
     a_dict = json.loads((ARTIFACTS_DIR / "articles" / "metrics.json").read_text(encoding="utf-8"))
 
-    report = build_markdown_report(m_dict, p_dict, a_dict)
+    fixture_manifest = {"dataset_source": "fixture", "dataset_name": "MIND"}
+    report = build_markdown_report(m_dict, p_dict, a_dict, articles_manifest=fixture_manifest)
 
     # 1. Labelled as SYNTHETIC DEMO (not MIND)
     assert "SYNTHETIC DEMO (not MIND)" in report or "SYNTHETIC FIXTURE (not MIND)" in report
@@ -221,6 +222,12 @@ def test_articles_provenance_synthetic_banner() -> None:
         "**SYNTHETIC DEMO (not MIND):**" in report or "**SYNTHETIC FIXTURE (not MIND):**" in report
     )
     assert "results are not evidence of real-world quality" in report.lower()
+
+    # 3. When real MIND manifest is provided, synthetic banner must NOT appear
+    real_manifest = {"dataset_source": "mind-small", "dataset_name": "MIND"}
+    real_report = build_markdown_report(m_dict, p_dict, a_dict, articles_manifest=real_manifest)
+    assert "SYNTHETIC DEMO (not MIND)" not in real_report
+    assert "SYNTHETIC FIXTURE (not MIND)" not in real_report
 
 
 def test_make_results_status_column_target_met_and_not_met() -> None:
@@ -321,8 +328,15 @@ def test_make_results_minimum_sample_rule_n3_and_n9() -> None:
     articles_metrics = json.loads(
         (ARTIFACTS_DIR / "articles" / "metrics.json").read_text(encoding="utf-8")
     )
+    import copy
 
-    report = build_markdown_report(movies_metrics, products_metrics, articles_metrics)
+    synthetic_articles = copy.deepcopy(articles_metrics)
+    synthetic_articles["protocols"]["impression_ranking"]["evaluated_impressions"] = 9
+    fixture_manifest = {"dataset_source": "fixture", "dataset_name": "MIND"}
+
+    report = build_markdown_report(
+        movies_metrics, products_metrics, synthetic_articles, articles_manifest=fixture_manifest
+    )
     assert "No verdict (synthetic / n=9)" in report
     # Executive summary has 'demo only' for articles
     exec_summary = report.split("## Executive Summary")[1].split("## 1.")[0]

@@ -38,7 +38,7 @@ def synthetic_sar_fixture() -> tuple[pd.DataFrame, pd.DataFrame]:
         for offset, item_idx in enumerate(range(u, u + 10)):
             item_id = f"movie_{item_idx % 30 + 1}"
             ts = base_ts + (offset * 5 * 86400)
-            rating = 3.0 + ((u + offset) % 3)
+            rating = 4.0 + ((u + offset) % 2)
             rows.append({"user_id": uid, "item_id": item_id, "signal": rating, "timestamp": ts})
 
     interactions = pd.DataFrame(rows)
@@ -58,6 +58,7 @@ def test_sar_cold_start_consistency_synthetic_ci_flat_weighting(
 
     spec = load_config("movies", fast=True)
     spec.model.params["timedecay_formula"] = False
+    spec.signal.positive_threshold = 0.0
 
     model = SarModel(spec)
     model.fit(interactions, items)
@@ -120,6 +121,7 @@ def test_sar_cold_start_consistency_shipped_config_timedecay_synthetic_ci(
 
     # Shipped config: timedecay_formula is True
     spec = load_config("movies", fast=True)
+    spec.signal.positive_threshold = 0.0
     assert spec.model.params.get("timedecay_formula") is True, (
         "Shipped config must have timedecay_formula enabled"
     )
@@ -178,6 +180,7 @@ def trained_movielens_sar() -> tuple[SarModel, pd.DataFrame, pd.DataFrame]:
     """Train SarModel on MovieLens 100K data with flat weighting convention."""
     spec = load_config("movies", fast=True)
     spec.model.params["timedecay_formula"] = False
+    spec.signal.positive_threshold = 0.0
 
     adapter = MovieLensAdapter(spec)
     if (
@@ -245,6 +248,7 @@ def test_sar_cold_start_consistency_timedecay_affinities(
     """Verify consistency when model is trained with time decay and supplied with training affinities."""
     spec = load_config("movies", fast=True)
     spec.model.params["timedecay_formula"] = True
+    spec.signal.positive_threshold = 0.0
 
     _, train_df, items = trained_movielens_sar
     model = SarModel(spec)

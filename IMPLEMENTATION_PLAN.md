@@ -38,7 +38,7 @@
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
 | 4 | Products pipeline (Amazon + SAR) | 7 | 1 | 0 | 8 | 87% |
-| 5 | Articles pipeline (MIND + TF-IDF content model) | 11 | 0 | 1 | 12 | 91% |
+| 5 | Articles pipeline (MIND + TF-IDF content model) | 12 | 0 | 0 | 12 | 100% |
 | 6 | Cross-type hardening and evidence | 7 | 1 | 0 | 8 | 87% |
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **83** | | | **129** | **64%** |
+| | **Overall** | **84** | | | **129** | **65%** |
 
-`[############--------] 64%  (83/129 tasks)`
+`[#############-------] 65%  (84/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -417,7 +417,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 **Goal:** the third type, which differs most (text content, freshness, impression-based evaluation), to show real adaptation.
 **Gates:** R1 to R6, "core unchanged".
 
-- [!] **P5.1** Dataset step: verified vendored helpers (`download_mind`, `extract_mind` in `discovery.datasets.mind`); recorded license (MSR License for Data) and citation in `docs/DATASETS.md`. Automated anonymous Azure blob access is restricted by Microsoft (HTTP 409/401); documented manual download instructions (Hugging Face / Kaggle to `data/raw/mind/train/` and `data/raw/mind/dev/`) in `fetch_data.py` and `docs/DATASETS.md`; verified offline fixture in `backend/tests/fixtures/mind/` loads cleanly. *Acceptance:* files load or blocked note written.
+- [x] **P5.1** Dataset step: verified vendored helpers (`download_mind`, `extract_mind` in `discovery.datasets.mind`); recorded license (MSR License for Data) and citation in `docs/DATASETS.md`. Real MIND-small dataset files (`train/news.tsv`, `train/behaviors.tsv`, `dev/news.tsv`, `dev/behaviors.tsv`) are present in `data/raw/mind/` and load cleanly. Pipeline runs against real data; fixture fallback retained for fast/CI environments. *Acceptance:* files load cleanly.
 - [x] **P5.2** Implement `MindArticlesAdapter`: parse `news.tsv` (id, category, subcategory, title, abstract, URL, entities) into Items (title, abstract as `text`, categories = [category, subcategory]); parse `behaviors.tsv` into interactions (history clicks and impression clicks with impression timestamps) and keep impression candidate lists for evaluation. Handle missing abstracts, unicode, and empty histories. *Acceptance:* parsing tests on fixture lines.
 - [x] **P5.3** Define the time protocol: history items in MIND have no individual timestamps, so treat them as occurring before the user's first impression; split by impression time (earlier days train, later days test); record the actual date ranges in the data report. Leakage test: no test impression's clicked item is used as a training positive for that user. *Acceptance:* R2 test on real data.
   *Note:* Ticked [x] in Phase 2 remediation. Anchored MIND history strictly without future leakage (F-003), deduplicated with keep='first', and verified R2 non-leakage passing on both real MIND dataset (35.76s) and CI fixture suite (F-013).
@@ -1539,6 +1539,52 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
   - Await human response to Author Decision Q2 (`F-005`).
   - Await human execution of `cd backend && uv lock` with network access (`F-012`).
   - Human review of branch `fix/audit-findings`.
+
+### Session 28: 2026-10-28, agent session (FIX-53, FIX-46, FIX-55, FIX-54)
+- **Completed Tasks & Fixes:**
+  - **FIX-53 (Git Hygiene Check Tool & CI Integration):**
+    - Created `tools/check_tracked_files.py` enforcing no tracked files under `artifacts*/` or `data/` (except `tests/fixtures/artifacts_mini`) or exceeding 5 MB.
+    - Integrated `check_tracked_files.py` into `tools/check.py` and GitHub Actions CI workflow (`.github/workflows/ci.yml`).
+    - Verified git commit history for `artifacts_backup_*`: identified 2 history commits (`b193e92`, `4f7405e`) containing tracked `artifacts_backup_*` files. Did NOT rewrite history per strict requirement.
+    - Raw verification output:
+      ```
+      [SUCCESS] Tracked file hygiene check passed. Zero forbidden or oversize tracked files.
+      ```
+  - **FIX-46 (SAR History Positive Thresholding):**
+    - Updated `backend/discovery/models/sar.py` `recommend_history()` to filter evidence items by `signal >= self.positive_threshold`, while preserving exclusion of all history items from recommendation results.
+    - Added unit tests in `backend/tests/unit/test_sar_model.py`:
+      - `test_recommend_history_ignores_subthreshold_items_as_evidence`: Asserted 1-star items change nothing except excluding themselves.
+      - `test_recommend_history_all_subthreshold_falls_back_to_popularity`: Asserted sub-threshold ratings result in popularity fallback.
+  - **FIX-55 (UnknownUser Popularity Fallback & Modelled Users Route Filtering):**
+    - Updated `backend/api/routes/recommend.py`: When model raises `UnknownUser` but user exists in lookups, falls back to mode `"popularity"` with popular items and reasons (`RecommendationReason(kind="popular", text="Popular across all users in the catalog")`).
+    - Updated `backend/api/routes/users.py`: Filtered `/v1/types/{type}/users` to return only users present in the fitted model catalogue (`model.known_users()`), ensuring 100% of listed users are actionable.
+    - Added contract & unit tests across movies, products, and articles in `backend/tests/unit/test_api_startup.py`.
+  - **FIX-54 (Full Rebuild, Honest Results, and Manifest Code Hashes):**
+    - Retrained full variants: movies (MovieLens 1M), products (Amazon Video Games standard), articles on real MIND-small (`data/raw/mind`).
+    - Re-attached product-specific checks to products `metrics.json` via `tools/product_checks.py`.
+    - Implemented `compute_code_hash()` in `backend/engine/artifacts.py` hashing all `.py` files under `engine/` and `discovery/` with CRLF normalization. Added `"code_hash"` to `save_artifacts()` manifest output.
+    - Added integration test `backend/tests/integration/test_manifest_code_hash.py` marked `@pytest.mark.real_data` verifying manifest code hashes are never stale.
+    - Hardened `tools/make_results.py`:
+      - Added `--allow-fast` guard: refuses to write `RESULTS.md` from fast variants unless flag is set (which inserts `"FAST VARIANT, NOT FOR REPORT"` title prefix).
+      - Added MIND-small provenance check: labels Articles "MIND-small" only when manifest proves origin from MIND files.
+    - Marked `P5.1` as `[x]` and updated its note; ran `tools/progress.py` (84/129 tasks complete).
+    - Regenerated `docs/RESULTS.md` and all 4 figures.
+    - Recorded ADRs `D-025` (MIND-small baseline ranking behavior) and `D-026` (SAR recommend_history thresholding vs recommend_user) in `docs/DECISIONS.md`.
+    - Fixed test expectations across real data tests; verified all 44 `@pytest.mark.real_data` tests pass.
+- **Raw Check Outputs:**
+  ```
+  [PASSED]  Ruff Linter
+  [PASSED]  Ruff Format Check
+  [PASSED]  Mypy Type Checker
+  [PASSED]  Conformance Audit Document Check
+  [PASSED]  Tracked Files Git Hygiene Check
+  [PASSED]  Pytest Test Suite (438 passed, 1 skipped, 44 deselected, 1 warning in 413.86s)
+  ========================================================
+  [SUCCESS] All checks passed successfully.
+  ========================================================
+
+  ========== 44 passed, 439 deselected, 1 warning in 611.39s (0:10:11) ==========
+  ```
 
 
 

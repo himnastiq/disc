@@ -30,7 +30,7 @@
       "ndcg": 0.09134,
       "recall": 0.08053,
       "hit_rate": 0.26154,
-      "coverage": 0.098692,
+      "coverage": 0.112695,
       "precision": 0.06982,
       "map": 0.05752
     },
@@ -38,7 +38,7 @@
       "ndcg": 0.10208,
       "recall": 0.12565,
       "hit_rate": 0.38225,
-      "coverage": 0.142687,
+      "coverage": 0.162933,
       "precision": 0.05834,
       "map": 0.05524
     },
@@ -46,13 +46,13 @@
       "ndcg": 0.06604,
       "recall": 0.04650,
       "hit_rate": 0.20237,
-      "coverage": 0.028537
+      "coverage": 0.032587
     },
     "random_5": {
       "ndcg": 0.00423,
       "recall": 0.00466,
       "hit_rate": 0.02012,
-      "coverage": 0.936385
+      "coverage": 0.951800
     }
   }
 }

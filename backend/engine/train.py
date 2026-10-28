@@ -283,6 +283,7 @@ def run_pipeline(
         demo_users=demo_users,
         topn=topn_df,
         extra_files=extra_files,
+        dataset_source=getattr(adapter, "dataset_source", None),
     )
 
     log_event(logger, "artifacts_saved", manifest_path=str(manifest_p))

@@ -67,6 +67,33 @@ def compute_file_sha256(file_path: Path) -> str:
     return hasher.hexdigest()
 
 
+def compute_code_hash(backend_dir: Path | None = None) -> str:
+    """Compute deterministic SHA-256 digest over engine/ and discovery/ Python sources.
+
+    All .py files under backend/engine/ and backend/discovery/ are hashed in sorted
+    order of their relative POSIX paths, with normalized LF (\\n) line endings.
+    """
+    if backend_dir is None:
+        backend_dir = Path(__file__).resolve().parents[1]
+    hasher = hashlib.sha256()
+    source_files: list[Path] = []
+    for sub in ("engine", "discovery"):
+        sub_dir = backend_dir / sub
+        if sub_dir.exists():
+            for p in sub_dir.rglob("*.py"):
+                if not any(part.startswith(".") or part == "__pycache__" for part in p.parts):
+                    source_files.append(p)
+    source_files.sort(key=lambda p: p.relative_to(backend_dir).as_posix())
+    for p in source_files:
+        rel_posix = p.relative_to(backend_dir).as_posix()
+        hasher.update(rel_posix.encode("utf-8"))
+        hasher.update(b"\n")
+        raw = p.read_bytes()
+        hasher.update(raw.replace(b"\r\n", b"\n"))
+        hasher.update(b"\n")
+    return hasher.hexdigest()
+
+
 @dataclass
 class LoadedArtifacts:
     """Container for verified, loaded artifacts ready for API serving."""
@@ -91,6 +118,7 @@ def save_artifacts(
     demo_users: list[dict[str, Any]],
     topn: pd.DataFrame | None = None,
     extra_files: dict[str, Any] | None = None,
+    dataset_source: str | None = None,
 ) -> Path:
     """Save pipeline outputs and build a cryptographically signed manifest with SHA-256 checksums.
 
@@ -198,9 +226,11 @@ def save_artifacts(
             "content_type": spec.type,
             "model_name": spec.model.name,
             "config_hash": compute_config_hash(spec),
+            "code_hash": compute_code_hash(),
             "git_sha": get_git_sha(),
             "dataset_variant": spec.dataset.variant,
             "dataset_name": dataset_name,
+            "dataset_source": dataset_source or spec.dataset.variant,
             "section_heading": section_heading,
             "created_at": datetime.now(UTC).isoformat(),
             "files": file_checksums,
