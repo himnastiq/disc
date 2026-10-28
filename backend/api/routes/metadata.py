@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from fastapi import APIRouter, Path, Query, Request
 
-from api.deps import resolve_loaded_artifacts
+from api.deps import resolve_loaded_artifacts, resolve_model
 from api.schemas import (
     AboutResponse,
     DatasetAttribution,
@@ -162,6 +162,8 @@ def get_users_for_type(
 ) -> UsersResponse:
     """Retrieve users for exploration: diverse demo users appear first, followed by sampled users."""
     loaded = resolve_loaded_artifacts(request, type)
+    model = resolve_model(request, type)
+    modelled_users = model.get_modelled_user_ids()
 
     # 1. Process demo users first
     demo_users = loaded.demo_users
@@ -171,11 +173,13 @@ def get_users_for_type(
     persona_clean = persona.strip().lower() if persona else None
 
     for d in demo_users:
+        uid = str(d["user_id"])
+        if modelled_users and uid not in modelled_users:
+            continue
         user_persona = str(d.get("persona", ""))
         if persona_clean and user_persona.lower() != persona_clean:
             continue
 
-        uid = str(d["user_id"])
         demo_ids.add(uid)
         categories = as_str_list(d.get("top_categories", []))
 
@@ -200,6 +204,8 @@ def get_users_for_type(
         for _, row in users_df.iterrows():
             uid = str(row["user_id"])
             if uid in demo_ids:
+                continue
+            if modelled_users and uid not in modelled_users:
                 continue
 
             categories = as_str_list(row.get("top_categories"))
@@ -310,7 +316,7 @@ def get_about() -> AboutResponse:
         title="Discovery Engine",
         version="1.0.0",
         description=(
-            "Adaptive multi-domain recommendation engine serving Movies, Products, and Articles "
+            "Adaptive multi-domain recommendation engine serving multiple content domains "
             "with full auditability, zero deep-learning runtime overhead, and verified ranking integrity."
         ),
         attributions=ATTRIBUTIONS,

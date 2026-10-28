@@ -73,6 +73,8 @@ ALLOWED_PATTERNS = [
     ".gitattributes",
     ".github/*",
     ".github/**/*",
+    "audit/*",
+    "audit/**/*",
 ]
 
 CORE_ENGINE_PREFIXES = [

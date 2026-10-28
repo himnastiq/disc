@@ -50,8 +50,18 @@ def main() -> None:
         ),
         ("Mypy Type Checker", [py, "-m", "mypy", "engine/", "api/"], BACKEND_DIR),
         (
+            "Conformance Audit Document Check",
+            [py, str(REPO_ROOT / "tools" / "check_conformance.py"), "--check"],
+            REPO_ROOT,
+        ),
+        (
+            "Tracked Files Git Hygiene Check",
+            [py, str(REPO_ROOT / "tools" / "check_tracked_files.py")],
+            REPO_ROOT,
+        ),
+        (
             "Pytest Test Suite",
-            [py, "-m", "pytest", "tests/", "-v", "--tb=short"],
+            [py, "-m", "pytest", "tests/", "-v", "--tb=short", "-m", "not real_data"],
             BACKEND_DIR,
         ),
     ]

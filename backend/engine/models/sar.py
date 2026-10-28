@@ -273,25 +273,31 @@ class SarModel(RecommenderModel):
         if not self._is_fitted or self.sar is None:
             raise RuntimeError("Model has not been fitted.")
 
+        exclusions = set(str(x) for x in exclude_ids)
         if not history:
-            return self.popular(k=k, exclude_ids=exclude_ids)
+            return self.popular(k=k, exclude_ids=exclusions)
 
         norm_res = normalize_history(
             history, catalogue=self.catalogue, max_history_length=max_history_length
         )
         if not norm_res.normalized_history:
-            return self.popular(k=k, exclude_ids=exclude_ids)
+            return self.popular(k=k, exclude_ids=exclusions)
 
-        # Build affinity sparse row vector
+        # Still exclude all history items from results (FIX-46)
+        if not self.spec.model.allow_repeat:
+            exclusions.update(item_id for item_id, _ in norm_res.normalized_history)
+
+        # Build affinity sparse row vector using only evidence with signal >= positive_threshold (FIX-46)
+        pos_thresh = float(self.spec.signal.positive_threshold)
         indices = []
         data = []
         for item_id, signal in norm_res.normalized_history:
-            if item_id in self.sar.item2index:
+            if float(signal) >= pos_thresh and item_id in self.sar.item2index:
                 indices.append(self.sar.item2index[item_id])
                 data.append(float(signal))
 
         if not indices:
-            return self.popular(k=k, exclude_ids=exclude_ids)
+            return self.popular(k=k, exclude_ids=exclusions)
 
         affinity_vec = sparse.csr_matrix(
             (data, ([0] * len(indices), indices)),
@@ -299,10 +305,6 @@ class SarModel(RecommenderModel):
         )
 
         raw_scores = affinity_vec.dot(self.sar.item_similarity)
-
-        exclusions = set(str(x) for x in exclude_ids)
-        if not self.spec.model.allow_repeat:
-            exclusions.update(item_id for item_id, _ in norm_res.normalized_history)
 
         candidates: list[tuple[float, str]] = []
         if isinstance(raw_scores, sparse.spmatrix):
@@ -627,3 +629,9 @@ class SarModel(RecommenderModel):
         self.sar.item_frequencies = np.load(dir_path / "item_frequencies.npy")
 
         self._is_fitted = True
+
+    def get_modelled_user_ids(self) -> set[str]:
+        """Return set of user IDs known and modelled by SAR (FIX-55)."""
+        if self._is_fitted and self.sar is not None and hasattr(self.sar, "user2index"):
+            return set(self.sar.user2index.keys())
+        return set()

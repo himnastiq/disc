@@ -124,7 +124,7 @@ def run_pipeline(
     """Execute end-to-end training and evaluation pipeline for a content type.
 
     Args:
-        content_type: Slug of content type (e.g. 'movies', 'toy').
+        content_type: Slug of content type (e.g. 'media', 'toy').
         fast: Whether to apply fast developer overrides.
         seed: Optional explicit random seed.
         artifacts_dir: Optional custom artifact output root directory.
@@ -164,9 +164,12 @@ def run_pipeline(
     # 3. Split interactions into train, valid, test via adapter
     train_df, valid_df, test_df = adapter.split(interactions)
 
-    # Filter items catalogue to items present in the split
+    # Filter items catalogue and interactions to items present in the split
     all_split_items = set(train_df["item_id"]).union(valid_df["item_id"]).union(test_df["item_id"])
     items = items[items["item_id"].isin(all_split_items)].reset_index(drop=True)
+    interactions = interactions[interactions["item_id"].isin(all_split_items)].reset_index(
+        drop=True
+    )
 
     extra_files: dict[str, Any] = {"data_report.json": report.model_dump()}
 
@@ -210,7 +213,7 @@ def run_pipeline(
 
     # 6. Run evaluation harness across baselines and primary model
     if (
-        content_type == "articles"
+        spec.evaluation.protocol == "dual_protocol"
         and hasattr(adapter, "impression_candidates")
         and adapter.impression_candidates
     ):
@@ -225,7 +228,7 @@ def run_pipeline(
             "random": rand_model,
             spec.model.name: primary_model,
         }
-        max_test = 50 if fast else 200
+        max_test = spec.evaluation.max_test_users
         metrics = run_articles_dual_protocol_eval(
             spec=spec,
             train_df=train_df,
@@ -239,7 +242,7 @@ def run_pipeline(
         )
     else:
         harness = EvaluationHarness(spec, models=eval_models)
-        max_test = 2000 if content_type in ("movies", "products") else (50 if fast else 200)
+        max_test = spec.evaluation.max_test_users
         metrics = harness.run(
             interactions=interactions,
             items=items,
@@ -280,6 +283,7 @@ def run_pipeline(
         demo_users=demo_users,
         topn=topn_df,
         extra_files=extra_files,
+        dataset_source=getattr(adapter, "dataset_source", None),
     )
 
     log_event(logger, "artifacts_saved", manifest_path=str(manifest_p))
@@ -336,7 +340,7 @@ def main() -> None:
     parser.add_argument(
         "--type",
         required=True,
-        help="Content type identifier (e.g. movies, products, articles, toy)",
+        help="Content type identifier slug corresponding to a YAML configuration in configs dir",
     )
     parser.add_argument(
         "--fast",

@@ -2,7 +2,7 @@
   "artifact_schema_version": "1.0.0",
   "content_type": "movies",
   "model_name": "sar",
-  "config_hash": "55c1687b58cd045945119067dd85cf400064c4a6cec86080c160c053af65864c",
+  "config_hash": "aba30eafec89931706cdac54d32aaf8be0a5d5a15c31802f22d3fe24d1cdfa30",
   "git_sha": "0f7028b911dbe2169b1fa0c483927ea5262f709f",
   "dataset_variant": "100k",
   "dataset_name": "MovieLens 100k",
@@ -21,5 +21,6 @@
     "model/user_affinity.npz": "6cc47c2ff64b6987cf7e040ec972969337089d90f20e9e2e5039c106ba98282c",
     "topn.parquet": "31388fc25701462b19d0966196ec6741a895f921a86fb6c36a53ab5fa884dfd6",
     "users.parquet": "8a3e34257c928195cfad07cc7be359b1914fec93b3313832d502a0edb9605c56"
-  }
+  },
+  "code_hash": "b7c37d8d4fa4f89abe09f2dffd3dc76543d6349835e1287753e2280ed65df45b"
 }

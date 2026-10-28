@@ -500,7 +500,15 @@ def build_mini_articles(out_dir: Path) -> None:
     }
 
     save_artifacts(
-        out_dir, spec, items_df, inter_df, users_df, metrics_dict, demo_users, topn=topn_df
+        out_dir,
+        spec,
+        items_df,
+        inter_df,
+        users_df,
+        metrics_dict,
+        demo_users,
+        topn=topn_df,
+        dataset_source="fixture",
     )
     verify_artifacts(out_dir)
     print(f"Articles mini artifacts built successfully at {out_dir}")

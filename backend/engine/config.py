@@ -88,7 +88,7 @@ def load_config(
     """Load, validate, optionally override, and return a ContentTypeSpec.
 
     Args:
-        path_or_type: File path or content type identifier (e.g. 'movies').
+        path_or_type: File path or content type identifier (e.g. 'media').
         fast: If True, applies faster settings (smaller dataset variants).
         configs_dir: Optional custom directory to look for config YAMLs.
 

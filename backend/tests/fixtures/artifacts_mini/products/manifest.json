@@ -2,7 +2,7 @@
   "artifact_schema_version": "1.0.0",
   "content_type": "products",
   "model_name": "sar",
-  "config_hash": "44b22b38d2f584951653505936bce14bd52f13b6eed8f37e434fac3a8635d649",
+  "config_hash": "685369e8aa58ce0e15f594326ef586d1e1a9b501ecc80088e250008e55e600b7",
   "git_sha": "0f7028b911dbe2169b1fa0c483927ea5262f709f",
   "dataset_variant": "instruments",
   "dataset_name": "Amazon Instruments",
@@ -21,5 +21,6 @@
     "model/user_affinity.npz": "4d04ed676b5b1a1d84b11ccc77bc14f96fa946fa3e83a897c7b63b865e60fc47",
     "topn.parquet": "38bc4935f077cb21ef2d5afdee18d3892d6672359c9cc0d5d2e7e5e9fa191871",
     "users.parquet": "aa7bed691435c4052543c0e3aaf4e3643a55ec07c9b3456c5c571ecad616861e"
-  }
+  },
+  "code_hash": "b7c37d8d4fa4f89abe09f2dffd3dc76543d6349835e1287753e2280ed65df45b"
 }

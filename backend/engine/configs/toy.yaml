@@ -5,6 +5,7 @@ test_only: true
 dataset:
   adapter: toy
   variant: "default"
+  display_name: "Toy Dataset"
   min_user_interactions: 3
   min_item_interactions: 3
 signal:
@@ -23,6 +24,8 @@ evaluation:
   k: [5, 10]
   cold_start_history_sizes: [0, 1, 3, 5]
   baselines: [popularity, random]
+  protocol: standard
+  max_test_users: 50
 serving:
   top_neighbors_per_item: 10
   max_items_in_similarity: 100

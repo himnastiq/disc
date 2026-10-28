@@ -357,6 +357,26 @@ def run_benchmark(
         RESULTS_MD_PATH.write_text(new_content, encoding="utf-8")
         print(f"\n[SUCCESS] Appended performance benchmark results to {RESULTS_MD_PATH}")
 
+    if append_to_results:
+        import json
+
+        json_path = REPO_ROOT / "docs" / "benchmark_results.json"
+        json_payload = {
+            "timestamp": time.time(),
+            "target_p95_ms": TARGET_P95_MS,
+            "summary": {
+                "p50_topn_ms": p50_topn,
+                "p95_topn_ms": p95_topn,
+                "p95_cold_ms": p95_cold,
+                "worst_p95_ms": worst_p95,
+                "peak_rss_mb": rss_peak,
+                "all_passed": all(r["meets_budget"] for r in results),
+            },
+            "endpoints": results,
+        }
+        json_path.write_text(json.dumps(json_payload, indent=2), encoding="utf-8")
+        print(f"[SUCCESS] Wrote benchmark JSON results to {json_path}")
+
     return results
 
 

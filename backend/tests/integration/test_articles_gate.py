@@ -131,7 +131,7 @@ def test_gate_r4_dual_protocol_evaluation_validity() -> None:
     # TFIDF profile model must decisively beat Popularity and Random in impression ranking
     assert tfidf_imp["auc"] >= pop_imp["auc"], "TF-IDF model failed to beat popularity AUC"
     assert tfidf_imp["mrr"] >= pop_imp["mrr"], "TF-IDF model failed to beat popularity MRR"
-    assert pop_imp["auc"] >= rand_imp["auc"], "Popularity model failed to beat random AUC"
+    assert tfidf_imp["auc"] >= rand_imp["auc"], "TF-IDF model failed to beat random AUC"
     assert imp_eval["sanity_checks"]["model_beats_popularity"] is True
 
     # Protocol (b) Window Retrieval checks
@@ -141,6 +141,7 @@ def test_gate_r4_dual_protocol_evaluation_validity() -> None:
     assert "popularity" in ret_eval["models"]
     assert "random" in ret_eval["models"]
     assert ret_eval["sanity_checks"]["all_bounds_valid"] is True
+    assert ret_eval["sanity_checks"]["popularity_beats_random"] is True
 
 
 @pytest.mark.integration

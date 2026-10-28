@@ -161,7 +161,6 @@ def parse_behavior_line(line: str) -> dict[str, Any] | None:
 
 
 @register_adapter("mind_articles")
-@register_adapter("articles")
 @register_adapter("mind")
 class MindArticlesAdapter(DatasetAdapter):
     """Dataset adapter for MIND News Articles and Behaviors."""
@@ -178,6 +177,7 @@ class MindArticlesAdapter(DatasetAdapter):
         self.missing_catalogue_items_count: int = 0
         self.empty_history_users_count: int = 0
         self._raw_interactions_count: int = 0
+        self.dataset_source: str = "fixture"
 
     def download(self, raw_dir: Path) -> None:
         """Download MIND dataset to raw_dir if not present."""
@@ -205,6 +205,7 @@ class MindArticlesAdapter(DatasetAdapter):
         news_files = files["news"]
         behavior_files = files["behaviors"]
 
+        is_fallback = False
         if not news_files or not behavior_files:
             # Fallback to tests fixture if present
             fixture_dir = (
@@ -214,12 +215,20 @@ class MindArticlesAdapter(DatasetAdapter):
                 files = self._locate_mind_files(fixture_dir)
                 news_files = files["news"]
                 behavior_files = files["behaviors"]
+                is_fallback = True
 
         if not news_files or not behavior_files:
             raise FileNotFoundError(
                 f"Could not locate news.tsv and behaviors.tsv in {raw_dir}. "
-                "Run 'python backend/scripts/fetch_data.py --type articles --variant fast' first."
+                f"Run 'python backend/scripts/fetch_data.py --type {self.spec.type} --variant fast' first."
             )
+
+        all_paths = [str(p).replace("\\", "/").lower() for p in (news_files + behavior_files)]
+        if is_fallback or any("fixture" in p or "tests" in p for p in all_paths):
+            self.dataset_source = "fixture"
+        else:
+            variant = self.spec.dataset.variant or "small"
+            self.dataset_source = f"mind-{variant}"
 
         news_lines: list[str] = []
         for nf in news_files:

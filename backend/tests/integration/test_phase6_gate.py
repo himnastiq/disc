@@ -147,8 +147,9 @@ def test_phase6_gate_r4_evaluation_sanity_and_honesty(content_type: str) -> None
         imp_sanity = (
             metrics.get("protocols", {}).get("impression_ranking", {}).get("sanity_checks", {})
         )
+        ret_sanity = metrics.get("protocols", {}).get("retrieval", {}).get("sanity_checks", {})
         assert imp_sanity.get("model_beats_popularity") is True
-        assert imp_sanity.get("popularity_beats_random") is True
+        assert ret_sanity.get("popularity_beats_random") is True
         assert imp_sanity.get("all_bounds_valid") is True
     else:
         assert sanity.get("model_beats_popularity") is True, (

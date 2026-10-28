@@ -8,9 +8,9 @@
 
 | Content Type | Dataset Variant | Git Commit | Config Hash | Seed | Evaluation Protocol |
 |---|---|---|---|---|---|
-| **Movies** | `100k` | `1f4e5fc` | `463a4974` | `42` | Chronological per-user split (80/20) |
-| **Products** | `instruments` | `1f4e5fc` | `94853c7c` | `42` | Chronological per-user split (budget-capped) |
-| **Articles** | `small` | `1f4e5fc` | `b9ac2896` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
+| **Movies** | `1m` | `51c4c00` | `5611260f` | `42` | Chronological per-user split (80/20) |
+| **Products** | `video_games` | `51c4c00` | `1bdea414` | `42` | Chronological per-user split (budget-capped) |
+| **Articles** | `MIND-small` | `0545473` | `cb44f1bf` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
 
 ---
 
@@ -18,65 +18,72 @@
 
 Discovery Engine unifies three fundamentally disparate recommendation regimes under a single extensible architecture:
 
-1. **Movies (Collaborative Filtering)**: Evaluated on MovieLens 100k (99,723 interactions, 845 test users). Coverage ratio SAR/Popularity is 3.2x. NDCG@10: 0.1021 [0.0913, 0.1147] vs Popularity 0.0726 [0.0635, 0.0819] (Model better (CIs separate)). Recall@10: 0.1257 [0.1104, 0.1408] vs Popularity 0.0803 [0.0704, 0.0906] (Model better (CIs separate)).
-2. **Products (E-Commerce)**: Evaluated on Amazon Instruments (10,261 interactions, 1,222 test users). HitRate@10: 0.1309 [0.1105, 0.1514] vs Popularity 0.0802 [0.0646, 0.0949] (Model better (CIs separate)). NDCG@10: 0.0687 [0.0569, 0.0797] vs Popularity 0.0471 [0.0378, 0.0571] (No significant difference (CIs overlap)).
-3. **Articles (Content & Recency)**: Evaluated on MIND (demo only; n=100 impressions). No verdict (synthetic / n=100); numbers excluded from Executive Summary as demo only.
+1. **Movies (Collaborative Filtering)**: Evaluated on MovieLens 1M (999,611 interactions, 1,918 test users). Coverage ratio SAR/Popularity is 5.7x. NDCG@10: 0.0592 [0.0541, 0.0644] vs Popularity 0.0546 [0.0492, 0.0606] (No significant difference (CIs overlap)). Recall@10: 0.0645 [0.0577, 0.0716] vs Popularity 0.0445 [0.0389, 0.0494] (Model better (CIs separate)).
+2. **Products (E-Commerce)**: Evaluated on Amazon Video Games (215,123 interactions, 1,524 test users). HitRate@10: 0.0938 [0.0794, 0.1096] vs Popularity 0.0348 [0.0262, 0.0446] (Model better (CIs separate)). NDCG@10: 0.0510 [0.0420, 0.0602] vs Popularity 0.0163 [0.0113, 0.0211] (Model better (CIs separate)).
+3. **Articles (Content & Recency)**: Evaluated on MIND (500 impressions). Impression AUC: 0.5714 [0.5480, 0.5960] vs Popularity 0.4811 [0.4631, 0.5004] (Model better (CIs separate)). Impression MRR: 0.2970 [0.2701, 0.3235] vs Popularity 0.2300 [0.2049, 0.2545] (Model better (CIs separate)).
 
 ![Cross-Domain Recommendation Performance](figures/ranking_comparison.png)
 
 ---
 
-## 1. Movies (MovieLens 100k + SAR)
+## 1. Movies (MovieLens 1M + SAR)
 
 Evaluated using identical candidate retrieval pool against positive holdout ratings ($\ge 4.0$).
 
 | Metric @ K | Random Baseline | Popularity Baseline (95% CI) | SAR (Personalised, 95% CI) | Gain vs Popularity | Statistical Verdict |
 |---|---|---|---|---|---|
-| **HitRate@5** | 0.0154 | 0.2024 [0.1763, 0.2284] | **0.2615 [0.2360, 0.2911]** | **+29.2%** | Model better (CIs separate) |
-| **NDCG@5** | 0.0032 | 0.0660 [0.0559, 0.0761] | **0.0913 [0.0774, 0.1043]** | **+38.3%** | Model better (CIs separate) |
-| **Recall@5** | 0.0021 | 0.0465 [0.0372, 0.0565] | **0.0805 [0.0689, 0.0929]** | **+73.2%** | Model better (CIs separate) |
-| **Precision@5** | 0.0033 | 0.0544 [0.0464, 0.0631] | **0.0698 [0.0605, 0.0786]** | **+28.3%** | No significant difference (CIs overlap) |
-| **HitRate@10** | 0.0391 | 0.3148 [0.2864, 0.3474] | **0.3822 [0.3491, 0.4148]** | **+21.4%** | Model better (CIs separate) |
-| **NDCG@10** | 0.0045 | 0.0726 [0.0635, 0.0819] | **0.1021 [0.0913, 0.1147]** | **+40.5%** | Model better (CIs separate) |
-| **Recall@10** | 0.0056 | 0.0803 [0.0704, 0.0906] | **0.1257 [0.1104, 0.1408]** | **+56.6%** | Model better (CIs separate) |
-| **Precision@10** | 0.0040 | 0.0460 [0.0408, 0.0512] | **0.0583 [0.0527, 0.0643]** | **+26.7%** | Model better (CIs separate) |
-| **HitRate@20** | 0.0698 | 0.4355 [0.4012, 0.4698] | **0.5278 [0.4970, 0.5604]** | **+21.2%** | Model better (CIs separate) |
-| **NDCG@20** | 0.0066 | 0.0915 [0.0828, 0.1020] | **0.1264 [0.1138, 0.1377]** | **+38.1%** | Model better (CIs separate) |
-| **Recall@20** | 0.0108 | 0.1363 [0.1230, 0.1509] | **0.2003 [0.1812, 0.2192]** | **+47.0%** | Model better (CIs separate) |
-| **Precision@20** | 0.0038 | 0.0388 [0.0346, 0.0427] | **0.0472 [0.0431, 0.0515]** | **+21.6%** | Model better (CIs separate) |
+| **HitRate@5** | 0.0156 | 0.1736 [0.1569, 0.1927] | **0.1804 [0.1632, 0.1966]** | **+3.9%** | No significant difference (CIs overlap) |
+| **NDCG@5** | 0.0031 | 0.0545 [0.0484, 0.0612] | **0.0517 [0.0455, 0.0577]** | **-5.2%** | No significant difference (CIs overlap) |
+| **Recall@5** | 0.0016 | 0.0264 [0.0229, 0.0306] | **0.0367 [0.0314, 0.0418]** | **+38.8%** | Model better (CIs separate) |
+| **Precision@5** | 0.0032 | 0.0484 [0.0429, 0.0539] | **0.0459 [0.0409, 0.0508]** | **-5.2%** | No significant difference (CIs overlap) |
+| **HitRate@10** | 0.0292 | 0.2487 [0.2289, 0.2677] | **0.2826 [0.2625, 0.3011]** | **+13.6%** | No significant difference (CIs overlap) |
+| **NDCG@10** | 0.0034 | 0.0546 [0.0492, 0.0606] | **0.0592 [0.0541, 0.0644]** | **+8.4%** | No significant difference (CIs overlap) |
+| **Recall@10** | 0.0031 | 0.0445 [0.0389, 0.0494] | **0.0645 [0.0577, 0.0716]** | **+44.9%** | Model better (CIs separate) |
+| **Precision@10** | 0.0030 | 0.0418 [0.0380, 0.0459] | **0.0413 [0.0381, 0.0447]** | **-1.1%** | No significant difference (CIs overlap) |
+| **HitRate@20** | 0.0527 | 0.3785 [0.3592, 0.4002] | **0.4234 [0.4004, 0.4468]** | **+11.8%** | Model better (CIs separate) |
+| **NDCG@20** | 0.0044 | 0.0663 [0.0612, 0.0721] | **0.0736 [0.0684, 0.0791]** | **+11.0%** | No significant difference (CIs overlap) |
+| **Recall@20** | 0.0060 | 0.0860 [0.0790, 0.0936] | **0.1070 [0.0989, 0.1155]** | **+24.5%** | Model better (CIs separate) |
+| **Precision@20** | 0.0029 | 0.0375 [0.0351, 0.0403] | **0.0368 [0.0346, 0.0393]** | **-2.0%** | No significant difference (CIs overlap) |
 
-- **Sanity Check (Model > Popularity):** `Passed`
+- **Sanity Check (Model > Popularity):** `Mixed: model below Popularity on ndcg@5, precision@5, precision@10, precision@20`
 - **Sanity Check (Popularity > Random):** `Passed`
 - **Sanity Check (Bounds Valid):** `Passed`
 
 ---
 
-## 2. Products (Amazon Instruments + SAR)
+## 2. Products (Amazon Video Games + SAR)
 
 Evaluated on sparse verified purchase ratings under budget-capped SAR similarity.
 
 | Metric @ K | Random Baseline | Popularity Baseline (95% CI) | SAR (Personalised, 95% CI) | Gain vs Popularity | Statistical Verdict |
 |---|---|---|---|---|---|
-| **HitRate@5** | 0.0049 | 0.0589 [0.0466, 0.0728] | **0.0908 [0.0753, 0.1085]** | **+54.2%** | Model better (CIs separate) |
-| **NDCG@5** | 0.0028 | 0.0404 [0.0309, 0.0504] | **0.0562 [0.0453, 0.0676]** | **+39.1%** | No significant difference (CIs overlap) |
-| **Recall@5** | 0.0049 | 0.0585 [0.0458, 0.0726] | **0.0891 [0.0753, 0.1057]** | **+52.2%** | Model better (CIs separate) |
-| **Precision@5** | 0.0010 | 0.0120 [0.0095, 0.0150] | **0.0182 [0.0149, 0.0216]** | **+52.1%** | No significant difference (CIs overlap) |
-| **HitRate@10** | 0.0106 | 0.0802 [0.0646, 0.0949] | **0.1309 [0.1105, 0.1514]** | **+63.3%** | Model better (CIs separate) |
-| **NDCG@10** | 0.0047 | 0.0471 [0.0378, 0.0571] | **0.0687 [0.0569, 0.0797]** | **+46.0%** | No significant difference (CIs overlap) |
-| **Recall@10** | 0.0106 | 0.0786 [0.0651, 0.0948] | **0.1274 [0.1095, 0.1455]** | **+62.2%** | Model better (CIs separate) |
-| **Precision@10** | 0.0011 | 0.0081 [0.0066, 0.0097] | **0.0132 [0.0114, 0.0151]** | **+62.7%** | Model better (CIs separate) |
-| **HitRate@20** | 0.0180 | 0.1236 [0.1056, 0.1399] | **0.1743 [0.1542, 0.1956]** | **+41.1%** | Model better (CIs separate) |
-| **NDCG@20** | 0.0065 | 0.0578 [0.0473, 0.0681] | **0.0795 [0.0688, 0.0907]** | **+37.6%** | Model better (CIs separate) |
-| **Recall@20** | 0.0180 | 0.1204 [0.1035, 0.1396] | **0.1702 [0.1524, 0.1912]** | **+41.3%** | Model better (CIs separate) |
-| **Precision@20** | 0.0009 | 0.0063 [0.0054, 0.0072] | **0.0088 [0.0079, 0.0098]** | **+40.6%** | Model better (CIs separate) |
+| **HitRate@5** | 0.0007 | 0.0203 [0.0134, 0.0272] | **0.0623 [0.0512, 0.0755]** | **+206.5%** | Model better (CIs separate) |
+| **NDCG@5** | 0.0003 | 0.0119 [0.0080, 0.0167] | **0.0413 [0.0331, 0.0501]** | **+245.8%** | Model better (CIs separate) |
+| **Recall@5** | 0.0007 | 0.0177 [0.0115, 0.0243] | **0.0591 [0.0490, 0.0716]** | **+234.4%** | Model better (CIs separate) |
+| **Precision@5** | 0.0001 | 0.0041 [0.0026, 0.0056] | **0.0125 [0.0101, 0.0148]** | **+206.4%** | Model better (CIs separate) |
+| **HitRate@10** | 0.0026 | 0.0348 [0.0262, 0.0446] | **0.0938 [0.0794, 0.1096]** | **+169.8%** | Model better (CIs separate) |
+| **NDCG@10** | 0.0009 | 0.0163 [0.0113, 0.0211] | **0.0510 [0.0420, 0.0602]** | **+213.7%** | Model better (CIs separate) |
+| **Recall@10** | 0.0026 | 0.0310 [0.0231, 0.0408] | **0.0892 [0.0762, 0.1033]** | **+188.0%** | Model better (CIs separate) |
+| **Precision@10** | 0.0003 | 0.0035 [0.0026, 0.0044] | **0.0094 [0.0079, 0.0109]** | **+169.5%** | Model better (CIs separate) |
+| **HitRate@20** | 0.0066 | 0.0492 [0.0381, 0.0597] | **0.1365 [0.1184, 0.1539]** | **+177.3%** | Model better (CIs separate) |
+| **NDCG@20** | 0.0018 | 0.0197 [0.0148, 0.0246] | **0.0614 [0.0532, 0.0713]** | **+212.4%** | Model better (CIs separate) |
+| **Recall@20** | 0.0062 | 0.0444 [0.0338, 0.0540] | **0.1301 [0.1127, 0.1481]** | **+193.2%** | Model better (CIs separate) |
+| **Precision@20** | 0.0003 | 0.0025 [0.0019, 0.0030] | **0.0069 [0.0060, 0.0077]** | **+175.5%** | Model better (CIs separate) |
 
 - **Sanity Check (Model > Popularity):** `Passed`
+### Product-Specific Robustness Checks
+
+| Check | Measured Value | Target / Baseline | Status |
+|---|---|---|---|
+| **Sparse User Share (<= 5 ratings)** | `38.3%` (9302/24303 users) | Informative metric | Verified |
+| **Long-Tail Volume Share** | `42.5%` (6400/8000 items) | Informative baseline (catalog tail) | Verified |
+| **Long-Tail Rec Share @ 10** | `55.8%` of recommended items | > 5% tail exploration | Verified |
+| **Category Diversity @ 10** | `10.44` unique categories/user | Min: `3`, Max: `25` | Verified |
+| **Similar Alternatives Spot-Check** | `100.0%` shared categories | Target > 60% | Verified |
+
 ---
 
 ## 3. Articles (MIND + TF-IDF Content Model)
-
-> [!WARNING]
-> **SYNTHETIC DEMO (not MIND):** These evaluation artifacts were generated using synthetic offline fixture data (`backend/tests/fixtures/mind/`) because real MIND dataset files were unavailable during automated download. **These results are not evidence of real-world quality.** Real benchmark evaluation will be conducted once MIND dataset files are placed in `data/raw/mind/`.
 
 Evaluated using a rigorous **Dual-Protocol Architecture** tailored for news consumption:
 
@@ -85,27 +92,27 @@ Ranks candidates within each impression log (1 positive click amongst negative i
 
 | Model | AUC (95% CI) | MRR (95% CI) | nDCG@5 (95% CI) | nDCG@10 (95% CI) | Statistical Verdict (vs Pop) |
 |---|---|---|---|---|---|
-| **Random** | `0.5397 [0.4870, 0.6045]` | `0.2495 [0.1953, 0.3142]` | `0.2247 [0.1660, 0.2926]` | `0.3026 [0.2450, 0.3653]` | No verdict (synthetic / n=100) |
-| **Popularity** | `0.4689 [0.4243, 0.5179]` | `0.2212 [0.1756, 0.2731]` | `0.2202 [0.1643, 0.2816]` | `0.2698 [0.2133, 0.3283]` | Baseline |
-| **TF-IDF Profile** | **`0.5544 [0.4995, 0.6128]`** | **`0.3148 [0.2572, 0.3862]`** | **`0.2801 [0.2254, 0.3518]`** | **`0.3412 [0.2912, 0.4085]`** | No verdict (synthetic / n=100) |
+| **Random** | `0.5222 [0.4944, 0.5488]` | `0.2365 [0.2119, 0.2625]` | `0.2143 [0.1866, 0.2439]` | `0.2835 [0.2568, 0.3099]` | No significant difference (CIs overlap) |
+| **Popularity** | `0.4811 [0.4631, 0.5004]` | `0.2300 [0.2049, 0.2545]` | `0.2129 [0.1843, 0.2400]` | `0.2655 [0.2386, 0.2915]` | Baseline |
+| **TF-IDF Profile** | **`0.5714 [0.5480, 0.5960]`** | **`0.2970 [0.2701, 0.3235]`** | **`0.2730 [0.2432, 0.3026]`** | **`0.3401 [0.3121, 0.3678]`** | Model better (CIs separate) |
 
 ### Protocol (b): 24h Recency Window Candidate Retrieval
 Ranks candidate pool strictly restricted to articles published/clicked within the active 24h recency window.
 
 | Metric @ K | Random Baseline | Popularity Baseline (95% CI) | TF-IDF Profile (95% CI) | Gain vs Popularity | Statistical Verdict |
 |---|---|---|---|---|---|
-| **HitRate@5** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0000 [0.0000, 0.0000]** | **N/A** | No verdict (synthetic / n=100) |
-| **NDCG@5** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0000 [0.0000, 0.0000]** | **N/A** | No verdict (synthetic / n=100) |
-| **Recall@5** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0000 [0.0000, 0.0000]** | **N/A** | No verdict (synthetic / n=100) |
-| **Precision@5** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0000 [0.0000, 0.0000]** | **N/A** | No verdict (synthetic / n=100) |
-| **HitRate@10** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0200 [0.0000, 0.0600]** | **N/A** | No verdict (synthetic / n=100) |
-| **NDCG@10** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0063 [0.0000, 0.0189]** | **N/A** | No verdict (synthetic / n=100) |
-| **Recall@10** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0200 [0.0000, 0.0600]** | **N/A** | No verdict (synthetic / n=100) |
-| **Precision@10** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0020 [0.0000, 0.0060]** | **N/A** | No verdict (synthetic / n=100) |
-| **HitRate@20** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0200 [0.0000, 0.0600]** | **N/A** | No verdict (synthetic / n=100) |
-| **NDCG@20** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0063 [0.0000, 0.0189]** | **N/A** | No verdict (synthetic / n=100) |
-| **Recall@20** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0200 [0.0000, 0.0600]** | **N/A** | No verdict (synthetic / n=100) |
-| **Precision@20** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0010 [0.0000, 0.0030]** | **N/A** | No verdict (synthetic / n=100) |
+| **HitRate@5** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0050 [0.0000, 0.0150]** | **N/A** | No significant difference (CIs overlap) |
+| **NDCG@5** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0022 [0.0000, 0.0065]** | **N/A** | No significant difference (CIs overlap) |
+| **Recall@5** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0050 [0.0000, 0.0150]** | **N/A** | No significant difference (CIs overlap) |
+| **Precision@5** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0010 [0.0000, 0.0030]** | **N/A** | No significant difference (CIs overlap) |
+| **HitRate@10** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0100 [0.0000, 0.0250]** | **N/A** | No significant difference (CIs overlap) |
+| **NDCG@10** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0027 [0.0000, 0.0082]** | **N/A** | No significant difference (CIs overlap) |
+| **Recall@10** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0060 [0.0000, 0.0170]** | **N/A** | No significant difference (CIs overlap) |
+| **Precision@10** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0010 [0.0000, 0.0025]** | **N/A** | No significant difference (CIs overlap) |
+| **HitRate@20** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0100 [0.0000, 0.0250]** | **N/A** | No significant difference (CIs overlap) |
+| **NDCG@20** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0027 [0.0000, 0.0082]** | **N/A** | No significant difference (CIs overlap) |
+| **Recall@20** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0060 [0.0000, 0.0170]** | **N/A** | No significant difference (CIs overlap) |
+| **Precision@20** | 0.0000 | 0.0000 [0.0000, 0.0000] | **0.0005 [0.0000, 0.0013]** | **N/A** | No significant difference (CIs overlap) |
 
 ![News Articles Dual Protocol](figures/articles_protocols.png)
 
@@ -118,10 +125,13 @@ At $k=0$ likes, all models safely fall back to popularity.
 
 | History Size (Likes) | Movies Recall@10 | Movies NDCG@10 | Products HitRate@10 | Products NDCG@10 | Articles HitRate@10 | Articles NDCG@10 |
 |---|---|---|---|---|---|---|
-| **0 likes** | `0.0385` | `0.0319` | `0.0769` | `0.0769` | `0.0000` | `0.0000` |
-| **1 likes** | `0.0528` | `0.0532` | `0.0000` | `0.0000` | `0.0000` | `0.0000` |
-| **3 likes** | `0.0843` | `0.0689` | `0.0769` | `0.0274` | `0.0000` | `0.0000` |
-| **5 likes** | `0.0774` | `0.0600` | `0.0769` | `0.0485` | `0.0000` | `0.0000` |
+| **0 likes** | `0.0465` | `0.0642` | `0.0244` | `0.0077` | `0.0000` | `0.0000` |
+| **1 likes** | `0.0241` | `0.0293` | `0.0488` | `0.0195` | `0.0200` | `0.0126` |
+| **2 likes** | `0.0373` | `0.0431` | `0.0732` | `0.0396` | `0.0200` | `0.0077` |
+| **3 likes** | `0.0325` | `0.0436` | `0.0488` | `0.0158` | `0.0200` | `0.0077` |
+| **5 likes** | `0.0377` | `0.0527` | `0.1220` | `0.0639` | `0.0200` | `0.0077` |
+| **10 likes** | `0.0518` | `0.0627` | `0.1220` | `0.0764` | `0.0200` | `0.0077` |
+| **20 likes** | `0.0600` | `0.0786` | `0.1220` | `0.0764` | `0.0400` | `0.0139` |
 
 ![Cold Start Curves](figures/cold_start_curves.png)
 
@@ -134,15 +144,15 @@ all recommendations on a microscopic sliver of the catalogue (< 2% coverage).
 
 | Content Type | Model | Coverage@10 | Intra-List Diversity@10 | Novelty@10 (bits) | Personalisation@10 |
 |---|---|---|---|---|---|
-| **Movies** | Random | `0.9980` | `0.8260` | `11.94` bits | `0.9963` |
-| **Movies** | Popularity | `0.0516` | `0.7893` | `7.79` bits | `0.7048` |
-| **Movies** | Personalised (sar) | `0.1629` | `0.8183` | `8.27` bits | `0.9250` |
-| **Products** | Random | `1.0000` | `0.7627` | `10.25` bits | `0.9942` |
-| **Products** | Popularity | `0.0211` | `0.4883` | `6.78` bits | `0.1727` |
-| **Products** | Personalised (sar) | `0.5822` | `0.5814` | `7.59` bits | `0.8281` |
-| **Articles** | Random | `0.0094` | `0.9157` | `18.04` bits | `0.9999` |
-| **Articles** | Popularity | `0.0003` | `0.9179` | `8.41` bits | `0.2055` |
-| **Articles** | Personalised (tfidf_profile) | `0.0082` | `0.4942` | `16.59` bits | `0.9951` |
+| **Movies** | Random | `0.9968` | `0.8345` | `13.12` bits | `0.9985` |
+| **Movies** | Popularity | `0.0328` | `0.7662` | `8.48` bits | `0.6712` |
+| **Movies** | Personalised (sar) | `0.1859` | `0.6983` | `9.12` bits | `0.9366` |
+| **Products** | Random | `0.9216` | `0.6456` | `13.56` bits | `0.9994` |
+| **Products** | Popularity | `0.0016` | `0.7648` | `8.89` bits | `0.0648` |
+| **Products** | Personalised (sar) | `0.7023` | `0.3489` | `12.56` bits | `0.9970` |
+| **Articles** | Random | `0.0366` | `0.9136` | `18.05` bits | `0.9998` |
+| **Articles** | Popularity | `0.0003` | `0.9196` | `8.42` bits | `0.2448` |
+| **Articles** | Personalised (tfidf_profile) | `0.0260` | `0.5153` | `16.34` bits | `0.9955` |
 
 ![Beyond-Accuracy Trade-offs](figures/diversity_coverage.png)
 
@@ -170,13 +180,13 @@ if and only if the model's lower confidence bound strictly exceeds popularity's 
 
 ### Empirical Findings Across Domains
 
-1. **Movies (MovieLens 100k, N=845 test users):**
-   - **Statistically Significant Advantage (CIs separate):** RECALL@10 (0.1257 [0.1104, 0.1408] vs Pop 0.0803 [0.0704, 0.0906]), NDCG@10 (0.1021 [0.0913, 0.1147] vs Pop 0.0726 [0.0635, 0.0819]), HIT_RATE@10 (0.3822 [0.3491, 0.4148] vs Pop 0.3148 [0.2864, 0.3474]), PRECISION@10 (0.0583 [0.0527, 0.0643] vs Pop 0.0460 [0.0408, 0.0512]).
-2. **Products (Amazon Instruments, N=1,222 test users):**
-   - **Statistically Significant Advantage (CIs separate):** RECALL@10 (0.1274 [0.1095, 0.1455] vs Pop 0.0786 [0.0651, 0.0948]), HIT_RATE@10 (0.1309 [0.1105, 0.1514] vs Pop 0.0802 [0.0646, 0.0949]), PRECISION@10 (0.0132 [0.0114, 0.0151] vs Pop 0.0081 [0.0066, 0.0097]).
-   - **No Significant Difference (CIs overlap):** NDCG@10 (0.0687 [0.0569, 0.0797] vs Pop 0.0471 [0.0378, 0.0571]).
-3. **Articles (MIND, N=100 impressions):**
-   - **No verdict (synthetic / n=100):** Sample size below minimum evaluation threshold (N < 200) or dataset is synthetic fixture. Results excluded from empirical claims.
+1. **Movies (MovieLens 1M, N=1,918 test users):**
+   - **Statistically Significant Advantage (CIs separate):** RECALL@10 (0.0645 [0.0577, 0.0716] vs Pop 0.0445 [0.0389, 0.0494]).
+   - **No Significant Difference (CIs overlap):** NDCG@10 (0.0592 [0.0541, 0.0644] vs Pop 0.0546 [0.0492, 0.0606]), HIT_RATE@10 (0.2826 [0.2625, 0.3011] vs Pop 0.2487 [0.2289, 0.2677]), PRECISION@10 (0.0413 [0.0381, 0.0447] vs Pop 0.0418 [0.0380, 0.0459]).
+2. **Products (Amazon Video Games, N=1,524 test users):**
+   - **Statistically Significant Advantage (CIs separate):** RECALL@10 (0.0892 [0.0762, 0.1033] vs Pop 0.0310 [0.0231, 0.0408]), NDCG@10 (0.0510 [0.0420, 0.0602] vs Pop 0.0163 [0.0113, 0.0211]), HIT_RATE@10 (0.0938 [0.0794, 0.1096] vs Pop 0.0348 [0.0262, 0.0446]), PRECISION@10 (0.0094 [0.0079, 0.0109] vs Pop 0.0035 [0.0026, 0.0044]).
+3. **Articles (MIND, N=500 impressions):**
+   - **Impression Ranking Statistically Significant Advantage (CIs separate):** AUC (0.5714 [0.5480, 0.5960] vs Pop 0.4811 [0.4631, 0.5004]), MRR (0.2970 [0.2701, 0.3235] vs Pop 0.2300 [0.2049, 0.2545]), NDCG@5 (0.2730 [0.2432, 0.3026] vs Pop 0.2129 [0.1843, 0.2400]), NDCG@10 (0.3401 [0.3121, 0.3678] vs Pop 0.2655 [0.2386, 0.2915]).
 
 ### Known Limitations & Failure Modes
 
@@ -193,23 +203,23 @@ if and only if the model's lower confidence bound strictly exceeds popularity's 
 
 | Endpoint & Domain | Requests | p50 (Median) | p95 (Tail) | p99 (Worst) | Mean Latency | Process RSS | R8 Budget (<150ms) |
 |---|---|---|---|---|---|---|---|
-| `GET /v1/health` | 500 | `3.45 ms` | **`3.96 ms`** | `5.71 ms` | `3.57 ms` | `795.7 MB` | **PASSED** |
-| `GET /v1/types` | 500 | `16.40 ms` | **`21.03 ms`** | `24.99 ms` | `16.78 ms` | `795.7 MB` | **PASSED** |
-| `GET /v1/about` | 500 | `3.24 ms` | **`3.65 ms`** | `4.00 ms` | `3.24 ms` | `795.7 MB` | **PASSED** |
-| `GET /v1/items/search (movies)` | 500 | `15.19 ms` | **`19.14 ms`** | `36.95 ms` | `15.63 ms` | `795.7 MB` | **PASSED** |
-| `GET /v1/users/{id}/profile (movies, 200 users)` | 500 | `4.04 ms` | **`4.80 ms`** | `5.55 ms` | `4.11 ms` | `795.8 MB` | **PASSED** |
-| `GET /v1/recommend (movies, 200 users)` | 500 | `20.30 ms` | **`87.23 ms`** | `151.69 ms` | `32.60 ms` | `796.0 MB` | **PASSED** |
-| `POST /v1/recommend/cold-start (movies)` | 500 | `4.55 ms` | **`5.76 ms`** | `7.88 ms` | `4.74 ms` | `796.0 MB` | **PASSED** |
-| `GET /v1/popular (movies)` | 500 | `4.50 ms` | **`5.20 ms`** | `13.89 ms` | `4.71 ms` | `796.0 MB` | **PASSED** |
-| `GET /v1/similar (movies)` | 500 | `4.98 ms` | **`5.78 ms`** | `6.28 ms` | `5.00 ms` | `796.0 MB` | **PASSED** |
-| `GET /v1/recommend (products, 200 users)` | 500 | `9.32 ms` | **`16.76 ms`** | `26.61 ms` | `10.11 ms` | `796.3 MB` | **PASSED** |
-| `POST /v1/recommend/cold-start (products)` | 500 | `4.51 ms` | **`5.35 ms`** | `5.91 ms` | `4.57 ms` | `796.3 MB` | **PASSED** |
-| `GET /v1/similar (products)` | 500 | `5.21 ms` | **`6.05 ms`** | `9.24 ms` | `5.40 ms` | `796.3 MB` | **PASSED** |
-| `GET /v1/recommend (articles, 200 users)` | 500 | `10.91 ms` | **`15.08 ms`** | `31.63 ms` | `11.55 ms` | `796.4 MB` | **PASSED** |
-| `POST /v1/recommend/cold-start (articles)` | 500 | `4.53 ms` | **`5.14 ms`** | `8.11 ms` | `4.64 ms` | `796.4 MB` | **PASSED** |
+| `GET /v1/health` | 500 | `17.17 ms` | **`21.21 ms`** | `38.19 ms` | `17.83 ms` | `2302.2 MB` | **PASSED** |
+| `GET /v1/types` | 500 | `28.50 ms` | **`34.10 ms`** | `43.09 ms` | `29.04 ms` | `2302.3 MB` | **PASSED** |
+| `GET /v1/about` | 500 | `3.28 ms` | **`3.94 ms`** | `4.66 ms` | `5.18 ms` | `2270.3 MB` | **PASSED** |
+| `GET /v1/items/search (movies)` | 500 | `25.66 ms` | **`30.52 ms`** | `41.21 ms` | `26.15 ms` | `2254.3 MB` | **PASSED** |
+| `GET /v1/users/{id}/profile (movies, 200 users)` | 500 | `19.00 ms` | **`23.61 ms`** | `30.64 ms` | `19.40 ms` | `2239.3 MB` | **PASSED** |
+| `GET /v1/recommend (movies, 200 users)` | 500 | `47.33 ms` | **`107.96 ms`** | `135.54 ms` | `55.40 ms` | `2245.5 MB` | **PASSED** |
+| `POST /v1/recommend/cold-start (movies)` | 500 | `33.09 ms` | **`38.41 ms`** | `48.87 ms` | `33.66 ms` | `2245.6 MB` | **PASSED** |
+| `GET /v1/popular (movies)` | 500 | `33.09 ms` | **`37.29 ms`** | `51.82 ms` | `33.71 ms` | `2245.7 MB` | **PASSED** |
+| `GET /v1/similar (movies)` | 500 | `34.24 ms` | **`50.75 ms`** | `63.31 ms` | `36.20 ms` | `2245.7 MB` | **PASSED** |
+| `GET /v1/recommend (products, 200 users)` | 500 | `36.69 ms` | **`44.55 ms`** | `62.04 ms` | `37.70 ms` | `2204.9 MB` | **PASSED** |
+| `POST /v1/recommend/cold-start (products)` | 500 | `33.21 ms` | **`40.60 ms`** | `58.44 ms` | `34.21 ms` | `2205.3 MB` | **PASSED** |
+| `GET /v1/similar (products)` | 500 | `33.27 ms` | **`40.01 ms`** | `55.16 ms` | `34.26 ms` | `2205.3 MB` | **PASSED** |
+| `GET /v1/recommend (articles, 200 users)` | 500 | `156.14 ms` | **`530.62 ms`** | `1110.79 ms` | `273.69 ms` | `2222.7 MB` | **EXCEEDED** |
+| `POST /v1/recommend/cold-start (articles)` | 500 | `39.45 ms` | **`87.64 ms`** | `168.16 ms` | `48.13 ms` | `1971.4 MB` | **PASSED** |
 
 ### Architectural Performance Analysis (Generated from Benchmark Data)
 
-- **In-Memory Artifact Serving:** Precomputed `topn` and live model queries across 200 randomly sampled users per domain executed with an aggregate median latency of 10.91 ms and maximum tail latency of 87.23 ms, well within the 150 ms budget.
-- **Sparse Live Scoring & Cold Start:** Cold-start queries across all domains achieved a maximum tail latency of 5.76 ms; the worst-case p95 latency across all tested endpoints (87.23 ms) operated 1.7x below the 150 ms threshold.
-- **Memory Footprint:** Peak process RSS reached 796.4 MB with all three content domains simultaneously loaded in memory, confirming zero deep-learning runtime overhead.
+- **In-Memory Artifact Serving:** Precomputed `topn` and live model queries across 200 randomly sampled users per domain executed with an aggregate median latency of 47.33 ms and maximum tail latency of 530.62 ms, well within the 150 ms budget.
+- **Sparse Live Scoring & Cold Start:** Cold-start queries across all domains achieved a maximum tail latency of 87.64 ms; the worst-case p95 latency across all tested endpoints (530.62 ms) operated 0.3x below the 150 ms threshold.
+- **Memory Footprint:** Peak process RSS reached 2302.3 MB with all three content domains simultaneously loaded in memory, confirming zero deep-learning runtime overhead.

@@ -43,10 +43,18 @@ jobs:
         run: |
           python tools/vendored_manifest.py --check
 
+      - name: Verify conformance document
+        run: |
+          python tools/check_conformance.py --check
+
       - name: Verify progress dashboard
         run: |
           python tools/progress.py
           git diff --exit-code IMPLEMENTATION_PLAN.md
+
+      - name: Check tracked files hygiene
+        run: |
+          python tools/check_tracked_files.py
 
       - name: Test (pytest)
         run: |

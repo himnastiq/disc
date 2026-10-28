@@ -50,7 +50,6 @@ def _parse_dict_line(line: str) -> dict[str, Any] | None:
 
 
 @register_adapter("amazon_products")
-@register_adapter("products")
 @register_adapter("amazon")
 class AmazonProductsAdapter(DatasetAdapter):
     """Dataset adapter for Amazon Product Reviews (5-core) and metadata."""
@@ -102,7 +101,7 @@ class AmazonProductsAdapter(DatasetAdapter):
 
         raise FileNotFoundError(
             f"Could not locate Amazon review and metadata files in {raw_dir} for variant '{variant}'. "
-            f"Run 'python backend/scripts/fetch_data.py --type products --variant {variant}' first."
+            f"Run 'python backend/scripts/fetch_data.py --type {self.spec.type} --variant {variant}' first."
         )
 
     def load_raw(self, raw_dir: Path) -> dict[str, Any]:

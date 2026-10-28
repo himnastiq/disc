@@ -85,6 +85,7 @@ def get_recommendations(
     # 4. Attempt precomputed topn retrieval
     scored_items: list[tuple[str, float]] = []
     source = "live_model"
+    unknown_user_fallback = False
 
     if serving_mode == "popularity":
         source = "popularity"
@@ -104,10 +105,18 @@ def get_recommendations(
 
         # Live computation fallback if topn was insufficient
         if not scored_items:
-            source = "live_model"
-            model_results = model.recommend_user(user_id=uid_str, k=k, exclude_ids=exclusions)
-            for item in model_results:
-                scored_items.append((str(item.item_id), float(item.score)))
+            try:
+                source = "live_model"
+                model_results = model.recommend_user(user_id=uid_str, k=k, exclude_ids=exclusions)
+                for item in model_results:
+                    scored_items.append((str(item.item_id), float(item.score)))
+            except UnknownUser:
+                source = "popularity"
+                serving_mode = "popularity"
+                unknown_user_fallback = True
+                pop_results = model.popular(k=k, exclude_ids=exclusions)
+                for item in pop_results:
+                    scored_items.append((str(item.item_id), float(item.score)))
 
     # Ensure k items returned
     scored_items = scored_items[:k]
@@ -143,6 +152,13 @@ def get_recommendations(
                 )
                 explanation_errors += 1
                 reason_obj = None
+        elif unknown_user_fallback:
+            reason_obj = RecommendationReason(
+                kind="popular",
+                item_id=None,
+                text="Popular across all users in the catalog",
+                similarity_score=None,
+            )
 
         results.append(
             ScoredItemResponse(
