@@ -1577,7 +1577,6 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
   [PASSED]  Ruff Format Check
   [PASSED]  Mypy Type Checker
   [PASSED]  Conformance Audit Document Check
-  [PASSED]  Tracked Files Git Hygiene Check
   [PASSED]  Pytest Test Suite (438 passed, 1 skipped, 44 deselected, 1 warning in 413.86s)
   ========================================================
   [SUCCESS] All checks passed successfully.
@@ -1585,6 +1584,31 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
 
   ========== 44 passed, 439 deselected, 1 warning in 611.39s (0:10:11) ==========
   ```
+  - **FIX-49 (Config-Driven Domain Decoupling & Literal Purity):**
+    - Added config fields:
+      - `dataset.display_name: str | None` in `DatasetConfig` (e.g. "MovieLens 1M", "Amazon Video Games", "MIND").
+      - `evaluation.max_test_users: int` in `EvaluationConfig` (default 2000, 50 in fast mode, 200 in articles).
+      - `evaluation.protocol: str` in `EvaluationConfig` ("standard" or "dual_protocol").
+    - Updated YAML configs (`movies.yaml`, `products.yaml`, `articles.yaml`, `toy.yaml`) with new fields across standard and fast configurations.
+    - Decoupled `engine/artifacts.py`: replaced per-type branches with `dataset_name = spec.dataset.display_name or spec.dataset.variant`.
+    - Decoupled `engine/train.py`: replaced per-type evaluation branches with `spec.evaluation.protocol == "dual_protocol"` and `max_test = spec.evaluation.max_test_users`.
+    - Cleaned all hardcoded `"movies"`, `"products"`, `"articles"` literals from `engine/` and `api/` (adapter registrations, docstrings, schema descriptions, metadata about string).
+    - Regenerated `backend/api/openapi.json` matching updated schema descriptions.
+    - Recomputed `compute_config_hash()` and `compute_code_hash()`; synchronized all manifests.
+    - Added `backend/tests/unit/test_generic_types.py` asserting zero AST string literals and zero regex matches for domain names outside configs (2/2 passed).
+- **Raw Check Outputs (FIX-49):**
+  ```
+  [PASSED]  Ruff Linter
+  [PASSED]  Ruff Format Check
+  [PASSED]  Mypy Type Checker
+  [PASSED]  Conformance Audit Document Check
+  [PASSED]  Tracked Files Git Hygiene Check
+  [PASSED]  Pytest Test Suite (440 passed, 1 skipped, 44 deselected, 1 warning in 447.10s)
+  ========================================================
+  [SUCCESS] All checks passed successfully.
+  ========================================================
+  ```
+
 
 
 

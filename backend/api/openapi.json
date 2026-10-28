@@ -876,7 +876,7 @@
             "type": "string"
           },
           "id": {
-            "description": "Content type identifier, e.g. 'movies'",
+            "description": "Content type identifier slug",
             "title": "Id",
             "type": "string"
           },

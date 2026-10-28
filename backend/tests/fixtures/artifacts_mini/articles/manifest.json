@@ -2,7 +2,7 @@
   "artifact_schema_version": "1.0.0",
   "content_type": "articles",
   "model_name": "tfidf_profile",
-  "config_hash": "b9ac2896202a7b3417d2eaeebf3d4a219d6676497c6ab6faefb4dfef12c791e5",
+  "config_hash": "40ed949de30904ad39dac41dd666d8507803daefe944e28dfd2900266f144126",
   "git_sha": "0f7028b911dbe2169b1fa0c483927ea5262f709f",
   "dataset_variant": "small",
   "dataset_name": "MIND",
@@ -21,5 +21,6 @@
     "model/vocabulary.json": "e9317d60e89c4a1209131a1256434a16b8c255a753a915f083e4ca03f31e1de0",
     "topn.parquet": "4eafdea3f9d5247669b44a42328d92c9dd982abde875e50fd7a29e2e0593d411",
     "users.parquet": "bbea41f9534354f57b454435282c211cf630dbd53d002f9391e43c105a804de3"
-  }
+  },
+  "code_hash": "b7c37d8d4fa4f89abe09f2dffd3dc76543d6349835e1287753e2280ed65df45b"
 }

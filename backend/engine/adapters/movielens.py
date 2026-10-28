@@ -72,7 +72,6 @@ def clean_movie_title(raw_title: str) -> tuple[str, int | None]:
 
 
 @register_adapter("movielens")
-@register_adapter("movies")
 class MovieLensAdapter(DatasetAdapter):
     """Dataset adapter for MovieLens 100K and 1M datasets."""
 

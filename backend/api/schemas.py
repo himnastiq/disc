@@ -53,7 +53,7 @@ class HealthResponse(BaseModel):
 class TypeInfo(BaseModel):
     """Summary description of a registered content type."""
 
-    id: str = Field(..., description="Content type identifier, e.g. 'movies'")
+    id: str = Field(..., description="Content type identifier slug")
     display_name: str = Field(..., description="Human-readable title")
     card_type: str = Field(..., description="UI card template: 'movie', 'product', or 'article'")
     supports_cold_start: bool = Field(
@@ -161,9 +161,7 @@ class MetricsResponse(BaseModel):
 
     model_config = {"extra": "allow"}
 
-    content_type: str = Field(
-        ..., description="Content type identifier: 'movies', 'products', or 'articles'"
-    )
+    content_type: str = Field(..., description="Content type identifier slug")
     dataset_variant: str = Field(
         ...,
         description="Dataset variant label, e.g. '1m', 'video_games', or 'SYNTHETIC DEMO (not MIND)'",

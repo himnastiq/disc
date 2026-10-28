@@ -161,7 +161,6 @@ def parse_behavior_line(line: str) -> dict[str, Any] | None:
 
 
 @register_adapter("mind_articles")
-@register_adapter("articles")
 @register_adapter("mind")
 class MindArticlesAdapter(DatasetAdapter):
     """Dataset adapter for MIND News Articles and Behaviors."""
@@ -221,7 +220,7 @@ class MindArticlesAdapter(DatasetAdapter):
         if not news_files or not behavior_files:
             raise FileNotFoundError(
                 f"Could not locate news.tsv and behaviors.tsv in {raw_dir}. "
-                "Run 'python backend/scripts/fetch_data.py --type articles --variant fast' first."
+                f"Run 'python backend/scripts/fetch_data.py --type {self.spec.type} --variant fast' first."
             )
 
         all_paths = [str(p).replace("\\", "/").lower() for p in (news_files + behavior_files)]

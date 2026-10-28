@@ -316,7 +316,7 @@ def get_about() -> AboutResponse:
         title="Discovery Engine",
         version="1.0.0",
         description=(
-            "Adaptive multi-domain recommendation engine serving Movies, Products, and Articles "
+            "Adaptive multi-domain recommendation engine serving multiple content domains "
             "with full auditability, zero deep-learning runtime overhead, and verified ranking integrity."
         ),
         attributions=ATTRIBUTIONS,

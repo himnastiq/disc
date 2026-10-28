@@ -148,7 +148,7 @@ def get_adapter(
     """Instantiate and return a configured DatasetAdapter.
 
     Args:
-        spec_or_type: Content type name (e.g. 'movies') or a validated ContentTypeSpec.
+        spec_or_type: Content type name (e.g. 'media') or a validated ContentTypeSpec.
         fast: Whether to apply fast developer overrides if loading from string type.
         configs_dir: Optional custom configs directory.
 
@@ -188,7 +188,7 @@ def build_model(
     """Build and instantiate a RecommenderModel according to config or explicit model name.
 
     Args:
-        spec_or_type: Content type name (e.g. 'movies') or a validated ContentTypeSpec.
+        spec_or_type: Content type name (e.g. 'media') or a validated ContentTypeSpec.
         model_name: Optional explicit model name (e.g. 'popularity'). Defaults to spec.model.name.
         fast: Whether to apply fast developer overrides if loading from string type.
         configs_dir: Optional custom configs directory.

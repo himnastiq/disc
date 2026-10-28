@@ -123,7 +123,7 @@ def save_artifacts(
     """Save pipeline outputs and build a cryptographically signed manifest with SHA-256 checksums.
 
     Args:
-        artifact_dir: Target directory (e.g. artifacts/movies).
+        artifact_dir: Target directory (e.g. artifacts/<content_type>).
         spec: Validated ContentTypeSpec.
         items: Canonical items catalogue.
         interactions: Canonical interactions (flagged with train/test).
@@ -197,20 +197,7 @@ def save_artifacts(
                 file_checksums[rel_path] = compute_file_sha256(p)
 
         # Derive dataset_name and section_heading
-        dataset_name = spec.dataset.variant
-        if spec.type == "movies":
-            dataset_name = (
-                "MovieLens 1M"
-                if spec.dataset.variant == "1m"
-                else f"MovieLens {spec.dataset.variant}"
-            )
-        elif spec.type == "products":
-            variant_title = spec.dataset.variant.replace("_", " ").title()
-            dataset_name = f"Amazon {variant_title}"
-        elif spec.type == "articles":
-            dataset_name = (
-                spec.dataset.variant if "SYNTHETIC" in spec.dataset.variant.upper() else "MIND"
-            )
+        dataset_name = spec.dataset.display_name or spec.dataset.variant
 
         model_display = spec.model.name.upper()
         if spec.model.name == "tfidf_profile":

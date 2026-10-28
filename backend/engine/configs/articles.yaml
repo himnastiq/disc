@@ -4,6 +4,7 @@ card_type: article
 dataset:
   adapter: mind_articles
   variant: "small"
+  display_name: "MIND"
   min_user_interactions: 3
 signal:
   positive_threshold: 1.0
@@ -26,6 +27,8 @@ evaluation:
   cold_start_history_sizes: [0, 1, 2, 3, 5, 10, 20]
   baselines: [popularity, random]
   recency_window: 86400
+  protocol: dual_protocol
+  max_test_users: 200
 serving:
   top_neighbors_per_item: 50
   max_items_in_similarity: 8000
@@ -33,11 +36,13 @@ serving:
 fast:
   dataset:
     variant: "small"
+    display_name: "MIND"
   model:
     params:
       max_features: 2000
   evaluation:
     cold_start_history_sizes: [0, 1, 3, 5]
     recency_window: 86400
+    max_test_users: 50
   serving:
     recency_window: 86400

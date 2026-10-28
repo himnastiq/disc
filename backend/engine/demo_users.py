@@ -121,7 +121,7 @@ def select_demo_users_from_dfs(
 
 
 def select_demo_users(
-    content_type: str = "movies",
+    content_type: str = "default",
     artifacts_dir: Path | None = None,
     seed: int = 42,
     target_count: int = 8,
@@ -130,7 +130,7 @@ def select_demo_users(
     """Select ~8 demo users with diverse tastes and verified pairwise Jaccard < threshold.
 
     Args:
-        content_type: Content type identifier (e.g. 'movies').
+        content_type: Content type identifier (e.g. 'default').
         artifacts_dir: Path to content type artifacts directory.
         seed: Random seed for deterministic selection.
         target_count: Target number of demo users (default 8).

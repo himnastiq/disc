@@ -46,7 +46,7 @@ def get_artifacts_from_query(
     request: Request,
     type: str = Query(
         ...,
-        description="Content type identifier: 'movies', 'products', or 'articles'",
+        description="Content type identifier slug",
         max_length=50,
     ),
 ) -> LoadedArtifacts:

@@ -157,6 +157,9 @@ class DatasetConfig(SchemaBase):
 
     adapter: str = Field(..., min_length=1)
     variant: str = Field(default="default", min_length=1)
+    display_name: str | None = Field(
+        default=None, description="Human-readable dataset display name (e.g. 'MovieLens 1M')"
+    )
     min_user_interactions: int = Field(default=1, ge=1)
     min_item_interactions: int = Field(default=1, ge=1)
 
@@ -198,6 +201,10 @@ class EvaluationConfig(SchemaBase):
     cold_start_history_sizes: list[int] = Field(default_factory=lambda: [0, 1, 2, 3, 5, 10, 20])
     baselines: list[str] = Field(default_factory=lambda: ["popularity", "random"])
     recency_window: int | str | None = Field(default=None)
+    max_test_users: int = Field(default=2000, ge=1, description="Maximum test users to evaluate")
+    protocol: str = Field(
+        default="standard", description="Evaluation protocol ('standard' or 'dual_protocol')"
+    )
 
 
 class ServingConfig(SchemaBase):
@@ -226,9 +233,9 @@ class ContentTypeSpec(SchemaBase):
     """Top-level specification for a content type loaded from YAML."""
 
     type: str = Field(
-        ..., min_length=1, description="Internal slug (e.g. movies, products, articles)"
+        ..., min_length=1, description="Internal slug (e.g. content domain identifier)"
     )
-    display_name: str = Field(..., min_length=1, description="UI display title (e.g. Movies)")
+    display_name: str = Field(..., min_length=1, description="UI display title")
     card_type: Literal["movie", "product", "article"] = Field(
         ..., description="Frontend card presentation variant"
     )
