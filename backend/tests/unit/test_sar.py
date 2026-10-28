@@ -350,3 +350,56 @@ def test_sparsify_similarity_chunked_equality_on_random_matrix() -> None:
                 np.testing.assert_allclose(
                     actual_sparse.toarray(), expected_sparse.toarray(), atol=1e-12
                 )
+
+
+def test_recommend_history_only_low_ratings_returns_popularity_with_exclusions(
+    fitted_sar_model: SarModel,
+) -> None:
+    """FIX-46: History with only low ratings (< positive_threshold) returns popularity mode excluding rated items."""
+    thresh = fitted_sar_model.spec.signal.positive_threshold
+    assert thresh == 4.0
+
+    low_history = [("movie_1", 1.0), ("movie_2", 2.0), ("movie_3", 3.0)]
+    recs = fitted_sar_model.recommend_history(low_history, k=5)
+    expected_pop = fitted_sar_model.popular(k=5, exclude_ids={"movie_1", "movie_2", "movie_3"})
+
+    assert [r.item_id for r in recs] == [r.item_id for r in expected_pop]
+    assert [r.score for r in recs] == pytest.approx([r.score for r in expected_pop])
+    # History items must be excluded from results
+    rec_ids = {r.item_id for r in recs}
+    assert "movie_1" not in rec_ids
+    assert "movie_2" not in rec_ids
+    assert "movie_3" not in rec_ids
+
+
+def test_recommend_history_adding_one_star_item_changes_nothing_except_exclusion(
+    fitted_sar_model: SarModel,
+) -> None:
+    """FIX-46: Adding a 1-star item changes nothing except excluding that item from recommendations."""
+    # Positive history
+    recs_base = fitted_sar_model.recommend_history([("movie_5", 5.0)], k=10)
+    base_ids = [r.item_id for r in recs_base]
+    base_scores = {r.item_id: r.score for r in recs_base}
+
+    # Case 1: Add a 1-star item that is not in the base recommendation list
+    non_rec_item = next(
+        m for m in fitted_sar_model.catalogue if m != "movie_5" and m not in base_ids
+    )
+    recs_with_non_rec = fitted_sar_model.recommend_history(
+        [("movie_5", 5.0), (non_rec_item, 1.0)], k=10
+    )
+    assert [r.item_id for r in recs_with_non_rec] == base_ids
+    assert [r.score for r in recs_with_non_rec] == pytest.approx([r.score for r in recs_base])
+
+    # Case 2: Add a 1-star item that WAS in the base recommendation list
+    rec_item_to_dislike = base_ids[0]
+    recs_with_excluded = fitted_sar_model.recommend_history(
+        [("movie_5", 5.0), (rec_item_to_dislike, 1.0)], k=10
+    )
+    new_ids = [r.item_id for r in recs_with_excluded]
+    assert rec_item_to_dislike not in new_ids
+
+    # For all items that appeared in both, scores must be strictly identical
+    for r in recs_with_excluded:
+        if r.item_id in base_scores:
+            assert r.score == pytest.approx(base_scores[r.item_id])
