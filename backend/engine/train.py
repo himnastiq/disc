@@ -272,7 +272,12 @@ def run_pipeline(
     model_dir = target_artifacts_dir / "model"
     primary_model.save(model_dir)
 
-    # 10. Save artifacts and generate cryptographic manifest
+    # 10. Precompute serving lookups (FIX-57)
+    from engine.lookups import compute_serving_lookups
+
+    serving_lookups_df = compute_serving_lookups(spec, items, interactions, users_df)
+
+    # 11. Save artifacts and generate cryptographic manifest
     manifest_p = save_artifacts(
         artifact_dir=target_artifacts_dir,
         spec=spec,
@@ -282,6 +287,7 @@ def run_pipeline(
         metrics=metrics,
         demo_users=demo_users,
         topn=topn_df,
+        serving_lookups=serving_lookups_df,
         extra_files=extra_files,
         dataset_source=getattr(adapter, "dataset_source", None),
     )

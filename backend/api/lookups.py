@@ -37,6 +37,52 @@ class TypeLookups:
     user_persona: dict[str, str | None] = field(default_factory=dict)
 
 
+class LazySetDict(dict[str, Any]):
+    """Dictionary that lazily converts list/sequence values to sets on first access."""
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if key in self:
+            val = super().__getitem__(key)
+            if not isinstance(val, set):
+                val = set(val) if val is not None else set()
+                super().__setitem__(key, val)
+            return val
+        return default
+
+    def __getitem__(self, key: str) -> Any:
+        val = super().__getitem__(key)
+        if not isinstance(val, set):
+            val = set(val) if val is not None else set()
+            super().__setitem__(key, val)
+        return val
+
+
+class LazyJsonDict(dict[str, Any]):
+    """Dictionary that lazily parses JSON string values on first access and caches the result."""
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if key in self:
+            val = super().__getitem__(key)
+            if isinstance(val, str):
+                import json
+
+                parsed = json.loads(val) if val else []
+                super().__setitem__(key, parsed)
+                return parsed
+            return val
+        return default
+
+    def __getitem__(self, key: str) -> Any:
+        val = super().__getitem__(key)
+        if isinstance(val, str):
+            import json
+
+            parsed = json.loads(val) if val else []
+            super().__setitem__(key, parsed)
+            return parsed
+        return val
+
+
 def build_type_lookups(spec: ContentTypeSpec, loaded: LoadedArtifacts) -> TypeLookups:
     """Build precomputed lookup indices from loaded artifacts without per-request DataFrame scans."""
     artifact_ver = str(loaded.manifest.get("artifact_schema_version", "1.0.0"))
@@ -78,131 +124,159 @@ def build_type_lookups(spec: ContentTypeSpec, loaded: LoadedArtifacts) -> TypeLo
     lookups.catalogue_ids = catalogue_ids
     lookups.item_metadata = item_metadata
 
-    # 2. Users metadata from users.parquet
-    user_ids: set[str] = set()
-    users_df = loaded.users
-    if not users_df.empty:
-        for row in users_df.itertuples():
-            uid = str(row.user_id)
-            user_ids.add(uid)
-            p = getattr(row, "persona", None)
-            lookups.user_persona[uid] = str(p) if pd.notna(p) else None
-
-            f_ts = getattr(row, "first_timestamp", None)
-            lookups.user_first_activity[uid] = int(f_ts) if pd.notna(f_ts) else None
-
-            l_ts = getattr(row, "last_timestamp", None)
-            lookups.user_last_activity[uid] = int(l_ts) if pd.notna(l_ts) else None
-
-    # 3. Interactions grouping: precompute seen items, positive counts, recent history, category shares
-    inter_df = loaded.interactions
-    if not inter_df.empty:
-        # Normalize columns once
-        user_col = inter_df["user_id"].astype(str)
-        item_col = inter_df["item_id"].astype(str)
-        has_pos = "positive" in inter_df.columns
-        pos_series = (
-            inter_df["positive"].astype(bool)
-            if has_pos
-            else (inter_df["signal"] >= spec.signal.positive_threshold)
+    # 2. If precomputed serving_lookups is present (FIX-57), unpack in sub-second time
+    sl_df = getattr(loaded, "serving_lookups", None)
+    if sl_df is not None and not sl_df.empty:
+        uids = sl_df["user_id"].astype(str).tolist()
+        lookups.user_ids = set(uids)
+        lookups.user_seen_items = LazySetDict(zip(uids, sl_df["seen_items"], strict=False))
+        lookups.user_positive_count = dict(
+            zip(uids, sl_df["positive_count"].astype(int), strict=False)
         )
-        sig_col = (
-            inter_df["signal"]
-            if "signal" in inter_df.columns
-            else pd.Series(1.0, index=inter_df.index)
-        )
-        ts_col = (
-            inter_df["timestamp"]
-            if "timestamp" in inter_df.columns
-            else pd.Series(0, index=inter_df.index)
+        lookups.user_interactions_count = dict(
+            zip(uids, sl_df["interaction_count"].astype(int), strict=False)
         )
 
-        temp_df = pd.DataFrame(
-            {
-                "user_id": user_col,
-                "item_id": item_col,
-                "positive": pos_series,
-                "signal": sig_col,
-                "timestamp": ts_col,
-            }
+        lookups.user_first_activity = dict(
+            zip(
+                uids,
+                [int(x) if pd.notna(x) else None for x in sl_df["first_timestamp"].values],
+                strict=False,
+            )
+        )
+        lookups.user_last_activity = dict(
+            zip(
+                uids,
+                [int(x) if pd.notna(x) else None for x in sl_df["last_timestamp"].values],
+                strict=False,
+            )
+        )
+        lookups.user_persona = dict(
+            zip(
+                uids,
+                [str(x) if pd.notna(x) else None for x in sl_df["persona"].values],
+                strict=False,
+            )
         )
 
-        for uid_val, grp in temp_df.groupby("user_id"):
-            uid_str = str(uid_val)
-            user_ids.add(uid_str)
-            seen = set(grp["item_id"])
-            lookups.user_seen_items[uid_str] = seen
-            lookups.user_interactions_count[uid_str] = len(grp)
-            lookups.user_positive_count[uid_str] = int(grp["positive"].sum())
+        lookups.user_recent_interactions = LazyJsonDict(
+            zip(uids, sl_df["recent_interactions"], strict=False)
+        )
+        lookups.user_category_shares = LazyJsonDict(
+            zip(uids, sl_df["category_shares"], strict=False)
+        )
+    else:
+        # Fallback to dynamic on-the-fly computation if serving_lookups artifact is absent
+        user_ids: set[str] = set()
+        users_df = loaded.users
+        if not users_df.empty:
+            for row in users_df.itertuples():
+                uid = str(row.user_id)
+                user_ids.add(uid)
+                p = getattr(row, "persona", None)
+                lookups.user_persona[uid] = str(p) if pd.notna(p) else None
 
-            if lookups.user_first_activity.get(uid_str) is None:
-                min_ts = grp["timestamp"].min()
-                lookups.user_first_activity[uid_str] = int(min_ts) if pd.notna(min_ts) else None
+                f_ts = getattr(row, "first_timestamp", None)
+                lookups.user_first_activity[uid] = int(f_ts) if pd.notna(f_ts) else None
 
-            if lookups.user_last_activity.get(uid_str) is None:
-                max_ts = grp["timestamp"].max()
-                lookups.user_last_activity[uid_str] = int(max_ts) if pd.notna(max_ts) else None
+                l_ts = getattr(row, "last_timestamp", None)
+                lookups.user_last_activity[uid] = int(l_ts) if pd.notna(l_ts) else None
 
-            # Recent interactions: up to 10 sorted by timestamp descending
-            sorted_grp = grp.sort_values(by="timestamp", ascending=False).head(10)
-            recent_list = []
-            for r in sorted_grp.itertuples():
-                item_id_str = str(r.item_id)
-                meta = item_metadata.get(item_id_str, {})
-                sig_raw: Any = getattr(r, "signal", None)
-                ts_raw: Any = getattr(r, "timestamp", None)
-                recent_list.append(
-                    {
-                        "item_id": item_id_str,
-                        "title": meta.get("title", item_id_str),
-                        "signal": float(sig_raw) if pd.notna(sig_raw) else None,
-                        "timestamp": int(ts_raw) if pd.notna(ts_raw) else None,
-                    }
-                )
-            lookups.user_recent_interactions[uid_str] = recent_list
+        inter_df = loaded.interactions
+        if not inter_df.empty:
+            user_col = inter_df["user_id"].astype(str)
+            item_col = inter_df["item_id"].astype(str)
+            has_pos = "positive" in inter_df.columns
+            pos_series = (
+                inter_df["positive"].astype(bool)
+                if has_pos
+                else (inter_df["signal"] >= spec.signal.positive_threshold)
+            )
+            sig_col = (
+                inter_df["signal"]
+                if "signal" in inter_df.columns
+                else pd.Series(1.0, index=inter_df.index)
+            )
+            ts_col = (
+                inter_df["timestamp"]
+                if "timestamp" in inter_df.columns
+                else pd.Series(0, index=inter_df.index)
+            )
 
-            # Category shares
-            cat_counts: Counter[str] = Counter()
-            for iid_str in grp["item_id"]:
-                for c in item_categories.get(iid_str, []):
-                    cat_counts[c] += 1
-            tot = sum(cat_counts.values())
-            shares = []
-            if tot > 0:
-                for c, cnt in cat_counts.most_common(10):
-                    shares.append(
+            temp_df = pd.DataFrame(
+                {
+                    "user_id": user_col,
+                    "item_id": item_col,
+                    "positive": pos_series,
+                    "signal": sig_col,
+                    "timestamp": ts_col,
+                }
+            )
+
+            for uid_val, grp in temp_df.groupby("user_id"):
+                uid_str = str(uid_val)
+                user_ids.add(uid_str)
+                seen = set(grp["item_id"])
+                lookups.user_seen_items[uid_str] = seen
+                lookups.user_interactions_count[uid_str] = len(grp)
+                lookups.user_positive_count[uid_str] = int(grp["positive"].sum())
+
+                if lookups.user_first_activity.get(uid_str) is None:
+                    min_ts = grp["timestamp"].min()
+                    lookups.user_first_activity[uid_str] = int(min_ts) if pd.notna(min_ts) else None
+
+                if lookups.user_last_activity.get(uid_str) is None:
+                    max_ts = grp["timestamp"].max()
+                    lookups.user_last_activity[uid_str] = int(max_ts) if pd.notna(max_ts) else None
+
+                sorted_grp = grp.sort_values(by="timestamp", ascending=False).head(10)
+                recent_list = []
+                for r in sorted_grp.itertuples():
+                    item_id_str = str(r.item_id)
+                    meta = item_metadata.get(item_id_str, {})
+                    sig_raw: Any = getattr(r, "signal", None)
+                    ts_raw: Any = getattr(r, "timestamp", None)
+                    recent_list.append(
                         {
-                            "category": c,
-                            "count": cnt,
-                            "share": round(cnt / tot, 4),
+                            "item_id": item_id_str,
+                            "title": meta.get("title", item_id_str),
+                            "signal": float(sig_raw) if pd.notna(sig_raw) else None,
+                            "timestamp": int(ts_raw) if pd.notna(ts_raw) else None,
                         }
                     )
-            lookups.user_category_shares[uid_str] = shares
+                lookups.user_recent_interactions[uid_str] = recent_list
 
-    lookups.user_ids = user_ids
+                cat_counts: Counter[str] = Counter()
+                for iid_str in grp["item_id"]:
+                    for c in item_categories.get(iid_str, []):
+                        cat_counts[c] += 1
+                tot = sum(cat_counts.values())
+                shares = []
+                if tot > 0:
+                    for c, cnt in cat_counts.most_common(10):
+                        shares.append(
+                            {
+                                "category": c,
+                                "count": cnt,
+                                "share": round(cnt / tot, 4),
+                            }
+                        )
+                lookups.user_category_shares[uid_str] = shares
 
-    # 4. Topn rows grouped by user
+        lookups.user_ids = user_ids
+
+    # 3. Topn rows grouped by user (optimized itertuples)
     if loaded.topn is not None and not loaded.topn.empty:
         topn_df = (
             loaded.topn.sort_values(by="rank") if "rank" in loaded.topn.columns else loaded.topn
         )
         user_topn_map: dict[str, list[tuple[str, float]]] = {}
-        topn_user_col = topn_df["user_id"].astype(str)
-        topn_item_col = topn_df["item_id"].astype(str)
-        topn_score_col = topn_df["score"].astype(float)
-
-        compact_topn = pd.DataFrame(
-            {
-                "user_id": topn_user_col,
-                "item_id": topn_item_col,
-                "score": topn_score_col,
-            }
-        )
-
-        for uid_val, grp in compact_topn.groupby("user_id"):
-            uid_str = str(uid_val)
-            items_scores = list(zip(grp["item_id"], grp["score"], strict=False))
-            user_topn_map[uid_str] = items_scores
+        for r in topn_df.itertuples():
+            uid_str = str(r.user_id)
+            if uid_str not in user_topn_map:
+                user_topn_map[uid_str] = []
+            score_raw: Any = r.score
+            user_topn_map[uid_str].append((str(r.item_id), float(score_raw)))
 
         lookups.user_topn = user_topn_map
 

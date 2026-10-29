@@ -3,11 +3,13 @@
   "content_type": "products",
   "model_name": "sar",
   "config_hash": "685369e8aa58ce0e15f594326ef586d1e1a9b501ecc80088e250008e55e600b7",
-  "git_sha": "0f7028b911dbe2169b1fa0c483927ea5262f709f",
+  "code_hash": "d33e791647a8be66eaf8d32ecc252b9f1b7e0ebe6c6fd7e2484a5fcc6e0830ce",
+  "git_sha": "30d84b62de84d5285ec2e984c12b32b12df9ab85",
   "dataset_variant": "instruments",
   "dataset_name": "Amazon Instruments",
+  "dataset_source": "instruments",
   "section_heading": "Products (Amazon Instruments + SAR)",
-  "created_at": "2026-10-26T06:52:49.087185+00:00",
+  "created_at": "2026-10-28T06:06:15.360157+00:00",
   "files": {
     "demo_users.json": "ac44285ecb0a3ada651f5b96108fa750278f35afa272c5fce95901183a69e652",
     "interactions.parquet": "0ad05b790f31166a43bb3eed2d9a862d1d4c1dcfc7aa8182469313a4c93e4eaf",
@@ -17,10 +19,10 @@
     "model/index2user.json": "663255be6b8c98db138e8a323f8fb4670fb50eb3f24b045fb5da673238e45832",
     "model/item_frequencies.npy": "1846f7101d60aeca491fa5567ca2a830c8d9971b97f2b0165fd8f9112eac6802",
     "model/item_similarity.npz": "3b07281454a52645153c8914524c6e91ef201deea62891e51a50118c9c8bab9f",
-    "model/model_meta.json": "1e099cb0dd63fc7a5450a14fce15fc3a0f861a0e4d4a3e23a8739beffa4d4f19",
+    "model/model_meta.json": "e22dee247db531c9369bfdeed264ec6f27937a51bc492cba70d792a7a02e1598",
     "model/user_affinity.npz": "4d04ed676b5b1a1d84b11ccc77bc14f96fa946fa3e83a897c7b63b865e60fc47",
+    "serving_lookups.parquet": "0a670e15cce7fd5339a2afa21a97b9312a1a5ccc78dae1931a403bf2ad6b8d2e",
     "topn.parquet": "38bc4935f077cb21ef2d5afdee18d3892d6672359c9cc0d5d2e7e5e9fa191871",
     "users.parquet": "aa7bed691435c4052543c0e3aaf4e3643a55ec07c9b3456c5c571ecad616861e"
-  },
-  "code_hash": "b7c37d8d4fa4f89abe09f2dffd3dc76543d6349835e1287753e2280ed65df45b"
+  }
 }

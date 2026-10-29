@@ -106,6 +106,7 @@ class LoadedArtifacts:
     demo_users: list[dict[str, Any]]
     model_dir: Path
     topn: pd.DataFrame | None = None
+    serving_lookups: pd.DataFrame | None = None
 
 
 def save_artifacts(
@@ -117,6 +118,7 @@ def save_artifacts(
     metrics: dict[str, Any],
     demo_users: list[dict[str, Any]],
     topn: pd.DataFrame | None = None,
+    serving_lookups: pd.DataFrame | None = None,
     extra_files: dict[str, Any] | None = None,
     dataset_source: str | None = None,
 ) -> Path:
@@ -131,7 +133,9 @@ def save_artifacts(
         metrics: Output from evaluation harness.
         demo_users: Selected diverse demo users list.
         topn: Optional precomputed top-N recommendations per known user.
+        serving_lookups: Optional precomputed serving lookups table.
         extra_files: Optional additional files to write before manifest hashing.
+        dataset_source: Optional human-readable dataset source.
 
     Returns:
         Path: Path to the generated manifest.json file.
@@ -151,6 +155,7 @@ def save_artifacts(
                     "interactions.parquet",
                     "users.parquet",
                     "topn.parquet",
+                    "serving_lookups.parquet",
                     "metrics.json",
                     "demo_users.json",
                     "manifest.json",
@@ -168,6 +173,15 @@ def save_artifacts(
 
         if topn is not None and not topn.empty:
             topn.to_parquet(stage_dir / "topn.parquet", index=False)
+
+        # Precompute serving lookups table if not explicitly passed (FIX-57)
+        if serving_lookups is None and not interactions.empty:
+            from engine.lookups import compute_serving_lookups
+
+            serving_lookups = compute_serving_lookups(spec, items, interactions, users)
+
+        if serving_lookups is not None and not serving_lookups.empty:
+            serving_lookups.to_parquet(stage_dir / "serving_lookups.parquet", index=False)
 
         # 2. Write JSON metadata
         write_text_file(stage_dir / "metrics.json", json.dumps(metrics, indent=2))
@@ -374,6 +388,9 @@ def load_artifacts(
     topn_p = artifact_dir / "topn.parquet"
     topn_df = pd.read_parquet(topn_p) if topn_p.exists() else None
 
+    sl_p = artifact_dir / "serving_lookups.parquet"
+    serving_lookups_df = pd.read_parquet(sl_p) if sl_p.exists() else None
+
     model_dir = artifact_dir / "model"
 
     return LoadedArtifacts(
@@ -385,4 +402,5 @@ def load_artifacts(
         demo_users=demo_users_data,
         model_dir=model_dir,
         topn=topn_df,
+        serving_lookups=serving_lookups_df,
     )

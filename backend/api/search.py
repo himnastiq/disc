@@ -55,14 +55,15 @@ class ItemSearchIndex:
 
         default_rank = len(pop_ranks) + 1000
 
-        for _, row in items_df.iterrows():
-            item_id = str(row["item_id"])
-            title = str(row.get("title", item_id))
-            subtitle = str(row["subtitle"]) if pd.notna(row.get("subtitle")) else None
-            categories = as_str_list(row.get("categories"))
-            year_val = row.get("year")
+        for row in items_df.itertuples():
+            item_id = str(row.item_id)
+            title = str(getattr(row, "title", item_id))
+            sub = getattr(row, "subtitle", None)
+            subtitle = str(sub) if pd.notna(sub) else None
+            categories = as_str_list(getattr(row, "categories", None))
+            year_val = getattr(row, "year", None)
             year = int(year_val) if pd.notna(year_val) else None
-            img_val = row.get("image_url")
+            img_val = getattr(row, "image_url", None)
             image_url = str(img_val) if pd.notna(img_val) else None
 
             norm_title = normalize_text(title)
@@ -227,3 +228,45 @@ class ItemSearchIndex:
             + len(contains_matches)
         )
         return results, total_matches
+
+
+class LazySearchIndex:
+    """Lazy search index wrapper that defers tokenization and indexing until first access."""
+
+    def __init__(self, items_df: pd.DataFrame, interactions_df: pd.DataFrame | None = None) -> None:
+        self._items_df = items_df
+        self._interactions_df = interactions_df
+        self._index: ItemSearchIndex | None = None
+
+    def _get_index(self) -> ItemSearchIndex:
+        if self._index is None:
+            self._index = ItemSearchIndex(self._items_df, self._interactions_df)
+        return self._index
+
+    @property
+    def _entries(self) -> Any:
+        return self._get_index()._entries
+
+    @_entries.setter
+    def _entries(self, val: Any) -> None:
+        self._get_index()._entries = val
+
+    @property
+    def _items_by_id(self) -> Any:
+        return self._get_index()._items_by_id
+
+    @_items_by_id.setter
+    def _items_by_id(self, val: Any) -> None:
+        self._get_index()._items_by_id = val
+
+    def get_entry(self, item_id: str) -> dict[str, Any] | None:
+        """Return raw search index entry for item_id, or None if not indexed."""
+        return self._get_index().get_entry(item_id)
+
+    def get_popularity_rank(self, item_id: str) -> int | None:
+        """Return precomputed popularity rank for item_id, or None if not indexed."""
+        return self._get_index().get_popularity_rank(item_id)
+
+    def search(self, query: str, limit: int = 20) -> tuple[list[SearchItem], int]:
+        """Execute normalized search with hierarchical match-type ranking."""
+        return self._get_index().search(query, limit=limit)

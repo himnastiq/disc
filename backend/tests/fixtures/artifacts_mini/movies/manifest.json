@@ -3,11 +3,13 @@
   "content_type": "movies",
   "model_name": "sar",
   "config_hash": "aba30eafec89931706cdac54d32aaf8be0a5d5a15c31802f22d3fe24d1cdfa30",
-  "git_sha": "0f7028b911dbe2169b1fa0c483927ea5262f709f",
+  "code_hash": "d33e791647a8be66eaf8d32ecc252b9f1b7e0ebe6c6fd7e2484a5fcc6e0830ce",
+  "git_sha": "30d84b62de84d5285ec2e984c12b32b12df9ab85",
   "dataset_variant": "100k",
   "dataset_name": "MovieLens 100k",
+  "dataset_source": "100k",
   "section_heading": "Movies (MovieLens 100k + SAR)",
-  "created_at": "2026-10-26T06:52:48.851697+00:00",
+  "created_at": "2026-10-28T06:06:14.997967+00:00",
   "files": {
     "demo_users.json": "7fc549f0f7449c330f28365b3a72662284674a1648cc51512a31cc7e1e7fa826",
     "interactions.parquet": "501dec3e774c05863e75df3f17ca314ae316aca55a909c872612cf67cf32cc18",
@@ -17,10 +19,10 @@
     "model/index2user.json": "663255be6b8c98db138e8a323f8fb4670fb50eb3f24b045fb5da673238e45832",
     "model/item_frequencies.npy": "ae149f4e5c0952c39959ba085395fb38aeec9ffd02a8204d20e7735a9198d4c6",
     "model/item_similarity.npz": "a68bde00f3ec369c9108afc05e0c2f3a3bb86061bf08e45ccc198fafa55d1dd6",
-    "model/model_meta.json": "f2cdc6b5bd9fc15f2816194823696ebd64755bdd363728d7fbe88198a688a2a5",
+    "model/model_meta.json": "8d4c0e234d8d21e2ed080851b58b61c156943a6adcda841c94476c1c83f24def",
     "model/user_affinity.npz": "6cc47c2ff64b6987cf7e040ec972969337089d90f20e9e2e5039c106ba98282c",
+    "serving_lookups.parquet": "21e4cd93a886be78c6b1ea18ecbb911a80c4bd30dcaa81e764f4d8427852a21a",
     "topn.parquet": "31388fc25701462b19d0966196ec6741a895f921a86fb6c36a53ab5fa884dfd6",
     "users.parquet": "8a3e34257c928195cfad07cc7be359b1914fec93b3313832d502a0edb9605c56"
-  },
-  "code_hash": "b7c37d8d4fa4f89abe09f2dffd3dc76543d6349835e1287753e2280ed65df45b"
+  }
 }
