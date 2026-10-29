@@ -22,7 +22,7 @@ from api.lookups import build_type_lookups
 from api.routes.metadata import router as metadata_router
 from api.routes.recommend import router as recommend_router
 from api.routes.users import router as users_router
-from api.search import ItemSearchIndex
+from api.search import LazySearchIndex
 from api.security import SecurityMiddleware
 from engine import registry
 from engine.artifacts import load_artifacts, verify_artifacts
@@ -99,8 +99,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             # 3. Build in-memory lookup structures (FIX-34)
             lookups = build_type_lookups(spec, loaded)
 
-            # 4. Build text search index
-            search_index = ItemSearchIndex(loaded.items, loaded.interactions)
+            # 4. Build text search index (lazy initialization for fast startup)
+            search_index = LazySearchIndex(loaded.items, loaded.interactions)
 
             app.state.configs[content_type] = spec
             app.state.lookups[content_type] = lookups

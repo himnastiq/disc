@@ -1608,6 +1608,21 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
   [SUCCESS] All checks passed successfully.
   ========================================================
   ```
+  - **FIX-48 (Real-Artifact Smoke Test Suite):**
+    - Created `backend/tests/integration/test_real_artifacts_smoke.py` marked `@pytest.mark.real_data`.
+    - Tests 20 users and 30 items per content type (movies, products, articles) across all 12 API endpoints.
+    - Verified strict invariants:
+      - HTTP 200 for all valid requests (with documented 404 handled cleanly for unindexed items on `/v1/similar`).
+      - Zero duplicate IDs across all item responses.
+      - Strictly non-empty category lists across all item responses and catalogues.
+    - Raw verification output:
+      ```
+      backend\tests\integration\test_real_artifacts_smoke.py::test_real_artifact_smoke_all_endpoints[movies] PASSED [ 33%]
+      backend\tests\integration\test_real_artifacts_smoke.py::test_real_artifact_smoke_all_endpoints[products] PASSED [ 66%]
+      backend\tests\integration\test_real_artifacts_smoke.py::test_real_artifact_smoke_all_endpoints[articles] PASSED [100%]
+      ================== 3 passed, 1 warning in 150.57s (0:02:30) ===================
+      ```
+
 
 
 

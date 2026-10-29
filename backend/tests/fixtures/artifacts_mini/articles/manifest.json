@@ -3,11 +3,13 @@
   "content_type": "articles",
   "model_name": "tfidf_profile",
   "config_hash": "40ed949de30904ad39dac41dd666d8507803daefe944e28dfd2900266f144126",
-  "git_sha": "0f7028b911dbe2169b1fa0c483927ea5262f709f",
+  "code_hash": "d33e791647a8be66eaf8d32ecc252b9f1b7e0ebe6c6fd7e2484a5fcc6e0830ce",
+  "git_sha": "30d84b62de84d5285ec2e984c12b32b12df9ab85",
   "dataset_variant": "small",
   "dataset_name": "MIND",
+  "dataset_source": "fixture",
   "section_heading": "Articles (MIND + TF-IDF Content Model)",
-  "created_at": "2026-10-26T06:52:49.670511+00:00",
+  "created_at": "2026-10-28T06:06:15.646643+00:00",
   "files": {
     "demo_users.json": "a6b01a77c671452ee622468bba6cd3253560faae67aa90fae7e743dd09f8b54f",
     "interactions.parquet": "076fbb279b48828cc7cf38251e88470fa8836ebb2023a34c83e6761c8ea39a7e",
@@ -16,11 +18,11 @@
     "model/idf.npy": "bbec272b537f6af5d5c976338a67c84542feae2e11de345a3ab9ad4bf44b2b2f",
     "model/item_ids.json": "375b165ef572fbe293936663826c97c419064bc140de6ab6eee08b6ceb9745a1",
     "model/item_titles.json": "9648d5076d2d21add8839f853701422cf9301b50b82f8c847be92da8a236fd18",
-    "model/model_meta.json": "84d29a13b02621bebe9c904847da139ff7d4983229f8aec2e7cf208f0df79585",
+    "model/model_meta.json": "c56d0d58a25cc63bfd3ff035124c18cdf9a719ebfaaace0b2276fe56c61829ef",
     "model/tfidf_matrix.npz": "51472665d1b70255a8b6ce2c23f3b33bdf04a43431aff324b083fee9073a46c8",
     "model/vocabulary.json": "e9317d60e89c4a1209131a1256434a16b8c255a753a915f083e4ca03f31e1de0",
+    "serving_lookups.parquet": "2e2a6ed394c78c8592278d6c15dc059830c1b1144a4a8f6929469e94836cf60e",
     "topn.parquet": "4eafdea3f9d5247669b44a42328d92c9dd982abde875e50fd7a29e2e0593d411",
     "users.parquet": "bbea41f9534354f57b454435282c211cf630dbd53d002f9391e43c105a804de3"
-  },
-  "code_hash": "b7c37d8d4fa4f89abe09f2dffd3dc76543d6349835e1287753e2280ed65df45b"
+  }
 }
