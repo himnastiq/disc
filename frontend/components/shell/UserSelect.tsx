@@ -109,7 +109,7 @@ export function UserSelect({ currentType, currentUser, onUserChange }: UserSelec
         disabled={isLoading}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        aria-label="Select user persona"
+        aria-label={`User #${currentUser}${activeUser?.persona ? ` · ${activeUser.persona}` : ''}: Select user persona`}
         className="h-8 flex items-center gap-2 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-xs font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-elevated)] cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)]"
       >
         <User className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />

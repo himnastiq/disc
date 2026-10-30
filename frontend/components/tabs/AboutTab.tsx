@@ -101,7 +101,12 @@ export function AboutTab() {
         </p>
 
         {/* Flowchart Diagram in SVG */}
-        <div className="w-full overflow-x-auto py-2">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="System architecture diagram flowchart"
+          className="w-full overflow-x-auto py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+        >
           <svg
             viewBox="0 0 780 140"
             role="img"
@@ -184,7 +189,12 @@ export function AboutTab() {
           Full transparency regarding newly authored code versus third-party open-source algorithms.
         </p>
 
-        <div className="overflow-x-auto">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Original vs Derived Codebase Division Table"
+          className="overflow-x-auto focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+        >
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold">

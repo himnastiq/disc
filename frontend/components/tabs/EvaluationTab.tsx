@@ -191,7 +191,12 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          <div
+            tabIndex={0}
+            role="region"
+            aria-label="Impression ranking metrics table"
+            className="overflow-x-auto focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+          >
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold">
@@ -275,7 +280,12 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
         </div>
 
         {/* Headline Metrics Table */}
-        <div className="overflow-x-auto">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Top-K ranking metrics table"
+          className="overflow-x-auto focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+        >
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold">
