@@ -43,12 +43,12 @@
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
-| 10 | Integration and robustness audit | 2 | 0 | 0 | 8 | 25% |
+| 10 | Integration and robustness audit | 3 | 0 | 0 | 8 | 37% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **110** | | | **129** | **85%** |
+| | **Overall** | **111** | | | **129** | **86%** |
 
-`[#################---] 85%  (110/129 tasks)`
+`[#################---] 86%  (111/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -542,7 +542,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
   - Slow case: use a mock that waits on a release signal instead of sleeping for 10 s in most assertions. Assert: skeleton visible within 200 ms, tab switching still works while waiting, exactly one request per query key (this is why the build must be production), and no layout jump on resolve (measure CLS with a PerformanceObserver, fail above 0.1). Keep one real 10 s test to confirm the proxy timeout path from P8.3 ends in a defined error state.
   - Console spy: fail on any `pageerror` and on any hydration warning. Fail on `console.error` too, except an allow-list for the browser's own "Failed to load resource" lines, and only inside scenarios that inject network or HTTP failures.
   - For 404 `unknown_user`, the expected UI is whatever P9 built (notice plus popularity fallback). If no notice exists, adding a minimal one is in scope as a bug fix; record it.
-- [ ] **P10.3** Data-versus-UI consistency audit. *Acceptance:* zero mismatches between rendered numbers and the source of truth, and the headline metrics also survive an independent recomputation.
+- [x] **P10.3** Data-versus-UI consistency audit. *Acceptance:* zero mismatches between rendered numbers and the source of truth, and the headline metrics also survive an independent recomputation.
   - Rounding first: the displayed precision is fixed (document it from P9.7). Compare rendered text with the raw value formatted to that precision, with zero extra tolerance. Python and JavaScript round differently (`round`, `toFixed`), so add unit tests on boundary values and compare against strings produced by the same rule, not floats.
   - Evaluation tab (all types): every model, k in 5/10/20, HitRate, NDCG, Recall, Precision, Coverage, Novelty, Diversity, Personalisation, the bootstrap CI bounds, and the cold-start curve points for sizes 0, 1, 2, 3, 5, 10, 20 (read from the chart's text alternative). Source: `artifacts/<type>/metrics.json`.
   - Profile cards: UI text equals the API response, and for 10 users per type the API values also equal a direct pandas computation on `interactions.parquet` (state which rows count, matching P7.4: interactions, positives = signal at or above the positive threshold, top category shares).

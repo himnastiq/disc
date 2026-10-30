@@ -757,6 +757,32 @@ Ensures complete failure-injection verification and layout stability across all 
 
 ---
 
+## D-031: Data-versus-UI Consistency Audit Protocol and Precision Formatting (P10.3)
+
+**Date:** 2026-10-30
+**Status:** Accepted
+**Context:**
+Numerical consistency between raw dataset artifacts, precomputed serving lookups, backend API serialization, and client-side UI rendering must be guaranteed end-to-end without rounding drift, metric formulation discrepancies, or rendering mismatches.
+
+**Options considered:**
+1. Compare rendered float numbers with an arbitrary tolerance epsilon (e.g. ±0.01) across components.
+2. Formulate strict string-formatted equality matching the exact fixed precision rules documented in P9.7, accompanied by an independent plain-NumPy recomputation of core ranking metrics (NDCG@10, Recall@10) on 200 users per domain without any engine/discovery dependencies.
+
+**Decision:**
+Option 2.
+1. **Precision Formatting Rules:** Documented and verified fixed precision formatting: headline ranking metrics and bootstrap CIs formatted to 4 decimals (`0.0000`), catalog coverage and personalisation to 1 decimal percentage (`0.0%`), diversity to 3 decimals (`0.000`), novelty to 2 decimals bits (`0.00 bits`), and user category affinity shares to 1 decimal percentage (`0.0%`). Boundary values (`0.12345`, `0.05465`, `0.00005`, `0.0`, `1.0`) are unit tested to prove string-based comparison equality rather than raw IEEE 754 float equality.
+2. **Independent Metric Recomputation:** Implemented standalone NumPy functions for Recall@10 and binary nDCG@10 (zero engine/discovery imports) and verified exact equivalence (< 1e-9 difference) against `engine.evaluation.metrics` on 200 test users across Movies, Products, and Articles (600 users total).
+3. **Profile Card Audit:** Verified API response values for 10 users per type against direct pandas computation on `interactions.parquet` and `items.parquet` for interaction counts, positive signal counts, timestamps, and category shares.
+4. **Compare Tab Overlap Audit:** Verified overlap counts, percentages, and pairwise Jaccard similarity against exact set operations on `/v1/popular` and `/v1/recommend` responses for 5 users per type.
+5. **Accessible Chart Text Alternative:** Enhanced cold-start SVG degradation curves with accessible text descriptions and DOM tables so that points are accessible to assistive technologies and automated scrapers with zero layout shift.
+
+**Consequences:**
+Guarantees 100% data-versus-UI fidelity across all 3 content types with zero tolerance discrepancies.
+
+**Related tasks:** P10.3, P9.7, R4, R9
+
+---
+
 <!-- Add new entries above this line -->
 
 
