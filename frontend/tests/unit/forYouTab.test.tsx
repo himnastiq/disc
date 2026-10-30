@@ -56,7 +56,7 @@ describe('ForYouTab (P9.4)', () => {
     );
 
     const matrixCard = await screen.findByRole('button', {
-      name: /view details for the matrix/i,
+      name: /the matrix \(1999\)/i,
     });
     fireEvent.click(matrixCard);
 
