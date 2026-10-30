@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { Sparkles, User, Tag, Clock } from 'lucide-react';
 
 function DashboardContent() {
-  const { type, tab, user, setType, setTab, setUser } = useUrlState();
+  const { type, tab, user, setTab, setUser, switchType } = useUrlState();
 
   const domainBadges: Record<ContentTypeKey, { label: string; variant: 'movie' | 'product' | 'article' }> = {
     movies: { label: 'Movies & TV', variant: 'movie' },
@@ -20,16 +20,16 @@ function DashboardContent() {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
       <AppHeader
         currentType={type}
-        onTypeChange={setType}
+        onTypeChange={(newType, defaultUser) => switchType(newType, defaultUser)}
         currentUser={user}
         onUserChange={setUser}
       />
       <TabNavigation activeTab={tab} onTabChange={setTab} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-[52rem] w-full mx-auto px-4 sm:px-6 py-6">
         {/* Active Tab View Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-4">
           <div>

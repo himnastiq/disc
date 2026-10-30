@@ -1,22 +1,19 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Bricolage_Grotesque } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  axes: ['opsz'],
+  variable: '--font-bricolage',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Discovery Engine — Recommender Dashboard',
+  title: 'Discovery Engine',
   description:
-    'Real-time adaptive cross-domain recommendation system across Movies, Products, and News.',
+    'Consumer entertainment discovery and adaptive recommendation engine across Movies, Products, and News.',
 };
 
 export default function RootLayout({
@@ -28,9 +25,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bricolage.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
+      <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] font-sans">
         <Providers>{children}</Providers>
       </body>
     </html>

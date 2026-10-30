@@ -19,33 +19,46 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   ];
 
   return (
-    <div className="w-full border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav
-          className="-mb-px flex space-x-6 sm:space-x-8 overflow-x-auto no-scrollbar"
-          aria-label="Tabs"
+    <nav
+      aria-label="Main Navigation Tabs"
+      className="w-full border-b border-[var(--color-border)] bg-[var(--color-bg)]"
+    >
+      <div className="max-w-[52rem] mx-auto px-4 sm:px-6">
+        <div
+          role="tablist"
+          className="-mb-px flex space-x-2 sm:space-x-6 overflow-x-auto no-scrollbar"
         >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`flex items-center gap-2 whitespace-nowrap border-b-2 py-3 px-1 text-xs sm:text-sm font-medium transition-all ${
-                  isActive
-                    ? 'border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50 font-semibold'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300'
-                }`}
+                role="tab"
+                aria-selected={isActive}
                 aria-current={isActive ? 'page' : undefined}
+                onClick={() => onTabChange(tab.id)}
+                className={`relative flex items-center gap-1.5 sm:gap-2 whitespace-nowrap py-3.5 px-2 text-xs font-medium min-h-[48px] transition-all cursor-pointer ${
+                  isActive
+                    ? 'text-[var(--color-accent-text)] font-semibold'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                }`}
               >
-                {tab.icon}
-                {tab.label}
+                {/* 2px accent indicator line on active tab */}
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--color-accent)]"
+                  />
+                )}
+                <span className={isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'}>
+                  {tab.icon}
+                </span>
+                <span>{tab.label}</span>
               </button>
             );
           })}
-        </nav>
+        </div>
       </div>
-    </div>
+    </nav>
   );
 }
-

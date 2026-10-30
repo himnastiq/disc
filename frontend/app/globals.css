@@ -1,59 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #09090b;
-  --card: #ffffff;
-  --card-foreground: #09090b;
-  --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #18181b;
+@theme {
+  /* Surfaces */
+  --color-bg: #0A0A0A;
+  --color-surface: #141414;
+  --color-elevated: #1F1F1F;
+  --color-border: #2A2A2A;
 
-  --movie-accent: #f59e0b;
-  --product-accent: #0284c7;
-  --article-accent: #10b981;
+  /* Text */
+  --color-text: #F5F5F1;
+  --color-text-secondary: #B3B3B3;
+  --color-text-muted: #808080;
+
+  /* Accent */
+  --color-accent: #E50914;
+  --color-accent-hover: #F6121D;
+  --color-accent-active: #B20710;
+  --color-accent-text: #FF4A53;
+
+  /* Status */
+  --color-success: #46D369;
+  --color-error: #FF7A59;
+
+  /* Type */
+  --font-sans: var(--font-bricolage), sans-serif;
+
+  /* Shape and size */
+  --container-shell: 52rem;
+  --radius-card: 6px;
 }
 
-.dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #18181b;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #18181b;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
-  --destructive: #7f1d1d;
-  --destructive-foreground: #fafafa;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #d4d4d8;
-
-  --movie-accent: #fbbf24;
-  --product-accent: #38bdf8;
-  --article-accent: #34d399;
+:root {
+  color-scheme: dark;
+  --header-h: 64px;
+  --nav-h: 64px;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
