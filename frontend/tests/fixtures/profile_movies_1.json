@@ -1,0 +1,40 @@
+{
+  "user_id": "1",
+  "content_type": "movies",
+  "persona": "Sci-Fi Fan (High Activity)",
+  "interaction_count": 53,
+  "positive_count": 48,
+  "first_activity": 978300760,
+  "last_activity": 978824351,
+  "top_categories": [
+    {
+      "category": "Drama",
+      "count": 21,
+      "share": 0.396
+    },
+    {
+      "category": "Sci-Fi",
+      "count": 14,
+      "share": 0.264
+    },
+    {
+      "category": "Animation",
+      "count": 10,
+      "share": 0.189
+    }
+  ],
+  "recent_items": [
+    {
+      "item_id": "1193",
+      "title": "One Flew Over the Cuckoo's Nest (1975)",
+      "signal": 5,
+      "timestamp": 978300760
+    },
+    {
+      "item_id": "661",
+      "title": "James and the Giant Peach (1996)",
+      "signal": 3,
+      "timestamp": 978302109
+    }
+  ]
+}

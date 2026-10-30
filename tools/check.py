@@ -17,6 +17,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND_DIR = REPO_ROOT / "backend"
+FRONTEND_DIR = REPO_ROOT / "frontend"
 
 
 def run_step(name: str, cmd: list[str], cwd: Path) -> None:
@@ -40,6 +41,8 @@ def run_step(name: str, cmd: list[str], cwd: Path) -> None:
 
 def main() -> None:
     py = sys.executable
+
+    npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
 
     steps = [
         ("Ruff Linter", [py, "-m", "ruff", "check", "."], BACKEND_DIR),
@@ -65,6 +68,16 @@ def main() -> None:
             BACKEND_DIR,
         ),
     ]
+
+    if (FRONTEND_DIR / "node_modules").exists():
+        steps.extend(
+            [
+                ("Frontend Linter (eslint)", [npm_cmd, "run", "lint"], FRONTEND_DIR),
+                ("Frontend Type Checker (tsc)", [npm_cmd, "run", "type-check"], FRONTEND_DIR),
+                ("Frontend Vitest Suite", [npm_cmd, "run", "test"], FRONTEND_DIR),
+                ("Frontend Secret Leakage Check", [npm_cmd, "run", "check-secrets"], FRONTEND_DIR),
+            ]
+        )
 
     print("========================================================")
     print("Discovery Engine Quality Assurance Checks")

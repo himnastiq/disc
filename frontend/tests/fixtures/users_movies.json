@@ -1,0 +1,39 @@
+{
+  "content_type": "movies",
+  "total": 3,
+  "users": [
+    {
+      "user_id": "1",
+      "persona": "Sci-Fi Fan (High Activity)",
+      "interaction_count": 53,
+      "is_demo": true,
+      "top_categories": [
+        "Drama",
+        "Sci-Fi",
+        "Animation"
+      ]
+    },
+    {
+      "user_id": "2",
+      "persona": "Drama Enthusiast",
+      "interaction_count": 129,
+      "is_demo": true,
+      "top_categories": [
+        "Drama",
+        "Action",
+        "Crime"
+      ]
+    },
+    {
+      "user_id": "3",
+      "persona": "Action & Adventure Buff",
+      "interaction_count": 51,
+      "is_demo": true,
+      "top_categories": [
+        "Action",
+        "Adventure",
+        "Comedy"
+      ]
+    }
+  ]
+}

@@ -41,14 +41,14 @@
 | 5 | Articles pipeline (MIND + TF-IDF content model) | 12 | 0 | 0 | 12 | 100% |
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
-| 8 | Frontend scaffolding | 0 | 0 | 0 | 9 | 0% |
+| 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 0 | 0 | 0 | 12 | 0% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **87** | | | **129** | **67%** |
+| | **Overall** | **96** | | | **129** | **74%** |
 
-`[#############-------] 67%  (87/129 tasks)`
+`[##############------] 74%  (96/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -479,15 +479,15 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 **Goal:** a typed, tested, themed Next.js shell wired to the API through server-side route handlers.
 **Gates:** R9 (partial), R11.
 
-- [ ] **P8.1** Create the Next.js app in `frontend/` (App Router, TypeScript strict, Tailwind, ESLint, Prettier). Record exact versions in `docs/DECISIONS.md`. *Acceptance:* `npm run build` and `npm run lint` pass.
-- [ ] **P8.2** Environment handling: `API_BASE_URL` and optional `API_KEY` are **server-only** env vars (never `NEXT_PUBLIC_`). `.env.example` committed. *Acceptance:* a build-output check script greps the client bundle for the key and fails if found.
-- [ ] **P8.3** API access layer: Next.js route handlers under `src/app/api/*` proxy to FastAPI (adding the key, timeouts, and uniform error mapping). Generate TypeScript types from `openapi.json` (`openapi-typescript`), and add **zod schemas** that validate every response at runtime. A contract test compares zod schemas to the OpenAPI types. *Acceptance:* a malformed API response produces a typed error state, not a crash.
-- [ ] **P8.4** Data fetching with React Query (or SWR): caching, retry with backoff for idempotent GETs, abort on navigation, stale-while-revalidate for metadata. *Acceptance:* unit tests with mocked responses.
-- [ ] **P8.5** URL state: `type`, `user`, `tab` kept in the query string; invalid values fall back to defaults and the URL is corrected. *Acceptance:* tests for invalid params.
-- [ ] **P8.6** Design system: tokens for colours, spacing, typography; light and dark themes (system default plus toggle); primitives `Card`, `Badge`, `Button`, `Tabs`, `Skeleton`, `ErrorState` (with retry), `EmptyState`, `Toast`, `Tooltip`. *Acceptance:* a `/dev/components` page (excluded in production builds) shows all primitives in both themes.
-- [ ] **P8.7** App shell: top bar (title, TypeSwitcher placeholder, UserSelect placeholder, theme toggle), tab container, footer with attribution links (Recommenders, MovieLens, Amazon reviews, MIND; non-commercial notice). *Acceptance:* renders correctly at 360, 768, 1280 px.
-- [ ] **P8.8** Test tooling: vitest and Testing Library; MSW with fixtures **recorded from the real API** (script `frontend/scripts/record_fixtures.ts`); Playwright config. Add frontend jobs to `make check` and CI. *Acceptance:* at least one passing test of each kind.
-- [ ] **P8.9** Phase 8 Gate and "break your own work" ritual.
+- [x] **P8.1** Create the Next.js app in `frontend/` (App Router, TypeScript strict, Tailwind, ESLint, Prettier). Record exact versions in `docs/DECISIONS.md`. *Acceptance:* `npm run build` and `npm run lint` pass.
+- [x] **P8.2** Environment handling: `API_BASE_URL` and optional `API_KEY` are **server-only** env vars (never `NEXT_PUBLIC_`). `.env.example` committed. *Acceptance:* a build-output check script greps the client bundle for the key and fails if found.
+- [x] **P8.3** API access layer: Next.js route handlers under `src/app/api/*` proxy to FastAPI (adding the key, timeouts, and uniform error mapping). Generate TypeScript types from `openapi.json` (`openapi-typescript`), and add **zod schemas** that validate every response at runtime. A contract test compares zod schemas to the OpenAPI types. *Acceptance:* a malformed API response produces a typed error state, not a crash.
+- [x] **P8.4** Data fetching with React Query (or SWR): caching, retry with backoff for idempotent GETs, abort on navigation, stale-while-revalidate for metadata. *Acceptance:* unit tests with mocked responses.
+- [x] **P8.5** URL state: `type`, `user`, `tab` kept in the query string; invalid values fall back to defaults and the URL is corrected. *Acceptance:* tests for invalid params.
+- [x] **P8.6** Design system: tokens for colours, spacing, typography; light and dark themes (system default plus toggle); primitives `Card`, `Badge`, `Button`, `Tabs`, `Skeleton`, `ErrorState` (with retry), `EmptyState`, `Toast`, `Tooltip`. *Acceptance:* a `/dev/components` page (excluded in production builds) shows all primitives in both themes.
+- [x] **P8.7** App shell: top bar (title, TypeSwitcher placeholder, UserSelect placeholder, theme toggle), tab container, footer with attribution links (Recommenders, MovieLens, Amazon reviews, MIND; non-commercial notice). *Acceptance:* renders correctly at 360, 768, 1280 px.
+- [x] **P8.8** Test tooling: vitest and Testing Library; MSW with fixtures **recorded from the real API** (script `frontend/scripts/record_fixtures.ts`); Playwright config. Add frontend jobs to `make check` and CI. *Acceptance:* at least one passing test of each kind.
+- [x] **P8.9** Phase 8 Gate and "break your own work" ritual.
 
 ---
 

@@ -64,6 +64,8 @@ ALLOWED_PATTERNS = [
     "backend/discovery/**/*",
     "backend/api/*",
     "backend/api/**/*",
+    "frontend/*",
+    "frontend/**/*",
     "IMPLEMENTATION_PLAN.md",
     "README.md",
     "Makefile",

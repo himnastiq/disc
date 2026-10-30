@@ -1,0 +1,52 @@
+{
+  "content_type": "movies",
+  "user_id": "1",
+  "mode": "personalized",
+  "k": 5,
+  "results": [
+    {
+      "item_id": "385",
+      "title": "The Matrix (1999)",
+      "subtitle": "Warner Bros.",
+      "categories": [
+        "Action",
+        "Sci-Fi"
+      ],
+      "year": 1999,
+      "image_url": null,
+      "score": 0.567625,
+      "display_score": 1,
+      "reason": {
+        "kind": "history_item",
+        "item_id": "1193",
+        "text": "Because you watched and rated highly One Flew Over the Cuckoo Nest",
+        "similarity_score": 0.85
+      },
+      "meta": {}
+    },
+    {
+      "item_id": "423",
+      "title": "Blade Runner (1982)",
+      "subtitle": null,
+      "categories": [
+        "Sci-Fi",
+        "Film-Noir"
+      ],
+      "year": 1982,
+      "image_url": null,
+      "score": 0.551251,
+      "display_score": 0.97,
+      "reason": {
+        "kind": "history_item",
+        "item_id": "661",
+        "text": "Because you liked Sci-Fi titles in your history",
+        "similarity_score": 0.78
+      },
+      "meta": {}
+    }
+  ],
+  "meta": {
+    "model": "sar",
+    "similarity": "jaccard"
+  }
+}

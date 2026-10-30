@@ -1,0 +1,31 @@
+{
+  "types": [
+    {
+      "id": "movies",
+      "display_name": "Movies",
+      "card_type": "movie",
+      "supports_cold_start": true,
+      "user_count": 6040,
+      "item_count": 3883,
+      "interaction_count": 1000209
+    },
+    {
+      "id": "products",
+      "display_name": "Products",
+      "card_type": "product",
+      "supports_cold_start": true,
+      "user_count": 24303,
+      "item_count": 8000,
+      "interaction_count": 231780
+    },
+    {
+      "id": "articles",
+      "display_name": "Articles",
+      "card_type": "article",
+      "supports_cold_start": true,
+      "user_count": 50000,
+      "item_count": 4241,
+      "interaction_count": 147775
+    }
+  ]
+}

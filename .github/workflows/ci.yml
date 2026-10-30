@@ -63,8 +63,6 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    # Skip until Phase 8
-    if: false
 
     steps:
       - uses: actions/checkout@v4
@@ -72,7 +70,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install dependencies
         run: |
@@ -87,9 +85,15 @@ jobs:
       - name: Type check
         run: |
           cd frontend
-          npx tsc --noEmit
+          npm run type-check
 
       - name: Test
         run: |
           cd frontend
-          npm run test -- --run
+          npm run test
+
+      - name: Check bundle secrets
+        run: |
+          cd frontend
+          npm run build
+          npm run check-secrets

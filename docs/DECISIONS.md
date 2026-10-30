@@ -687,6 +687,33 @@ Storage for products interactions remains compact and decoupled from a fixed thr
 
 ---
 
+## D-028: Frontend scaffolding architecture, Next.js 16, and zero-deprecated modern stack (2026-10-30)
+
+**Context:**
+Per tasks P8.1 to P8.9, the frontend requires a typed, tested, accessible, and themed Next.js application shell in `frontend/` wired to FastAPI via server-side route proxies. The user scaffolded the base project using Next.js 16.4.3, React 19.3.0, and Tailwind CSS 4, requiring an audit of current non-deprecated modules across the ecosystem.
+
+**Options considered:**
+1. Stick with legacy Next.js 14 and React 18 with older v1 MSW and v3 Tailwind syntax.
+2. Adopt current modern dependencies (Next.js 16.4.3, React 19.3.0, Tailwind CSS 4, TanStack Query v5, MSW v2/v3, openapi-typescript v7, Vitest v5) while adhering strictly to non-deprecated APIs.
+
+**Decision:**
+Option 2. The frontend is built on the current modern ecosystem:
+- Next.js 16.4.3 with Turbopack, App Router, and server route handlers.
+- Tailwind CSS 4 with `@tailwindcss/turbopack` and CSS custom property theming without deprecated opacity utility classes.
+- ESLint 9 Flat Config (`eslint.config.mjs`) with `eslint-config-next/core-web-vitals` and TypeScript rules.
+- TanStack Query v5 with single-object options syntax and `QueryCache` error boundaries.
+- Zod v4 schemas validating all incoming API payloads at runtime, with contract verification against `openapi-typescript` v7 AST-generated types.
+- MSW v2/v3 standard Web Fetch API (`http.get`, `HttpResponse.json()`).
+- Server-side environment isolation: `API_BASE_URL` and `API_KEY` are server-only; verified by `frontend/scripts/check_bundle_secrets.mjs` (Quality Gate R11).
+- React 19 hydration safety: `ThemeToggle` uses `useSyncExternalStore` rather than cascading `useEffect` state updates.
+
+**Consequences:**
+The application runs on modern, non-deprecated modules with fast build times (Turbopack: 3.5s compile) and 0 vulnerabilities. Quality Gate R11 is strictly maintained.
+
+**Related tasks:** P8.1, P8.2, P8.3, P8.4, P8.5, P8.6, P8.7, P8.8, P8.9, R9, R11
+
+---
+
 <!-- Add new entries above this line -->
 
 
