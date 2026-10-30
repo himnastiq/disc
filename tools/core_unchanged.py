@@ -27,6 +27,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+
 class GitHistoryUnavailable(Exception):
     """Raised when required git commit history or tags are missing (e.g. shallow clone)."""
 
@@ -69,6 +70,10 @@ ALLOWED_PATTERNS = [
     "IMPLEMENTATION_PLAN.md",
     "README.md",
     "Makefile",
+    "run.sh",
+    "run.bat",
+    "run.ps1",
+    "design.md",
     "pyproject.toml",
     "backend/pyproject.toml",
     "uv.lock",
