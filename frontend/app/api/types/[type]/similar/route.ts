@@ -6,8 +6,8 @@ export async function GET(
 ) {
   const { type } = await params;
   const { searchParams } = new URL(request.url);
-  const query = searchParams.toString();
-  const backendPath = `/v1/types/${encodeURIComponent(type)}/similar${query ? `?${query}` : ''}`;
+  searchParams.set('type', type);
+  const backendPath = `/v1/similar?${searchParams.toString()}`;
   return proxyToBackend(backendPath);
 }
 

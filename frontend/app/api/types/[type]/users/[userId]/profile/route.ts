@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: Promise<{ type: string; userId: string }> }
 ) {
   const { type, userId } = await params;
-  const backendPath = `/v1/types/${encodeURIComponent(type)}/users/${encodeURIComponent(userId)}/profile`;
+  const backendPath = `/v1/users/${encodeURIComponent(userId)}/profile?type=${encodeURIComponent(type)}`;
   return proxyToBackend(backendPath);
 }
 
