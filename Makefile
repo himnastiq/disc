@@ -51,10 +51,7 @@ web:
 	else echo "Frontend not yet created (Phase 8)."; exit 1; fi
 
 demo:
-	@echo "Starting Discovery Engine demo..."
-	@echo "1. Start the API: make api"
-	@echo "2. Start the frontend: make web"
-	@echo "3. Open http://localhost:3000"
+	@bash ./run.sh
 
 # ---- Quality ----
 test:
