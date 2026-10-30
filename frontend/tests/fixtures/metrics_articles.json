@@ -1,0 +1,822 @@
+{
+  "protocol": {
+    "split_strategy": "impression_time",
+    "split_ratio": 0.8,
+    "allow_repeat": false,
+    "positive_threshold": 1.0,
+    "total_interactions": 2118564,
+    "total_items": 52875,
+    "evaluated_test_users": 200,
+    "evaluated_impressions": 500,
+    "dual_protocol": true
+  },
+  "protocols": {
+    "impression_ranking": {
+      "description": "MIND-style candidate ranking per impression",
+      "evaluated_impressions": 500,
+      "models": {
+        "popularity": {
+          "auc": 0.4811,
+          "auc_ci95": [
+            0.4631,
+            0.5004
+          ],
+          "mrr": 0.23,
+          "mrr_ci95": [
+            0.2049,
+            0.2545
+          ],
+          "ndcg@5": 0.2129,
+          "ndcg@5_ci95": [
+            0.1843,
+            0.24
+          ],
+          "ndcg@10": 0.2655,
+          "ndcg@10_ci95": [
+            0.2386,
+            0.2915
+          ]
+        },
+        "random": {
+          "auc": 0.5222,
+          "auc_ci95": [
+            0.4944,
+            0.5488
+          ],
+          "mrr": 0.2365,
+          "mrr_ci95": [
+            0.2119,
+            0.2625
+          ],
+          "ndcg@5": 0.2143,
+          "ndcg@5_ci95": [
+            0.1866,
+            0.2439
+          ],
+          "ndcg@10": 0.2835,
+          "ndcg@10_ci95": [
+            0.2568,
+            0.3099
+          ]
+        },
+        "tfidf_profile": {
+          "auc": 0.5714,
+          "auc_ci95": [
+            0.548,
+            0.596
+          ],
+          "mrr": 0.297,
+          "mrr_ci95": [
+            0.2701,
+            0.3235
+          ],
+          "ndcg@5": 0.273,
+          "ndcg@5_ci95": [
+            0.2432,
+            0.3026
+          ],
+          "ndcg@10": 0.3401,
+          "ndcg@10_ci95": [
+            0.3121,
+            0.3678
+          ]
+        }
+      },
+      "sanity_checks": {
+        "all_bounds_valid": true,
+        "popularity_beats_random": false,
+        "model_beats_popularity": true
+      }
+    },
+    "retrieval": {
+      "description": "Top-K retrieval from the active recency window candidate pool",
+      "recency_window_seconds": 86400.0,
+      "candidate_pool_size": 33118,
+      "evaluated_test_users": 200,
+      "k_values": [
+        5,
+        10,
+        20
+      ],
+      "models": {
+        "popularity": {
+          "5": {
+            "precision": 0.0,
+            "precision_ci95": [
+              0.0,
+              0.0
+            ],
+            "recall": 0.0,
+            "recall_ci95": [
+              0.0,
+              0.0
+            ],
+            "ndcg": 0.0,
+            "ndcg_ci95": [
+              0.0,
+              0.0
+            ],
+            "map": 0.0,
+            "map_ci95": [
+              0.0,
+              0.0
+            ],
+            "hit_rate": 0.0,
+            "hit_rate_ci95": [
+              0.0,
+              0.0
+            ],
+            "coverage": 0.00018912529550827424,
+            "novelty": 8.237557777918381,
+            "diversity": 0.9621666666666667,
+            "personalisation": 0.26849525404801794
+          },
+          "10": {
+            "precision": 0.0,
+            "precision_ci95": [
+              0.0,
+              0.0
+            ],
+            "recall": 0.0,
+            "recall_ci95": [
+              0.0,
+              0.0
+            ],
+            "ndcg": 0.0,
+            "ndcg_ci95": [
+              0.0,
+              0.0
+            ],
+            "map": 0.0,
+            "map_ci95": [
+              0.0,
+              0.0
+            ],
+            "hit_rate": 0.0,
+            "hit_rate_ci95": [
+              0.0,
+              0.0
+            ],
+            "coverage": 0.0003215130023640662,
+            "novelty": 8.420514345235546,
+            "diversity": 0.9195925925925929,
+            "personalisation": 0.24482260620451574
+          },
+          "20": {
+            "precision": 0.0,
+            "precision_ci95": [
+              0.0,
+              0.0
+            ],
+            "recall": 0.0,
+            "recall_ci95": [
+              0.0,
+              0.0
+            ],
+            "ndcg": 0.0,
+            "ndcg_ci95": [
+              0.0,
+              0.0
+            ],
+            "map": 0.0,
+            "map_ci95": [
+              0.0,
+              0.0
+            ],
+            "hit_rate": 0.0,
+            "hit_rate_ci95": [
+              0.0,
+              0.0
+            ],
+            "coverage": 0.0006619385342789598,
+            "novelty": 8.706131166263404,
+            "diversity": 0.8971842105263158,
+            "personalisation": 0.2092148259759291
+          }
+        },
+        "random": {
+          "5": {
+            "precision": 0.0,
+            "precision_ci95": [
+              0.0,
+              0.0
+            ],
+            "recall": 0.0,
+            "recall_ci95": [
+              0.0,
+              0.0
+            ],
+            "ndcg": 0.0,
+            "ndcg_ci95": [
+              0.0,
+              0.0
+            ],
+            "map": 0.0,
+            "map_ci95": [
+              0.0,
+              0.0
+            ],
+            "hit_rate": 0.0,
+            "hit_rate_ci95": [
+              0.0,
+              0.0
+            ],
+            "coverage": 0.018591016548463356,
+            "novelty": 18.029658387313663,
+            "diversity": 0.9161666666666668,
+            "personalisation": 0.9999050809603575
+          },
+          "10": {
+            "precision": 0.0,
+            "precision_ci95": [
+              0.0,
+              0.0
+            ],
+            "recall": 0.0,
+            "recall_ci95": [
+              0.0,
+              0.0
+            ],
+            "ndcg": 0.0,
+            "ndcg_ci95": [
+              0.0,
+              0.0
+            ],
+            "map": 0.0,
+            "map_ci95": [
+              0.0,
+              0.0
+            ],
+            "hit_rate": 0.0,
+            "hit_rate_ci95": [
+              0.0,
+              0.0
+            ],
+            "coverage": 0.03655791962174941,
+            "novelty": 18.048429799826987,
+            "diversity": 0.9136296296296297,
+            "personalisation": 0.9998175085956096
+          },
+          "20": {
+            "precision": 0.0,
+            "precision_ci95": [
+              0.0,
+              0.0
+            ],
+            "recall": 0.0,
+            "recall_ci95": [
+              0.0,
+              0.0
+            ],
+            "ndcg": 0.0,
+            "ndcg_ci95": [
+              0.0,
+              0.0
+            ],
+            "map": 0.0,
+            "map_ci95": [
+              0.0,
+              0.0
+            ],
+            "hit_rate": 0.0,
+            "hit_rate_ci95": [
+              0.0,
+              0.0
+            ],
+            "coverage": 0.07156501182033097,
+            "novelty": 17.941105287534228,
+            "diversity": 0.9095175438596492,
+            "personalisation": 0.9997126658935706
+          }
+        },
+        "tfidf_profile": {
+          "5": {
+            "precision": 0.001,
+            "precision_ci95": [
+              0.0,
+              0.003
+            ],
+            "recall": 0.005,
+            "recall_ci95": [
+              0.0,
+              0.015
+            ],
+            "ndcg": 0.00215,
+            "ndcg_ci95": [
+              0.0,
+              0.00646
+            ],
+            "map": 0.00125,
+            "map_ci95": [
+              0.0,
+              0.00375
+            ],
+            "hit_rate": 0.005,
+            "hit_rate_ci95": [
+              0.0,
+              0.015
+            ],
+            "coverage": 0.0138628841607565,
+            "novelty": 16.273196082968624,
+            "diversity": 0.4991666666666667,
+            "personalisation": 0.9961637552843582
+          },
+          "10": {
+            "precision": 0.001,
+            "precision_ci95": [
+              0.0,
+              0.0025
+            ],
+            "recall": 0.006,
+            "recall_ci95": [
+              0.0,
+              0.017
+            ],
+            "ndcg": 0.00272,
+            "ndcg_ci95": [
+              0.0,
+              0.00816
+            ],
+            "map": 0.00139,
+            "map_ci95": [
+              0.0,
+              0.00432
+            ],
+            "hit_rate": 0.01,
+            "hit_rate_ci95": [
+              0.0,
+              0.025
+            ],
+            "coverage": 0.026004728132387706,
+            "novelty": 16.344276653877408,
+            "diversity": 0.5152962962962964,
+            "personalisation": 0.9955011675086896
+          },
+          "20": {
+            "precision": 0.0005,
+            "precision_ci95": [
+              0.0,
+              0.00125
+            ],
+            "recall": 0.006,
+            "recall_ci95": [
+              0.0,
+              0.017
+            ],
+            "ndcg": 0.00272,
+            "ndcg_ci95": [
+              0.0,
+              0.00816
+            ],
+            "map": 0.00139,
+            "map_ci95": [
+              0.0,
+              0.00432
+            ],
+            "hit_rate": 0.01,
+            "hit_rate_ci95": [
+              0.0,
+              0.025
+            ],
+            "coverage": 0.047319148936170216,
+            "novelty": 16.43965769163947,
+            "diversity": 0.5454298245614035,
+            "personalisation": 0.9942580952305352
+          }
+        }
+      },
+      "sanity_checks": {
+        "all_bounds_valid": true,
+        "popularity_beats_random": true,
+        "model_beats_popularity": true,
+        "ci_separated_metrics": {
+          "recall": false,
+          "ndcg": false,
+          "precision": false,
+          "map": false,
+          "hit_rate": false
+        }
+      }
+    }
+  },
+  "seeds": {
+    "split_seed": 42,
+    "model_seed": 42
+  },
+  "config_hash": "1ce5e663ea85aeadcea753064efb4bba4d36ffd8d76df380d66d161cb51a4cb8",
+  "git_sha": "5ee8745472c6ff2980308baff6822f40bc9d1fdf",
+  "created_at": "2026-10-30T04:16:55.314332+00:00",
+  "content_type": "articles",
+  "dataset_variant": "small",
+  "k_values": [
+    5,
+    10,
+    20
+  ],
+  "models": {
+    "popularity": {
+      "5": {
+        "precision": 0.0,
+        "precision_ci95": [
+          0.0,
+          0.0
+        ],
+        "recall": 0.0,
+        "recall_ci95": [
+          0.0,
+          0.0
+        ],
+        "ndcg": 0.0,
+        "ndcg_ci95": [
+          0.0,
+          0.0
+        ],
+        "map": 0.0,
+        "map_ci95": [
+          0.0,
+          0.0
+        ],
+        "hit_rate": 0.0,
+        "hit_rate_ci95": [
+          0.0,
+          0.0
+        ],
+        "coverage": 0.00018912529550827424,
+        "novelty": 8.237557777918381,
+        "diversity": 0.9621666666666667,
+        "personalisation": 0.26849525404801794
+      },
+      "10": {
+        "precision": 0.0,
+        "precision_ci95": [
+          0.0,
+          0.0
+        ],
+        "recall": 0.0,
+        "recall_ci95": [
+          0.0,
+          0.0
+        ],
+        "ndcg": 0.0,
+        "ndcg_ci95": [
+          0.0,
+          0.0
+        ],
+        "map": 0.0,
+        "map_ci95": [
+          0.0,
+          0.0
+        ],
+        "hit_rate": 0.0,
+        "hit_rate_ci95": [
+          0.0,
+          0.0
+        ],
+        "coverage": 0.0003215130023640662,
+        "novelty": 8.420514345235546,
+        "diversity": 0.9195925925925929,
+        "personalisation": 0.24482260620451574
+      },
+      "20": {
+        "precision": 0.0,
+        "precision_ci95": [
+          0.0,
+          0.0
+        ],
+        "recall": 0.0,
+        "recall_ci95": [
+          0.0,
+          0.0
+        ],
+        "ndcg": 0.0,
+        "ndcg_ci95": [
+          0.0,
+          0.0
+        ],
+        "map": 0.0,
+        "map_ci95": [
+          0.0,
+          0.0
+        ],
+        "hit_rate": 0.0,
+        "hit_rate_ci95": [
+          0.0,
+          0.0
+        ],
+        "coverage": 0.0006619385342789598,
+        "novelty": 8.706131166263404,
+        "diversity": 0.8971842105263158,
+        "personalisation": 0.2092148259759291
+      }
+    },
+    "random": {
+      "5": {
+        "precision": 0.0,
+        "precision_ci95": [
+          0.0,
+          0.0
+        ],
+        "recall": 0.0,
+        "recall_ci95": [
+          0.0,
+          0.0
+        ],
+        "ndcg": 0.0,
+        "ndcg_ci95": [
+          0.0,
+          0.0
+        ],
+        "map": 0.0,
+        "map_ci95": [
+          0.0,
+          0.0
+        ],
+        "hit_rate": 0.0,
+        "hit_rate_ci95": [
+          0.0,
+          0.0
+        ],
+        "coverage": 0.018591016548463356,
+        "novelty": 18.029658387313663,
+        "diversity": 0.9161666666666668,
+        "personalisation": 0.9999050809603575
+      },
+      "10": {
+        "precision": 0.0,
+        "precision_ci95": [
+          0.0,
+          0.0
+        ],
+        "recall": 0.0,
+        "recall_ci95": [
+          0.0,
+          0.0
+        ],
+        "ndcg": 0.0,
+        "ndcg_ci95": [
+          0.0,
+          0.0
+        ],
+        "map": 0.0,
+        "map_ci95": [
+          0.0,
+          0.0
+        ],
+        "hit_rate": 0.0,
+        "hit_rate_ci95": [
+          0.0,
+          0.0
+        ],
+        "coverage": 0.03655791962174941,
+        "novelty": 18.048429799826987,
+        "diversity": 0.9136296296296297,
+        "personalisation": 0.9998175085956096
+      },
+      "20": {
+        "precision": 0.0,
+        "precision_ci95": [
+          0.0,
+          0.0
+        ],
+        "recall": 0.0,
+        "recall_ci95": [
+          0.0,
+          0.0
+        ],
+        "ndcg": 0.0,
+        "ndcg_ci95": [
+          0.0,
+          0.0
+        ],
+        "map": 0.0,
+        "map_ci95": [
+          0.0,
+          0.0
+        ],
+        "hit_rate": 0.0,
+        "hit_rate_ci95": [
+          0.0,
+          0.0
+        ],
+        "coverage": 0.07156501182033097,
+        "novelty": 17.941105287534228,
+        "diversity": 0.9095175438596492,
+        "personalisation": 0.9997126658935706
+      }
+    },
+    "tfidf_profile": {
+      "5": {
+        "precision": 0.001,
+        "precision_ci95": [
+          0.0,
+          0.003
+        ],
+        "recall": 0.005,
+        "recall_ci95": [
+          0.0,
+          0.015
+        ],
+        "ndcg": 0.00215,
+        "ndcg_ci95": [
+          0.0,
+          0.00646
+        ],
+        "map": 0.00125,
+        "map_ci95": [
+          0.0,
+          0.00375
+        ],
+        "hit_rate": 0.005,
+        "hit_rate_ci95": [
+          0.0,
+          0.015
+        ],
+        "coverage": 0.0138628841607565,
+        "novelty": 16.273196082968624,
+        "diversity": 0.4991666666666667,
+        "personalisation": 0.9961637552843582
+      },
+      "10": {
+        "precision": 0.001,
+        "precision_ci95": [
+          0.0,
+          0.0025
+        ],
+        "recall": 0.006,
+        "recall_ci95": [
+          0.0,
+          0.017
+        ],
+        "ndcg": 0.00272,
+        "ndcg_ci95": [
+          0.0,
+          0.00816
+        ],
+        "map": 0.00139,
+        "map_ci95": [
+          0.0,
+          0.00432
+        ],
+        "hit_rate": 0.01,
+        "hit_rate_ci95": [
+          0.0,
+          0.025
+        ],
+        "coverage": 0.026004728132387706,
+        "novelty": 16.344276653877408,
+        "diversity": 0.5152962962962964,
+        "personalisation": 0.9955011675086896
+      },
+      "20": {
+        "precision": 0.0005,
+        "precision_ci95": [
+          0.0,
+          0.00125
+        ],
+        "recall": 0.006,
+        "recall_ci95": [
+          0.0,
+          0.017
+        ],
+        "ndcg": 0.00272,
+        "ndcg_ci95": [
+          0.0,
+          0.00816
+        ],
+        "map": 0.00139,
+        "map_ci95": [
+          0.0,
+          0.00432
+        ],
+        "hit_rate": 0.01,
+        "hit_rate_ci95": [
+          0.0,
+          0.025
+        ],
+        "coverage": 0.047319148936170216,
+        "novelty": 16.43965769163947,
+        "diversity": 0.5454298245614035,
+        "personalisation": 0.9942580952305352
+      }
+    }
+  },
+  "cold_start_curves": {
+    "popularity": {
+      "0": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "1": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "2": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "3": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "5": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "10": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "20": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      }
+    },
+    "random": {
+      "0": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "1": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "2": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "3": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "5": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "10": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "20": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      }
+    },
+    "tfidf_profile": {
+      "0": {
+        "hit_rate@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0
+      },
+      "1": {
+        "hit_rate@10": 0.02,
+        "ndcg@10": 0.012618595071429149,
+        "recall@10": 0.02
+      },
+      "2": {
+        "hit_rate@10": 0.02,
+        "ndcg@10": 0.007737056144690831,
+        "recall@10": 0.02
+      },
+      "3": {
+        "hit_rate@10": 0.02,
+        "ndcg@10": 0.007737056144690831,
+        "recall@10": 0.02
+      },
+      "5": {
+        "hit_rate@10": 0.02,
+        "ndcg@10": 0.007737056144690831,
+        "recall@10": 0.02
+      },
+      "10": {
+        "hit_rate@10": 0.02,
+        "ndcg@10": 0.007737056144690831,
+        "recall@10": 0.02
+      },
+      "20": {
+        "hit_rate@10": 0.04,
+        "ndcg@10": 0.013868528072345416,
+        "recall@10": 0.03
+      }
+    }
+  },
+  "sanity_checks": {
+    "all_bounds_valid": true,
+    "popularity_beats_random": false,
+    "model_beats_popularity": true,
+    "leakage_check_passed": true
+  }
+}
