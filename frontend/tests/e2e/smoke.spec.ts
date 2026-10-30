@@ -22,8 +22,7 @@ test.describe('Discovery Engine App Shell & Viewports (P8.7, P8.8)', () => {
     await expect(page.getByRole('heading', { name: /personalized recommendations/i })).toBeVisible();
 
     // 4. Verify Footer
-    await expect(page.getByRole('contentinfo').getByText(/Recommenders \(MIT\)/i)).toBeVisible();
-    await expect(page.getByRole('contentinfo').getByText(/MovieLens/i)).toBeVisible();
+    await expect(page.getByRole('contentinfo').getByText(/Made with Next \+ FastAPI/i)).toBeVisible();
   });
 
   test('renders design system primitives catalog on dev route', async ({ page }) => {

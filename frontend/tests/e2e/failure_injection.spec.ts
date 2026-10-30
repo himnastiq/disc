@@ -189,7 +189,7 @@ test.describe('Failure Injection & Robustness Suite (P10.2)', () => {
     // Measure CLS caused strictly by the arrival of the delayed recommendation cards
     const shiftAfterRelease = await page.evaluate((sinceTime) => {
       try {
-        const entries = performance.getEntriesByType('layout-shift') as Array<{
+        const entries = performance.getEntriesByType('layout-shift') as unknown as Array<{
           startTime: number;
           hadRecentInput: boolean;
           value: number;
