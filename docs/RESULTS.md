@@ -203,23 +203,24 @@ if and only if the model's lower confidence bound strictly exceeds popularity's 
 
 | Endpoint & Domain | Requests | p50 (Median) | p95 (Tail) | p99 (Worst) | Mean Latency | Process RSS | R8 Budget (<150ms) |
 |---|---|---|---|---|---|---|---|
-| `GET /v1/health` | 500 | `17.17 ms` | **`21.21 ms`** | `38.19 ms` | `17.83 ms` | `2302.2 MB` | **PASSED** |
-| `GET /v1/types` | 500 | `28.50 ms` | **`34.10 ms`** | `43.09 ms` | `29.04 ms` | `2302.3 MB` | **PASSED** |
-| `GET /v1/about` | 500 | `3.28 ms` | **`3.94 ms`** | `4.66 ms` | `5.18 ms` | `2270.3 MB` | **PASSED** |
-| `GET /v1/items/search (movies)` | 500 | `25.66 ms` | **`30.52 ms`** | `41.21 ms` | `26.15 ms` | `2254.3 MB` | **PASSED** |
-| `GET /v1/users/{id}/profile (movies, 200 users)` | 500 | `19.00 ms` | **`23.61 ms`** | `30.64 ms` | `19.40 ms` | `2239.3 MB` | **PASSED** |
-| `GET /v1/recommend (movies, 200 users)` | 500 | `47.33 ms` | **`107.96 ms`** | `135.54 ms` | `55.40 ms` | `2245.5 MB` | **PASSED** |
-| `POST /v1/recommend/cold-start (movies)` | 500 | `33.09 ms` | **`38.41 ms`** | `48.87 ms` | `33.66 ms` | `2245.6 MB` | **PASSED** |
-| `GET /v1/popular (movies)` | 500 | `33.09 ms` | **`37.29 ms`** | `51.82 ms` | `33.71 ms` | `2245.7 MB` | **PASSED** |
-| `GET /v1/similar (movies)` | 500 | `34.24 ms` | **`50.75 ms`** | `63.31 ms` | `36.20 ms` | `2245.7 MB` | **PASSED** |
-| `GET /v1/recommend (products, 200 users)` | 500 | `36.69 ms` | **`44.55 ms`** | `62.04 ms` | `37.70 ms` | `2204.9 MB` | **PASSED** |
-| `POST /v1/recommend/cold-start (products)` | 500 | `33.21 ms` | **`40.60 ms`** | `58.44 ms` | `34.21 ms` | `2205.3 MB` | **PASSED** |
-| `GET /v1/similar (products)` | 500 | `33.27 ms` | **`40.01 ms`** | `55.16 ms` | `34.26 ms` | `2205.3 MB` | **PASSED** |
-| `GET /v1/recommend (articles, 200 users)` | 500 | `156.14 ms` | **`530.62 ms`** | `1110.79 ms` | `273.69 ms` | `2222.7 MB` | **EXCEEDED** |
-| `POST /v1/recommend/cold-start (articles)` | 500 | `39.45 ms` | **`87.64 ms`** | `168.16 ms` | `48.13 ms` | `1971.4 MB` | **PASSED** |
+| `GET /v1/health` | 500 | `15.22 ms` | **`19.40 ms`** | `21.00 ms` | `15.63 ms` | `1767.3 MB` | **PASSED** |
+| `GET /v1/types` | 500 | `26.29 ms` | **`39.33 ms`** | `70.05 ms` | `28.70 ms` | `1767.6 MB` | **PASSED** |
+| `GET /v1/about` | 500 | `2.25 ms` | **`3.35 ms`** | `4.27 ms` | `2.41 ms` | `1767.7 MB` | **PASSED** |
+| `GET /v1/items/search (movies)` | 500 | `24.37 ms` | **`30.17 ms`** | `36.36 ms` | `25.06 ms` | `1770.4 MB` | **PASSED** |
+| `GET /v1/users/{id}/profile (movies, 200 users)` | 500 | `16.51 ms` | **`23.54 ms`** | `33.63 ms` | `17.69 ms` | `1771.1 MB` | **PASSED** |
+| `GET /v1/recommend (movies, 200 users)` | 500 | `46.96 ms` | **`117.45 ms`** | `189.18 ms` | `59.31 ms` | `1771.9 MB` | **PASSED** |
+| `POST /v1/recommend/cold-start (movies)` | 500 | `30.75 ms` | **`45.12 ms`** | `53.40 ms` | `32.97 ms` | `1759.3 MB` | **PASSED** |
+| `GET /v1/popular (movies)` | 500 | `30.53 ms` | **`38.92 ms`** | `46.42 ms` | `32.09 ms` | `1694.5 MB` | **PASSED** |
+| `GET /v1/similar (movies)` | 500 | `30.37 ms` | **`37.37 ms`** | `49.72 ms` | `31.67 ms` | `1694.5 MB` | **PASSED** |
+| `GET /v1/recommend (products, 200 users)` | 500 | `33.93 ms` | **`41.43 ms`** | `53.68 ms` | `34.84 ms` | `1653.3 MB` | **PASSED** |
+| `POST /v1/recommend/cold-start (products)` | 500 | `32.02 ms` | **`68.42 ms`** | `132.11 ms` | `37.82 ms` | `1653.3 MB` | **PASSED** |
+| `GET /v1/similar (products)` | 500 | `30.56 ms` | **`37.45 ms`** | `45.60 ms` | `32.69 ms` | `1513.0 MB` | **PASSED** |
+| `GET /v1/recommend (articles, 200 users)` | 500 | `42.07 ms` | **`49.75 ms`** | `55.72 ms` | `42.05 ms` | `1553.4 MB` | **PASSED** |
+| `POST /v1/recommend/cold-start (articles)` | 500 | `30.46 ms` | **`35.30 ms`** | `38.49 ms` | `31.19 ms` | `1553.4 MB` | **PASSED** |
 
 ### Architectural Performance Analysis (Generated from Benchmark Data)
 
-- **In-Memory Artifact Serving:** Precomputed `topn` and live model queries across 200 randomly sampled users per domain executed with an aggregate median latency of 47.33 ms and maximum tail latency of 530.62 ms, well within the 150 ms budget.
-- **Sparse Live Scoring & Cold Start:** Cold-start queries across all domains achieved a maximum tail latency of 87.64 ms; the worst-case p95 latency across all tested endpoints (530.62 ms) operated 0.3x below the 150 ms threshold.
-- **Memory Footprint:** Peak process RSS reached 2302.3 MB with all three content domains simultaneously loaded in memory, confirming zero deep-learning runtime overhead.
+- **Recommend endpoints:** median of the per-endpoint p50 is 42.07 ms; highest p95 is 117.45 ms.
+- **Cold start:** highest p95 is 68.42 ms.
+- **Latency (R8):** every endpoint met the 150 ms p95 budget (worst p95 117.45 ms).
+- **Memory (R8):** peak process RSS was 1771.9 MB with all content types loaded; budget 2048 MB: **within budget**.

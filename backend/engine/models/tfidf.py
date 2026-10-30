@@ -126,6 +126,10 @@ class TfidfProfileModel(RecommenderModel):
         self.sorted_window_popular: list[str] = []
         self.catalogue: set[str] = set()
         self._is_fitted: bool = False
+        # (tfidf_matrix, fresh_candidates, rows, pool matrix, item ids) built on first use
+        self._score_cache: tuple[Any, ...] | None = None
+        # (vectorizer, vocabulary array): get_feature_names_out() is expensive, call it once
+        self._feature_names_cache: tuple[Any, np.ndarray] | None = None
 
     @property
     def supports_cold_start(self) -> bool:
@@ -434,32 +438,82 @@ class TfidfProfileModel(RecommenderModel):
 
         return self._score_candidates(profile, k=k, exclusions=exclusions)
 
+    def _feature_names(self) -> np.ndarray:
+        """Return the vocabulary as an array, built once per fitted vectorizer.
+
+        vectorizer.get_feature_names_out() sorts the whole vocabulary on every call, which made
+        each explained recommendation cost tens of milliseconds.
+        """
+        vectorizer = self.vectorizer
+        if vectorizer is None:
+            raise RuntimeError("TF-IDF vectorizer is not available.")
+        cache = getattr(self, "_feature_names_cache", None)
+        if cache is not None and cache[0] is vectorizer:
+            cached: np.ndarray = cache[1]
+            return cached
+        names: np.ndarray = vectorizer.get_feature_names_out()
+        self._feature_names_cache = (vectorizer, names)
+        return names
+
+    def _scoring_cache(self) -> tuple[np.ndarray, sparse.csr_matrix, np.ndarray]:
+        """Return (row indices, their TF-IDF rows, their item ids) for the candidate pool.
+
+        The pool is the recency window, or the whole catalogue when no window is set. It is built
+        once for each (tfidf_matrix, fresh_candidates) pair and reused by every request, so
+        serving never loops over the whole catalogue in Python.
+        """
+        matrix = self.tfidf_matrix
+        if matrix is None:
+            raise RuntimeError("TF-IDF model has not been fitted; tfidf_matrix is None.")
+        cache = getattr(self, "_score_cache", None)
+        if cache is not None and cache[0] is matrix and cache[1] is self.fresh_candidates:
+            return cache[2], cache[3], cache[4]
+        if self.fresh_candidates is None:
+            rows = np.arange(matrix.shape[0], dtype=np.int64)
+            pool = matrix
+        else:
+            rows = np.array(
+                sorted(self.item2index[i] for i in self.fresh_candidates if i in self.item2index),
+                dtype=np.int64,
+            )
+            pool = matrix[rows]
+        ids = np.array([self.item_ids[i] for i in rows], dtype=str)
+        self._score_cache = (matrix, self.fresh_candidates, rows, pool, ids)
+        return rows, pool, ids
+
     def _score_candidates(
         self,
         profile: sparse.csr_matrix,
         k: int,
         exclusions: set[str],
     ) -> list[ScoredItem]:
-        """Compute cosine similarities between profile and catalogue items, ranking top-k."""
+        """Compute cosine similarities between profile and candidate articles, ranking top-k.
+
+        Only the candidate pool is scored. Order: score descending, ties by item_id ascending.
+        """
         if self.tfidf_matrix is None:
             raise RuntimeError("TF-IDF model has not been fitted; tfidf_matrix is None.")
-        # profile shape: (1, D), tfidf_matrix shape: (N, D)
-        scores_mat = self.tfidf_matrix.dot(profile.T)  # (N, 1)
-        scores_arr = np.asarray(scores_mat.toarray()).flatten()
+        if k <= 0:
+            return []
+        rows, pool, ids = self._scoring_cache()
+        scores = np.asarray(pool.dot(profile.T).toarray()).ravel()  # one score per pool item
 
-        candidates: list[tuple[float, str]] = []
-        for idx, score_val in enumerate(scores_arr):
-            item_id = self.index2item[idx]
-            if self.fresh_candidates is not None and item_id not in self.fresh_candidates:
-                continue
-            if item_id in exclusions:
-                continue
-            s = float(score_val)
-            if np.isfinite(s) and s > 0.0:
-                candidates.append((s, item_id))
+        keep = np.isfinite(scores) & (scores > 0.0)
+        excluded_rows = [self.item2index[x] for x in exclusions if x in self.item2index]
+        if excluded_rows:
+            keep &= ~np.isin(rows, excluded_rows)
+        positions = np.flatnonzero(keep)
 
-        # Sort descending by similarity, breaking ties deterministically by item_id ascending
-        candidates.sort(key=lambda x: (-x[0], x[1]))
+        # Keep only the top-k region. Ties at the cut-off stay in, so the item_id tie-break
+        # below remains exact; then order that small region deterministically.
+        if positions.size > k:
+            negated = -scores[positions]
+            cutoff = np.partition(negated, k - 1)[k - 1]
+            positions = positions[negated <= cutoff]
+        order = np.lexsort((ids[positions], -scores[positions]))
+        candidates: list[tuple[float, str]] = [
+            (float(scores[p]), str(ids[p])) for p in positions[order]
+        ]
 
         # Pad with popular if fewer than k candidates found
         if len(candidates) < k:
@@ -635,21 +689,20 @@ class TfidfProfileModel(RecommenderModel):
         if not history_pairs:
             return None
 
+        valid = [(h_id, float(sig)) for h_id, sig in history_pairs if h_id in self.item2index]
         best_h: str | None = None
         best_contrib = -1.0
         total_contrib = 0.0
-
-        for h_id, sig in history_pairs:
-            if h_id not in self.item2index:
-                continue
-            h_idx = self.item2index[h_id]
-            h_vec = self.tfidf_matrix[h_idx, :]
-            sim = float(h_vec.dot(rec_vec.T).toarray()[0, 0])
-            contrib = max(0.0, sim * float(sig))
-            total_contrib += contrib
-            if contrib > best_contrib:
-                best_contrib = contrib
-                best_h = h_id
+        if valid:
+            # one row selection and one sparse product for the whole history (was one per item)
+            rows = [self.item2index[h_id] for h_id, _ in valid]
+            sims = np.asarray(self.tfidf_matrix[rows, :].dot(rec_vec.T).toarray()).ravel()
+            for (h_id, sig), sim in zip(valid, sims.tolist(), strict=True):
+                contrib = max(0.0, sim * sig)
+                total_contrib += contrib
+                if contrib > best_contrib:
+                    best_contrib = contrib
+                    best_h = h_id
 
         threshold = (
             min_threshold
@@ -694,7 +747,7 @@ class TfidfProfileModel(RecommenderModel):
         if shared.nnz == 0:
             return []
 
-        feature_names = self.vectorizer.get_feature_names_out()
+        feature_names = self._feature_names()
         cols = shared.indices
         vals = shared.data
 
