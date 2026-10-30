@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { X, Star, Film, ShoppingBag, Newspaper, Sparkles, Heart, Check } from 'lucide-react';
 import { useItemDetail, useSimilar, useMoviePoster } from '@/lib/api/hooks';
@@ -37,6 +37,11 @@ export function ItemDrawer({
     cardType === 'movie' && !item?.image_url
   );
   const activeImageUrl = item?.image_url || tmdbPosterUrl;
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [activeImageUrl]);
 
   // Store trigger element and restore focus on unmount
   useEffect(() => {
@@ -159,13 +164,15 @@ export function ItemDrawer({
           <div className="p-6 space-y-6">
             {/* 1. Large Poster / Hero Banner */}
             <div className="relative aspect-[16/9] sm:aspect-[2/1] w-full overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-elevated)] border border-[var(--color-border)]">
-              {activeImageUrl ? (
+              {activeImageUrl && !imageError ? (
                 <Image
                   src={activeImageUrl}
                   alt={item.title}
                   fill
+                  unoptimized
                   sizes="500px"
                   className="object-cover"
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center text-[var(--color-text-muted)]">
