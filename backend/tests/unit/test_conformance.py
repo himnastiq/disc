@@ -109,3 +109,25 @@ def test_conformance_up_to_date() -> None:
     assert result.returncode == 0, (
         f"Conformance document is out of date or failed check:\n{result.stderr}\n{result.stdout}"
     )
+
+
+def test_conformance_fallback_when_artifacts_absent_in_ci(tmp_path: Path) -> None:
+    """Option A: In CI environments where artifacts/ is gitignored, check falls back to committed CONFORMANCE."""
+    sys.path.insert(0, str(REPO_ROOT / "tools"))
+    from check_conformance import check_r2_no_leakage, check_r4_evaluation_validity
+
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    conformance_content = (
+        "| **R2** | **No Leakage** | text | **PASS** | [`source`](path). Mock R2 Evidence |\n"
+        "| **R4** | **Evaluation Validity** | text | **FAIL** | [`source`](path). Mock R4 Evidence |\n"
+    )
+    (docs_dir / "CONFORMANCE.md").write_text(conformance_content, encoding="utf-8")
+
+    status_r2, reason_r2 = check_r2_no_leakage(repo_root=tmp_path)
+    assert status_r2 == "PASS"
+    assert "Mock R2 Evidence" in reason_r2
+
+    status_r4, reason_r4 = check_r4_evaluation_validity(repo_root=tmp_path)
+    assert status_r4 == "FAIL"
+    assert "Mock R4 Evidence" in reason_r4
