@@ -51,7 +51,10 @@ web:
 	else echo "Frontend not yet created (Phase 8)."; exit 1; fi
 
 demo:
-	@bash ./run.sh
+	$(PYTHON) tools/demo.py
+
+demo-stop:
+	$(PYTHON) tools/demo.py --stop
 
 # ---- Quality ----
 test:

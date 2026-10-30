@@ -43,12 +43,12 @@
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
-| 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
+| 10 | Integration and robustness audit | 1 | 0 | 0 | 8 | 12% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **108** | | | **129** | **83%** |
+| | **Overall** | **109** | | | **129** | **84%** |
 
-`[################----] 83%  (108/129 tasks)`
+`[################----] 84%  (109/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -528,7 +528,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 **Execution order:** 1. P10.1, 2. P10.2, 3. P10.3, 4. P10.5, 5. write and run the P10.8 adversarial tests (fix what they find), 6. P10.7, 7. P10.4 (final pass, code frozen), 8. P10.6, 9. P10.8 sign-off.
 **Freeze rule:** P10.4 records the git SHA and the manifest `code_hash` values. Any change to `engine/`, `api/`, `discovery/` or `frontend/src/` after that point means P10.4 and P10.7 must be re-run. Task order in the list below is by ID; follow the execution order above.
 
-- [ ] **P10.1** make demo launcher: one command that starts the API and the frontend, waits for health, and prints URLs. *Acceptance:* from a clone with artifacts built per the README, one command reaches a healthy running demo; a foreign process on the ports is never killed; Ctrl+C or --stop leaves no orphan processes on Windows.
+- [x] **P10.1** make demo launcher: one command that starts the API and the frontend, waits for health, and prints URLs. *Acceptance:* from a clone with artifacts built per the README, one command reaches a healthy running demo; a foreign process on the ports is never killed; Ctrl+C or --stop leaves no orphan processes on Windows.
   - Implement `tools/demo.py` (cross-platform; stdlib plus psutil only if already a dependency, else netstat/lsof fallbacks). `make demo` and `make demo-stop` call it. Optional `run.ps1` and `run.sh` may exist only as one-line forwards with no logic.
   - Pre-flight: for each type, check `artifacts/<type>/manifest.json`, run `engine.artifacts.verify_artifacts`, and warn if the manifest `code_hash` no longer matches the code. If artifacts are missing, print the exact commands (`python -m engine.train --type <t>` or `--fast`) and exit. Auto-building is opt-in via `--build-missing` (fast variants only), and the demo prints a "FAST VARIANT" notice; articles say whether the MIND fixture or real MIND-small was used. Real datasets need `make data` and, for MIND, the documented manual download, so never promise "works on a bare clone".
   - Ports (API 127.0.0.1:8000, web localhost:3000): if busy and the PID is in `.demo/pids.json` from an earlier run, stop it gracefully and retry with 1 s backoff (max 5 tries). If busy and not ours, fail with the process name and PID and require `--force` to proceed. Add `--api-port` and `--web-port` overrides (used by tests).
