@@ -7,6 +7,38 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   partialPrefetching: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: '**.images-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.images-amazon.com',
+      },
+      {
+        protocol: 'http',
+        hostname: '**.ssl-images-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.ssl-images-amazon.com',
+      },
+      {
+        protocol: 'http',
+        hostname: '**.media-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.media-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+      },
+    ],
+  },
   turbopack: {
     rules: {
       "*.css": {

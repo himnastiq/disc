@@ -34,11 +34,16 @@ export function useUserProfile(type: string, userId?: string) {
   });
 }
 
-export function useRecommendations(type: string, userId?: string, k: number = 10) {
+export function useRecommendations(
+  type: string,
+  userId?: string,
+  k: number = 10,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ['recommendations', type, userId, k],
     queryFn: () => apiClient.getRecommendations(type, userId, k),
-    enabled: Boolean(type),
+    enabled: options?.enabled ?? Boolean(type),
     staleTime: 30 * 1000,
   });
 }

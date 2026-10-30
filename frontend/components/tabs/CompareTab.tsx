@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { GitCompare, TrendingUp, User, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { usePopular, useRecommendations, useUsers } from '@/lib/api/hooks';
 import { RecCard } from '@/components/features/RecCard';
@@ -46,10 +46,24 @@ export function CompareTab({
   onSelectItem,
 }: CompareTabProps) {
   const [compareMode, setCompareMode] = useState<'popular-vs-user' | 'user-vs-user'>('popular-vs-user');
-  const [secondaryUser, setSecondaryUser] = useState<string>('2');
+  const [secondaryUser, setSecondaryUser] = useState<string>(() => {
+    return type === 'movies' ? (user === '1' ? '2' : '1') : '';
+  });
 
   const { data: usersData } = useUsers(type);
   const availableUsers = useMemo(() => usersData?.users || [], [usersData?.users]);
+
+  // Synchronize secondaryUser to a valid peer when availableUsers or current user changes
+  useEffect(() => {
+    if (availableUsers.length > 0) {
+      const peers = availableUsers.filter((u) => u.user_id !== user);
+      if (peers.length > 0) {
+        if (!secondaryUser || !peers.some((u) => u.user_id === secondaryUser)) {
+          setSecondaryUser(peers[0].user_id);
+        }
+      }
+    }
+  }, [availableUsers, user, secondaryUser]);
 
   // Mode 1 queries
   const { data: popularData, isLoading: popLoading, isError: popError, refetch: refetchPop } =
@@ -58,9 +72,16 @@ export function CompareTab({
   const { data: userAData, isLoading: userALoading, isError: userAError, refetch: refetchUserA } =
     useRecommendations(type, user, k);
 
-  // Mode 2 secondary user query
+  // Mode 2 secondary user query: only run when in user-vs-user mode and secondaryUser is a valid peer
+  const isSecondaryValid =
+    compareMode === 'user-vs-user' &&
+    Boolean(secondaryUser) &&
+    (availableUsers.length === 0 || availableUsers.some((u) => u.user_id === secondaryUser));
+
   const { data: userBData, isLoading: userBLoading, isError: userBError, refetch: refetchUserB } =
-    useRecommendations(type, secondaryUser, k);
+    useRecommendations(type, isSecondaryValid ? secondaryUser : undefined, k, {
+      enabled: isSecondaryValid,
+    });
 
   const cardType = type === 'products' ? 'product' : type === 'articles' ? 'article' : 'movie';
 
@@ -227,9 +248,13 @@ export function CompareTab({
             title="Comparison failed"
             message="Unable to retrieve recommendation feeds for both columns."
             onRetry={() => {
-              refetchPop();
-              refetchUserA();
-              refetchUserB();
+              if (compareMode === 'popular-vs-user') {
+                refetchPop();
+                refetchUserA();
+              } else {
+                refetchUserA();
+                refetchUserB();
+              }
             }}
           />
         </div>

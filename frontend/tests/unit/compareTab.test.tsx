@@ -137,7 +137,7 @@ describe('CompareTab (P9.5)', () => {
 
     // Check secondary user selector presence
     expect(screen.getByText(/Compare User #1 with:/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /User #2/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /User #2/i })).toBeInTheDocument();
   });
 
   it('calls onKChange when k selector buttons are clicked', async () => {

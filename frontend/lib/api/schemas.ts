@@ -163,7 +163,8 @@ export const ScoredItemResponseSchema = z.object({
 export const RecommendResponseSchema = z.object({
   content_type: z.string(),
   user_id: z.string().optional().nullable(),
-  mode: z.enum(['personalized', 'popularity']),
+  query_item_id: z.string().optional().nullable(),
+  mode: z.enum(['personalized', 'popularity']).optional().default('popularity'),
   k: z.number(),
   results: z.array(ScoredItemResponseSchema),
   meta: z.record(z.string(), z.any()).default({}),
