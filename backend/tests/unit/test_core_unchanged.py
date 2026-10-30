@@ -38,6 +38,7 @@ def test_path_classification() -> None:
     assert is_allowed_path("docs/DECISIONS.md")
     assert is_allowed_path("tools/product_checks.py")
     assert is_allowed_path("backend/scripts/fetch_data.py")
+    assert is_allowed_path("backend/uv.lock")
     assert is_allowed_path("IMPLEMENTATION_PLAN.md")
 
     # Exempt from core engine violations
