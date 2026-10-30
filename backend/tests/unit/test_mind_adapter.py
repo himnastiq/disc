@@ -233,6 +233,7 @@ def test_mind_adapter_records_dataset_source(articles_spec) -> None:
         assert getattr(adapter_real, "dataset_source", None) == "mind-small"
 
 
+@pytest.mark.real_data
 def test_make_results_banner_and_verdict_derived_from_manifest() -> None:
     """Task C: make_results must derive SYNTHETIC DEMO banner and No verdict from manifest dataset_source."""
     import json
@@ -244,6 +245,13 @@ def test_make_results_banner_and_verdict_derived_from_manifest() -> None:
     from tools.make_results import build_markdown_report
 
     art_dir = repo_root / "artifacts"
+    if not (
+        (art_dir / "movies" / "metrics.json").exists()
+        and (art_dir / "products" / "metrics.json").exists()
+        and (art_dir / "articles" / "metrics.json").exists()
+    ):
+        pytest.skip("Full real artifacts in artifacts/ not found; skipping banner derivation test.")
+
     movies_metrics = json.loads((art_dir / "movies" / "metrics.json").read_text(encoding="utf-8"))
     products_metrics = json.loads(
         (art_dir / "products" / "metrics.json").read_text(encoding="utf-8")
