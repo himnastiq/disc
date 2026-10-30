@@ -28,6 +28,7 @@ evaluation:
   baselines: [popularity, random]
   protocol: standard
   max_test_users: 2000
+  post_train: [product_checks]
 serving:
   top_neighbors_per_item: 50
   max_items_in_similarity: 8000

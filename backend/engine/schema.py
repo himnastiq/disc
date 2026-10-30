@@ -205,6 +205,9 @@ class EvaluationConfig(SchemaBase):
     protocol: str = Field(
         default="standard", description="Evaluation protocol ('standard' or 'dual_protocol')"
     )
+    post_train: list[str] = Field(
+        default_factory=list, description="Post-training hook names to execute"
+    )
 
 
 class ServingConfig(SchemaBase):

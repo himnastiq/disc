@@ -22,7 +22,7 @@ from engine.evaluation.harness import EvaluationHarness
 from engine.logging_utils import configure_logging, get_logger, log_event
 from engine.models import sar as _sar_model  # noqa: F401
 from engine.models.baselines import PopularityModel, RandomModel
-from engine.registry import build_model, get_adapter
+from engine.registry import build_model, get_adapter, get_post_train_hook
 from engine.tuning import tune_sar_on_validation
 
 if TYPE_CHECKING:
@@ -250,6 +250,26 @@ def run_pipeline(
             cold_start_sample_users=20 if fast else 50,
             split_data=(train_df, valid_df, test_df),
         )
+
+    # 6b. Run post-train hooks configured in spec.evaluation.post_train
+    if spec.evaluation.post_train:
+        for hook_name in spec.evaluation.post_train:
+            log_event(logger, "post_train_hook_start", hook_name=hook_name)
+            hook_fn = get_post_train_hook(hook_name)
+            hook_result = hook_fn(
+                model=primary_model,
+                interactions=interactions,
+                items=items,
+                train_df=train_df,
+                valid_df=valid_df,
+                test_df=test_df,
+                spec=spec,
+                metrics=metrics,
+                seed=spec.split.seed or 42,
+            )
+            if isinstance(hook_result, dict):
+                metrics.update(hook_result)
+            log_event(logger, "post_train_hook_done", hook_name=hook_name)
 
     # 7. Precompute personas and user statistics
     users_df = compute_user_stats_and_personas(interactions, items)

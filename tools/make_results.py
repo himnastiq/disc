@@ -28,6 +28,32 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+BACKEND_DIR = REPO_ROOT / "backend"
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+HOOK_METRICS_KEY_MAP = {
+    "product_checks": "product_specific_checks",
+}
+
+
+def validate_post_train_checks_presence(content_type: str, metrics: dict[str, Any]) -> None:
+    """Validate that required post_train check keys exist in metrics.json if configured."""
+    try:
+        from engine.config import load_config
+
+        spec = load_config(content_type)
+        post_train_hooks = getattr(spec.evaluation, "post_train", [])
+        for hook in post_train_hooks:
+            expected_key = HOOK_METRICS_KEY_MAP.get(hook, f"{hook}_checks")
+            if expected_key not in metrics or not metrics[expected_key]:
+                raise ValueError(
+                    f"Content type '{content_type}' defines post_train hook '{hook}' in config, "
+                    f"but required key '{expected_key}' is missing or empty in metrics.json."
+                )
+    except Exception as e:
+        if isinstance(e, ValueError) and "defines post_train hook" in str(e):
+            raise
 
 
 def load_metrics_json(artifacts_dir: Path, content_type: str) -> dict[str, Any]:
@@ -583,6 +609,10 @@ def build_markdown_report(
         products_manifest=products_manifest,
         articles_manifest=articles_manifest,
     )
+
+    validate_post_train_checks_presence("movies", movies_metrics)
+    validate_post_train_checks_presence("products", products_metrics)
+    validate_post_train_checks_presence("articles", articles_metrics)
 
     md: list[str] = []
 
@@ -1194,6 +1224,14 @@ def main() -> None:
             "[ERROR] Refusing to write RESULTS.md from a fast variant unless --allow-fast is specified.",
             file=sys.stderr,
         )
+        sys.exit(1)
+
+    try:
+        validate_post_train_checks_presence("movies", movies_metrics)
+        validate_post_train_checks_presence("products", products_metrics)
+        validate_post_train_checks_presence("articles", articles_metrics)
+    except ValueError as err:
+        print(f"[ERROR] {err}", file=sys.stderr)
         sys.exit(1)
 
     print(f"Generating figures in {figures_dir}...")

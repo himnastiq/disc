@@ -20,6 +20,22 @@ M = TypeVar("M", bound="RecommenderModel")
 
 _ADAPTER_REGISTRY: dict[str, type[DatasetAdapter]] = {}
 _MODEL_REGISTRY: dict[str, type[RecommenderModel]] = {}
+_POST_TRAIN_HOOK_REGISTRY: dict[str, Callable[..., dict[str, Any]]] = {}
+
+
+def register_post_train_hook(
+    name: str,
+) -> Callable[[Callable[..., dict[str, Any]]], Callable[..., dict[str, Any]]]:
+    """Decorator to register a post-train evaluation hook function under a unique name."""
+
+    def decorator(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
+        key = name.strip().lower()
+        if not key:
+            raise ValueError("Post-train hook name cannot be empty")
+        _POST_TRAIN_HOOK_REGISTRY[key] = fn
+        return fn
+
+    return decorator
 
 
 def register_adapter(name: str) -> Callable[[type[A]], type[A]]:
@@ -92,6 +108,29 @@ def list_registered_models() -> list[str]:
     """Return sorted list of registered model names."""
     _ensure_default_models()
     return sorted(_MODEL_REGISTRY.keys())
+
+
+def _ensure_default_hooks() -> None:
+    """Ensure standard post-train hooks are registered without circular imports."""
+    if "product_checks" not in _POST_TRAIN_HOOK_REGISTRY:
+        from engine.evaluation.product_checks import run_product_checks_hook  # noqa: F401
+
+
+def get_post_train_hook(name: str) -> Callable[..., dict[str, Any]]:
+    """Retrieve a post-train hook function by name."""
+    _ensure_default_hooks()
+    key = name.strip().lower()
+    if key not in _POST_TRAIN_HOOK_REGISTRY:
+        raise ConfigError(
+            f"Post-train hook '{name}' is not registered. Available hooks: {list_registered_post_train_hooks()}"
+        )
+    return _POST_TRAIN_HOOK_REGISTRY[key]
+
+
+def list_registered_post_train_hooks() -> list[str]:
+    """Return sorted list of registered post-train hook names."""
+    _ensure_default_hooks()
+    return sorted(_POST_TRAIN_HOOK_REGISTRY.keys())
 
 
 def list_available_content_types(

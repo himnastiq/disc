@@ -22,6 +22,8 @@ def compute_config_hash(data: dict[str, Any] | ContentTypeSpec) -> str:
     """Compute a deterministic SHA-256 hash for a configuration dictionary or ContentTypeSpec."""
     raw_dict = data.model_dump() if isinstance(data, ContentTypeSpec) else copy.deepcopy(data)
     raw_dict.pop("test_only", None)
+    if isinstance(raw_dict.get("evaluation"), dict):
+        raw_dict["evaluation"].pop("post_train", None)
 
     # Serialize canonical JSON with sorted keys
     canonical_json = json.dumps(raw_dict, sort_keys=True, separators=(",", ":"))

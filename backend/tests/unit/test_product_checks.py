@@ -200,3 +200,35 @@ def test_real_products_artifacts_contain_valid_checks() -> None:
     sa = checks["similar_alternatives_spot_check"]
     assert sa["passed"] is True
     assert sa["shared_category_rate"] >= 0.60
+
+
+def test_product_checks_post_train_hook_registration_and_execution() -> None:
+    """Verify product_checks is registered in post-train hook registry and returns expected dict structure."""
+    from engine.registry import get_post_train_hook, list_registered_post_train_hooks
+
+    assert "product_checks" in list_registered_post_train_hooks()
+    hook_fn = get_post_train_hook("product_checks")
+
+    items = pd.DataFrame(
+        [
+            {"item_id": "i1", "categories": ["Electronics", "Gadgets"]},
+            {"item_id": "i2", "categories": ["Electronics", "Accessories"]},
+            {"item_id": "i3", "categories": ["Home"]},
+        ]
+    )
+    interactions = pd.DataFrame(
+        [
+            {"user_id": "u1", "item_id": "i1", "signal": 5.0, "timestamp": 100},
+            {"user_id": "u1", "item_id": "i2", "signal": 4.0, "timestamp": 200},
+            {"user_id": "u2", "item_id": "i1", "signal": 5.0, "timestamp": 300},
+        ]
+    )
+    mock_model = MockProductModel(item_ids=["i1", "i2", "i3"])
+
+    res = hook_fn(model=mock_model, interactions=interactions, items=items, seed=42)
+    assert "product_specific_checks" in res
+    checks = res["product_specific_checks"]
+    assert "sparse_data" in checks
+    assert "long_tail" in checks
+    assert "category_diversity" in checks
+    assert "similar_alternatives_spot_check" in checks

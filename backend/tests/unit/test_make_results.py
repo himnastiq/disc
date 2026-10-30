@@ -342,3 +342,24 @@ def test_make_results_minimum_sample_rule_n3_and_n9() -> None:
     exec_summary = report.split("## Executive Summary")[1].split("## 1.")[0]
     assert "demo only" in exec_summary
     assert "Impression AUC:" not in exec_summary
+
+
+def test_make_results_fails_when_post_train_checks_missing() -> None:
+    """Verify make_results fails when a type specifying post_train hooks is missing the checks key."""
+    if str(REPO_ROOT / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+    from make_results import build_markdown_report
+
+    m_dict = json.loads((ARTIFACTS_DIR / "movies" / "metrics.json").read_text(encoding="utf-8"))
+    p_dict = json.loads((ARTIFACTS_DIR / "products" / "metrics.json").read_text(encoding="utf-8"))
+    a_dict = json.loads((ARTIFACTS_DIR / "articles" / "metrics.json").read_text(encoding="utf-8"))
+
+    # Remove product_specific_checks from products metrics
+    p_dict_missing = dict(p_dict)
+    p_dict_missing.pop("product_specific_checks", None)
+
+    with pytest.raises(
+        ValueError,
+        match=r"defines post_train hook 'product_checks'.*product_specific_checks",
+    ):
+        build_markdown_report(m_dict, p_dict_missing, a_dict)
