@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import logging
 import sys
 import time
 from ctypes import wintypes
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
 
 RESULTS_MD_PATH = REPO_ROOT / "docs" / "RESULTS.md"
 TARGET_P95_MS = 150.0  # R8 budget threshold
+RSS_BUDGET_MB = 2048.0  # R8: API process RSS < 2 GB with all content types loaded
 
 
 class PROCESS_MEMORY_COUNTERS(ctypes.Structure):  # noqa: N801
@@ -158,6 +160,10 @@ def run_benchmark(
     results: list[dict[str, Any]] = []
 
     with TestClient(app) as client:
+        # httpx logs one INFO line per request; console output inside the timed section
+        # inflated every latency, so keep the benchmark quiet.
+        for noisy_logger in ("httpx", "httpcore"):
+            logging.getLogger(noisy_logger).setLevel(logging.WARNING)
         rng = np.random.default_rng(42)
 
         # Sample 200 random users per registered type
@@ -308,7 +314,28 @@ def run_benchmark(
     p95_cold = float(np.max([r["p95_ms"] for r in cold_results])) if cold_results else 0.0
     rss_peak = float(np.max([r["rss_mb"] for r in results])) if results else 0.0
     worst_p95 = float(np.max([r["p95_ms"] for r in results])) if results else 0.0
-    margin_ratio = TARGET_P95_MS / max(worst_p95, 0.001)
+    exceeded = [r["label"] for r in results if not r["meets_budget"]]
+    exceeded_list = ", ".join(f"`{label}`" for label in exceeded)
+    if exceeded:
+        latency_note = (
+            f"- **Latency (R8): BUDGET EXCEEDED** on {len(exceeded)} endpoint(s): {exceeded_list}. "
+            f"Worst p95 is {worst_p95:.2f} ms against the {int(TARGET_P95_MS)} ms budget "
+            f"({worst_p95 / TARGET_P95_MS:.1f}x over)."
+        )
+    else:
+        latency_note = (
+            f"- **Latency (R8):** every endpoint met the {int(TARGET_P95_MS)} ms p95 budget "
+            f"(worst p95 {worst_p95:.2f} ms)."
+        )
+    memory_state = "EXCEEDED" if rss_peak > RSS_BUDGET_MB else "within budget"
+    analysis_lines = [
+        f"- **Recommend endpoints:** median of the per-endpoint p50 is {p50_topn:.2f} ms; "
+        f"highest p95 is {p95_topn:.2f} ms.",
+        f"- **Cold start:** highest p95 is {p95_cold:.2f} ms.",
+        latency_note,
+        f"- **Memory (R8):** peak process RSS was {rss_peak:.1f} MB with all content types "
+        f"loaded; budget {int(RSS_BUDGET_MB)} MB: **{memory_state}**.",
+    ]
 
     # Generate Markdown Table and Honest Generated Analysis Section
     md_lines: list[str] = [
@@ -336,9 +363,7 @@ def run_benchmark(
             "",
             "### Architectural Performance Analysis (Generated from Benchmark Data)",
             "",
-            f"- **In-Memory Artifact Serving:** Precomputed `topn` and live model queries across 200 randomly sampled users per domain executed with an aggregate median latency of {p50_topn:.2f} ms and maximum tail latency of {p95_topn:.2f} ms, well within the {int(TARGET_P95_MS)} ms budget.",
-            f"- **Sparse Live Scoring & Cold Start:** Cold-start queries across all domains achieved a maximum tail latency of {p95_cold:.2f} ms; the worst-case p95 latency across all tested endpoints ({worst_p95:.2f} ms) operated {margin_ratio:.1f}x below the {int(TARGET_P95_MS)} ms threshold.",
-            f"- **Memory Footprint:** Peak process RSS reached {rss_peak:.1f} MB with all three content domains simultaneously loaded in memory, confirming zero deep-learning runtime overhead.",
+            *analysis_lines,
             "",
         ]
     )
