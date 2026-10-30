@@ -549,7 +549,7 @@ class SarModel(RecommenderModel):
             "n_items": int(self.sar.n_items),
             "catalogue": self.catalogue,
             "item_counts": {str(k): int(v) for k, v in self.item_counts.items()},
-            "user_seen": {k: list(v) for k, v in self.user_seen.items()},
+            "user_seen": {k: sorted(v) for k, v in sorted(self.user_seen.items())},
         }
         for p, s in [
             (dir_path / "model_meta.json", json.dumps(meta, indent=2, default=_json_default)),

@@ -4,55 +4,115 @@
   "seed": 42,
   "users": {
     "1": [
-      { "rank": 1, "item_id": "385", "score": 0.567625 },
-      { "rank": 2, "item_id": "423", "score": 0.551251 },
-      { "rank": 3, "item_id": "568", "score": 0.455819 },
-      { "rank": 4, "item_id": "228", "score": 0.454586 },
-      { "rank": 5, "item_id": "226", "score": 0.351481 }
+      {
+        "rank": 1,
+        "item_id": "385",
+        "score": 0.567625
+      },
+      {
+        "rank": 2,
+        "item_id": "423",
+        "score": 0.551251
+      },
+      {
+        "rank": 3,
+        "item_id": "568",
+        "score": 0.455819
+      },
+      {
+        "rank": 4,
+        "item_id": "228",
+        "score": 0.454586
+      },
+      {
+        "rank": 5,
+        "item_id": "226",
+        "score": 0.351481
+      }
     ],
     "2": [
-      { "rank": 1, "item_id": "121", "score": 6.919774 },
-      { "rank": 2, "item_id": "117", "score": 6.285748 },
-      { "rank": 3, "item_id": "181", "score": 6.129567 },
-      { "rank": 4, "item_id": "7", "score": 6.112337 },
-      { "rank": 5, "item_id": "405", "score": 4.815117 }
+      {
+        "rank": 1,
+        "item_id": "121",
+        "score": 6.919774
+      },
+      {
+        "rank": 2,
+        "item_id": "117",
+        "score": 6.285748
+      },
+      {
+        "rank": 3,
+        "item_id": "181",
+        "score": 6.129567
+      },
+      {
+        "rank": 4,
+        "item_id": "7",
+        "score": 6.112337
+      },
+      {
+        "rank": 5,
+        "item_id": "405",
+        "score": 4.815117
+      }
     ],
     "3": [
-      { "rank": 1, "item_id": "313", "score": 2.918551 },
-      { "rank": 2, "item_id": "286", "score": 2.887904 },
-      { "rank": 3, "item_id": "748", "score": 2.755357 },
-      { "rank": 4, "item_id": "327", "score": 2.555834 },
-      { "rank": 5, "item_id": "301", "score": 2.276410 }
+      {
+        "rank": 1,
+        "item_id": "313",
+        "score": 2.918551
+      },
+      {
+        "rank": 2,
+        "item_id": "286",
+        "score": 2.887904
+      },
+      {
+        "rank": 3,
+        "item_id": "748",
+        "score": 2.755357
+      },
+      {
+        "rank": 4,
+        "item_id": "327",
+        "score": 2.555834
+      },
+      {
+        "rank": 5,
+        "item_id": "301",
+        "score": 2.27641
+      }
     ]
   },
   "metrics": {
     "sar_5": {
-      "ndcg": 0.09134,
-      "recall": 0.08053,
-      "hit_rate": 0.26154,
-      "coverage": 0.112695,
-      "precision": 0.06982,
-      "map": 0.05752
+      "ndcg": 0.0547,
+      "recall": 0.05743,
+      "hit_rate": 0.15217,
+      "coverage": 0.05499,
+      "precision": 0.03913,
+      "map": 0.03496
     },
     "sar_10": {
-      "ndcg": 0.10208,
-      "recall": 0.12565,
-      "hit_rate": 0.38225,
-      "coverage": 0.162933,
-      "precision": 0.05834,
-      "map": 0.05524
+      "ndcg": 0.07788,
+      "recall": 0.12228,
+      "hit_rate": 0.30435,
+      "coverage": 0.082824,
+      "precision": 0.04348,
+      "map": 0.04043
     },
     "popularity_5": {
-      "ndcg": 0.06604,
-      "recall": 0.04650,
-      "hit_rate": 0.20237,
-      "coverage": 0.032587
+      "ndcg": 0.05152,
+      "recall": 0.04829,
+      "hit_rate": 0.13043,
+      "coverage": 0.01833
     },
     "random_5": {
-      "ndcg": 0.00423,
-      "recall": 0.00466,
-      "hit_rate": 0.02012,
-      "coverage": 0.951800
+      "ndcg": 0.0,
+      "recall": 0.0,
+      "hit_rate": 0.0,
+      "coverage": 0.157502
     }
   }
 }
