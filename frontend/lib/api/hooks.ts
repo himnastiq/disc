@@ -85,6 +85,20 @@ export function useColdStartMutation() {
   });
 }
 
+export function useColdStart(
+  type: string,
+  history: Array<{ item_id: string; signal?: number | null }>,
+  k: number = 10,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: ['coldStart', type, history, k],
+    queryFn: () => apiClient.postColdStart({ type, history, k, exclude: [] }),
+    enabled: options?.enabled !== false && Boolean(type),
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useMetrics(type: string) {
   return useQuery({
     queryKey: ['metrics', type],
