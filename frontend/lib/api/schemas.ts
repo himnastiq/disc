@@ -38,6 +38,8 @@ export const TypeInfoSchema = z.object({
   display_name: z.string(),
   card_type: z.enum(['movie', 'product', 'article']),
   supports_cold_start: z.boolean(),
+  available: z.boolean().default(true).optional(),
+  error: z.string().optional().nullable(),
   user_count: z.number().default(0),
   item_count: z.number().default(0),
   interaction_count: z.number().default(0),

@@ -20,9 +20,9 @@ const typeIcons: Record<string, React.ReactNode> = {
 export function TypeSwitcher({ currentType, onTypeChange }: TypeSwitcherProps) {
   const { data: typesResponse, isLoading } = useTypes();
   const types = typesResponse?.types || [
-    { id: 'movies', display_name: 'Movies' },
-    { id: 'products', display_name: 'Products' },
-    { id: 'articles', display_name: 'Articles' },
+    { id: 'movies', display_name: 'Movies', available: true },
+    { id: 'products', display_name: 'Products', available: true },
+    { id: 'articles', display_name: 'Articles', available: true },
   ];
 
   const handleSelect = async (typeId: string) => {
@@ -63,6 +63,11 @@ export function TypeSwitcher({ currentType, onTypeChange }: TypeSwitcherProps) {
           >
             {typeIcons[t.id] || <Film className="h-3.5 w-3.5 mr-1.5" />}
             <span className="capitalize">{t.display_name}</span>
+            {t.available === false && (
+              <span className="ml-1 text-[10px] text-amber-500 font-normal">
+                (offline)
+              </span>
+            )}
           </button>
         );
       })}

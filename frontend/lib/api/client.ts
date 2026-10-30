@@ -59,8 +59,8 @@ export async function apiFetch<T>(
     data = await res.json();
   } catch (err: unknown) {
     throw new ApiError(
-      `Invalid JSON response from ${path}`,
-      res.status,
+      `Unexpected response from server: malformed JSON response from ${path}`,
+      res.status || 502,
       'INVALID_JSON',
       err
     );
@@ -88,7 +88,7 @@ export async function apiFetch<T>(
   if (!result.success) {
     console.error(`[Zod ValidationError] Payload from ${path} did not match schema:`, result.error);
     throw new ApiError(
-      `API schema validation failed: ${result.error.issues[0]?.message || 'Unknown validation error'}`,
+      `Unexpected response from server: ${result.error.issues[0]?.message || 'schema validation failed'}`,
       res.status,
       'SCHEMA_VALIDATION_ERROR',
       result.error.format()
