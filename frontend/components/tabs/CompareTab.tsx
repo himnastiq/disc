@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GitCompare, TrendingUp, User, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { usePopular, useRecommendations, useUsers } from '@/lib/api/hooks';
 import { RecCard } from '@/components/features/RecCard';
@@ -46,24 +46,22 @@ export function CompareTab({
   onSelectItem,
 }: CompareTabProps) {
   const [compareMode, setCompareMode] = useState<'popular-vs-user' | 'user-vs-user'>('popular-vs-user');
-  const [secondaryUser, setSecondaryUser] = useState<string>(() => {
-    return type === 'movies' ? (user === '1' ? '2' : '1') : '';
-  });
+  const [selectedSecondaryUser, setSelectedSecondaryUser] = useState<string | null>(null);
 
   const { data: usersData } = useUsers(type);
   const availableUsers = useMemo(() => usersData?.users || [], [usersData?.users]);
+  const peerUsers = useMemo(() => availableUsers.filter((u) => u.user_id !== user), [availableUsers, user]);
 
-  // Synchronize secondaryUser to a valid peer when availableUsers or current user changes
-  useEffect(() => {
-    if (availableUsers.length > 0) {
-      const peers = availableUsers.filter((u) => u.user_id !== user);
-      if (peers.length > 0) {
-        if (!secondaryUser || !peers.some((u) => u.user_id === secondaryUser)) {
-          setSecondaryUser(peers[0].user_id);
-        }
-      }
+  // Derive active secondaryUser: use user selection if valid for current peers, otherwise default to first peer
+  const secondaryUser = useMemo(() => {
+    if (selectedSecondaryUser && peerUsers.some((u) => u.user_id === selectedSecondaryUser)) {
+      return selectedSecondaryUser;
     }
-  }, [availableUsers, user, secondaryUser]);
+    if (peerUsers.length > 0) {
+      return peerUsers[0].user_id;
+    }
+    return type === 'movies' ? (user === '1' ? '2' : '1') : '';
+  }, [selectedSecondaryUser, peerUsers, type, user]);
 
   // Mode 1 queries
   const { data: popularData, isLoading: popLoading, isError: popError, refetch: refetchPop } =
@@ -175,7 +173,7 @@ export function CompareTab({
           </span>
           <select
             value={secondaryUser}
-            onChange={(e) => setSecondaryUser(e.target.value)}
+            onChange={(e) => setSelectedSecondaryUser(e.target.value)}
             className="h-8 rounded-[4px] border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 text-xs font-medium text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent-text)]"
           >
             {availableUsers
