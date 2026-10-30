@@ -108,3 +108,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ poster_url: null, configured: true, error: String(err) });
   }
 }
+
