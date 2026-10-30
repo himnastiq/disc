@@ -4,7 +4,7 @@ import React, { Suspense } from 'react';
 import { AppHeader } from '@/components/shell/AppHeader';
 import { TabNavigation } from '@/components/shell/TabNavigation';
 import { AppFooter } from '@/components/shell/AppFooter';
-import { useUrlState, type ContentTypeKey, type TabKey } from '@/lib/hooks/useUrlState';
+import { useUrlState, type ContentTypeKey } from '@/lib/hooks/useUrlState';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
