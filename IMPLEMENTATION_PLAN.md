@@ -1751,3 +1751,59 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
   - Backend & Full QA: `tools/check.py` PASS (all 10 QA checks green).
 - **Next steps for the next session:**
   - Proceed with Phase 9: Frontend features (TypeSwitcher, UserSelect, ProfileCard, Recommendation feeds, Compare, Cold Start, Evaluation, About tabs).
+
+
+### Session 31: 2026-10-30, agent session (Phase 9 Complete: Frontend Features, A11y, and Break Rituals; Phase 10 Entry Checklist)
+- **Started at:** task P9.1   **Ended at:** task P9.12 (Phase 9 Complete; Entry Checklist E1–E4 complete)
+- **Completed Tasks:**
+  - `P9.1`: Domain and user switching (`TypeSwitcher.tsx`, `UserSelect.tsx`) with dynamic type enumeration via `/v1/types`, persona badges, URL synchronization, and automatic reset to first demo user on type changes.
+  - `P9.2`: User taste profile card (`ProfileCard.tsx`) with interaction counts, horizontal category affinity bar charts, and recent activity list matching API payloads.
+  - `P9.3`: Recommendation cards (`RecCard.tsx`) with three domain variants (movie, product, article), `ReasonBadge`, `ModeBadge`, match score badges, and WCAG 2.5.3 compliant accessible names.
+  - `P9.4`: For You recommendation feed (`ForYouTab.tsx`) with k-selectors ($k \in \{5, 10, 20\}$), responsive recommendation grid, loading skeletons, and accessible error/empty states.
+  - `P9.5`: Compare tab (`CompareTab.tsx`) with two modes: "Popular for everyone vs Personalised for this user" (with client-side Jaccard similarity and overlap highlighting) and two-user persona comparison.
+  - `P9.6`: Interactive Cold Start tab (`ColdStartTab.tsx`) with debounced catalog search (`/v1/items/search`), chip management (add/remove up to 200 items), star rating sliders, live cold-start scoring via `POST /v1/recommend/cold-start`, and popularity fallback indicators.
+  - `P9.7`: Evaluation tab (`EvaluationTab.tsx`) rendering verified tables, 95% bootstrap confidence intervals, cold-start degradation curves, and baseline comparison charts matching `metrics.json` to 4 decimal places.
+  - `P9.8`: About tab (`AboutTab.tsx`) with attribution statements (Microsoft Recommenders MIT), dataset citations (MovieLens, Amazon, MIND), SVG architecture flow diagram, and original vs derived summary.
+  - `P9.9`: Interactive item inspection slide-over drawer (`ItemDrawer.tsx`) displaying full item metadata, high-resolution media placeholders, genre tags, and contextual similar items via `/v1/similar`, with focus trapping and Escape key dismissal.
+  - `P9.10`: Responsiveness and accessibility audit: verified layouts across 360px, 768px, and 1280px breakpoints. Executed automated `@axe-core/playwright` accessibility scans across all 5 tabs and dialogs with **zero serious or critical WCAG violations**. Verified keyboard navigation and `prefers-reduced-motion`.
+  - `P9.11`: Full user journey integration tests (`frontend/tests/e2e/dashboard.spec.ts`) covering all 5 tabs and domain switching.
+  - `P9.12`: Executed 5 Phase 9 Break-Your-Own-Work rituals in `frontend/tests/e2e/break_rituals.spec.ts` (rapid type switching, rapid user switching, search debounce spam, 500 error injection with retry, extreme 500-char XSS strings).
+- **Entry Checklist Findings & Resolutions (E1–E4):**
+  - `E1` (Live Evidence): Executed `tools/check.py` (448 pytest passed, 64 vitest passed, 0 lint/type/secret errors) and full Playwright e2e suite (51 / 51 passed across Desktop Chrome, Mobile Chrome 360px, and Tablet 768px).
+  - `E2` (Citations Audit): Built `tools/audit_session_log.py` verifying all decisions, files, test functions, and FIX items. Created `backend/tests/unit/test_sar_model.py` resolving historic test citations. Recorded `D-029` in `docs/DECISIONS.md`.
+  - `E3` (Stale-Label Sweep): Removed stale "SYNTHETIC DEMO" references in `README.md` and `backend/api/routes/metadata.py`, aligning with real MIND-small artifacts proven by `artifacts/articles/manifest.json`.
+  - `E4` (Environment Record):
+    - OS: Windows 11 (Windows-10-10.0.26100-SP0)
+    - Python: 3.11.7 (64-bit AMD64)
+    - Node.js: v22.19.0
+    - npm: 11.12.1
+    - uv: 0.10.4
+    - make: Not available in PATH on Windows (all tasks verified runnable via standard Python / PowerShell tools).
+- **In progress ([~]):** None (Phase 9 is 100% complete; Phase 10 Entry Checklist complete).
+- **Blocked ([!]):** None.
+- **Decisions made:**
+  - `D-028`: Frontend modern non-deprecated stack architecture (Next.js 16.4.3, React 19.3.0, Tailwind v4, TanStack Query v5, Zod v4).
+  - `D-029`: Session log and code audit tooling (`tools/audit_session_log.py`).
+- **Gate results:**
+  - R9: PASS (Full dashboard responsive at 360/768/1280px; zero serious/critical Axe accessibility violations across all tabs; 64/64 vitest unit tests passing; 51/51 Playwright e2e tests passing).
+  - R11: PASS (Quality Gate R11: Zero server secrets leaked to client bundle verified by `check_bundle_secrets.mjs`).
+- **Raw Check Outputs:**
+  ```
+  [PASSED]  Ruff Linter
+  [PASSED]  Ruff Format Check
+  [PASSED]  Mypy Type Checker (47 source files)
+  [PASSED]  Conformance Audit Document Check
+  [PASSED]  Tracked Files Git Hygiene Check
+  [PASSED]  Pytest Test Suite (448 passed, 1 skipped, 49 deselected, 1 warning in 743.01s)
+  [PASSED]  Frontend Linter (eslint)
+  [PASSED]  Frontend Type Checker (tsc)
+  [PASSED]  Frontend Vitest Suite (13 test files, 64 passed in 28.67s)
+  [PASSED]  Frontend Secret Leakage Check
+  ========================================================
+  [SUCCESS] All checks passed successfully.
+  ========================================================
+
+  Playwright E2E Suite: 51 passed in 50.1s across Desktop Chrome, Mobile Chrome (360px), and Tablet (768px).
+  ```
+- **Next steps for the next session:**
+  - Begin Phase 10 execution with Task P10.1: Consolidated cross-platform demo supervisor (tools/demo.py), preflight checks, port management (.demo/pids.json), and production Next.js launcher.

@@ -121,3 +121,21 @@ export function useAbout() {
   });
 }
 
+export function useMoviePoster(title?: string, year?: number | null, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ['moviePoster', title, year],
+    queryFn: async () => {
+      if (!title) return null;
+      const params = new URLSearchParams({ title });
+      if (year) params.set('year', String(year));
+      const res = await fetch(`/api/posters/movie?${params.toString()}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.poster_url as string | null) || null;
+    },
+    enabled: enabled && Boolean(title),
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+}
+

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { X, Star, Film, ShoppingBag, Newspaper, Sparkles, Heart, Check } from 'lucide-react';
-import { useItemDetail, useSimilar } from '@/lib/api/hooks';
+import { useItemDetail, useSimilar, useMoviePoster } from '@/lib/api/hooks';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -29,6 +29,14 @@ export function ItemDrawer({
 
   const { data: item, isLoading, isError, refetch } = useItemDetail(type, itemId || undefined);
   const { data: similarData, isLoading: similarLoading } = useSimilar(type, itemId || undefined, 6);
+
+  // Dynamically resolve TMDB poster for movie items if image_url is missing
+  const { data: tmdbPosterUrl } = useMoviePoster(
+    item?.title,
+    item?.year,
+    cardType === 'movie' && !item?.image_url
+  );
+  const activeImageUrl = item?.image_url || tmdbPosterUrl;
 
   // Store trigger element and restore focus on unmount
   useEffect(() => {
@@ -151,9 +159,9 @@ export function ItemDrawer({
           <div className="p-6 space-y-6">
             {/* 1. Large Poster / Hero Banner */}
             <div className="relative aspect-[16/9] sm:aspect-[2/1] w-full overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-elevated)] border border-[var(--color-border)]">
-              {item.image_url ? (
+              {activeImageUrl ? (
                 <Image
-                  src={item.image_url}
+                  src={activeImageUrl}
                   alt={item.title}
                   fill
                   sizes="500px"

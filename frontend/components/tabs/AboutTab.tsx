@@ -305,6 +305,19 @@ export function AboutTab() {
               Includes fallback support for synthetic offline test partitions (explicitly marked in provenance banners) to guarantee 100% offline reproducibility without external network downloads.
             </p>
           </div>
+
+          {/* TMDB Poster Attribution */}
+          <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] border border-[var(--color-border)] p-4 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-[var(--color-text)]">The Movie Database (TMDB)</h4>
+              <span className="text-[10px] font-semibold text-[var(--color-accent-text)] bg-[var(--color-bg)] px-2 py-0.5 rounded border border-[var(--color-border)]">
+                API Attribution
+              </span>
+            </div>
+            <p className="text-[var(--color-text-secondary)] leading-relaxed">
+              Movie poster artwork is dynamically queried via the TMDB API. <strong>This product uses the TMDB API but is not endorsed or certified by TMDB.</strong>
+            </p>
+          </div>
         </div>
       </div>
 

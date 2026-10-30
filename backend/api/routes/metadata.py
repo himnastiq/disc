@@ -66,7 +66,7 @@ ATTRIBUTIONS: list[DatasetAttribution] = [
         license="Microsoft Research License for Data",
         source_url="https://msnews.github.io/",
         original_vs_derived=(
-            "SYNTHETIC DEMO FIXTURE: Serves offline synthetic fixture dataset with TF-IDF content profiles, "
+            "MIND-small: Serves news articles with TF-IDF content profiles, "
             "impression-ranking evaluation, and freshness recency window."
         ),
     ),

@@ -1,10 +1,18 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RecCard } from '@/components/features/RecCard';
 import { ReasonBadge } from '@/components/features/ReasonBadge';
 import { ModeBadge } from '@/components/features/ModeBadge';
 import type { ScoredItem } from '@/lib/api/schemas';
+
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 const mockMovieItem: ScoredItem = {
   item_id: '385',
@@ -58,7 +66,7 @@ const mockArticleItem: ScoredItem = {
 
 describe('RecCard & Badges (P9.3)', () => {
   it('renders movie variant with title, year, category chips, and reason', () => {
-    render(<RecCard item={mockMovieItem} cardType="movie" />);
+    renderWithClient(<RecCard item={mockMovieItem} cardType="movie" />);
 
     expect(screen.getByRole('heading', { name: 'The Matrix (1999)' })).toBeInTheDocument();
     expect(screen.getByText('1999')).toBeInTheDocument();
@@ -67,7 +75,7 @@ describe('RecCard & Badges (P9.3)', () => {
   });
 
   it('renders product variant with brand and category chips', () => {
-    render(<RecCard item={mockProductItem} cardType="product" />);
+    renderWithClient(<RecCard item={mockProductItem} cardType="product" />);
 
     expect(screen.getByRole('heading', { name: 'Logitech G502 Gaming Mouse' })).toBeInTheDocument();
     expect(screen.getByText('Logitech')).toBeInTheDocument();
@@ -76,7 +84,7 @@ describe('RecCard & Badges (P9.3)', () => {
   });
 
   it('renders article variant with headline, abstract snippet, and category', () => {
-    render(<RecCard item={mockArticleItem} cardType="article" />);
+    renderWithClient(<RecCard item={mockArticleItem} cardType="article" />);
 
     expect(screen.getByRole('heading', { name: 'Breakthrough in Solid State Battery Technology' })).toBeInTheDocument();
     expect(screen.getByText(/Researchers develop high-capacity solid state/i)).toBeInTheDocument();
@@ -86,7 +94,7 @@ describe('RecCard & Badges (P9.3)', () => {
 
   it('triggers onSelect when clicked or activated with Enter key', () => {
     const onSelect = vi.fn();
-    render(<RecCard item={mockMovieItem} cardType="movie" onSelect={onSelect} />);
+    renderWithClient(<RecCard item={mockMovieItem} cardType="movie" onSelect={onSelect} />);
 
     const card = screen.getByRole('button', { name: /the matrix/i });
     fireEvent.click(card);

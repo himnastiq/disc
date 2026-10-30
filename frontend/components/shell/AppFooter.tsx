@@ -45,12 +45,20 @@ export function AppFooter() {
             >
               MIND
             </a>
+            <a
+              href="https://www.themoviedb.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--color-text)] underline underline-offset-4"
+            >
+              TMDB
+            </a>
           </div>
         </div>
 
         <div className="border-t border-[var(--color-border)] pt-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[var(--color-text-muted)]">
           <p>
-            Developed strictly for non-commercial education, college showcase, and evaluation.
+            Developed strictly for non-commercial education, college showcase, and evaluation. This product uses the TMDB API but is not endorsed or certified by TMDB.
           </p>
           <p>
             Zero fabricated results · Strict temporal evaluation

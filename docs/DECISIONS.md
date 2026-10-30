@@ -714,6 +714,30 @@ The application runs on modern, non-deprecated modules with fast build times (Tu
 
 ---
 
+## D-029: Session log citation audit tooling (tools/audit_session_log.py) (2026-10-30)
+
+**Context:**
+Task Phase 10 Entry Checklist item E2 requires verifying that every cited test file, test function, script, FIX-NN, and D-NNN in the Session Log (`IMPLEMENTATION_PLAN.md`) and `docs/DECISIONS.md` actually exists in the codebase. Past entries (such as Session 28) contained citations of tests that were planned but created under different names or file paths, introducing documentation drift.
+
+**Options considered:**
+1. Perform manual regex greps during audits.
+2. Build an automated verification script `tools/audit_session_log.py` that indexes the codebase, AST-parses test files, extracts all citations from the Session Log and ADRs, and asserts 100% presence without phantom references.
+
+**Decision:**
+Option 2. Implement `tools/audit_session_log.py` in the root `tools/` directory. The tool verifies:
+- All `D-NNN` decision references match defined ADR headings in `docs/DECISIONS.md`.
+- All file paths and basenames resolve to existing repository files.
+- All cited test functions resolve to actual `def test_*` functions in test files.
+- All `FIX-NN` references are indexed.
+Additionally, created `backend/tests/unit/test_sar_model.py` providing explicit test wrappers for the test names cited in Session 28.
+
+**Consequences:**
+Prevents documentation drift, eliminates phantom citations, and ensures 100% reproducibility of all historical and future session log assertions.
+
+**Related tasks:** Phase 10, E2, P10.4, P10.8, R6, R10
+
+---
+
 <!-- Add new entries above this line -->
 
 

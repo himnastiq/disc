@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Film, ShoppingBag, Newspaper, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { ReasonBadge } from './ReasonBadge';
+import { useMoviePoster } from '@/lib/api/hooks';
 import type { ScoredItem } from '@/lib/api/schemas';
 
 export interface RecCardProps {
@@ -23,6 +24,14 @@ export function RecCard({
   className = '',
 }: RecCardProps) {
   const [imageError, setImageError] = useState(false);
+
+  // Dynamically resolve TMDB poster for movie cards when image_url is missing
+  const { data: tmdbPosterUrl } = useMoviePoster(
+    item.title,
+    item.year,
+    cardType === 'movie' && !item.image_url
+  );
+  const activeImageUrl = item.image_url || tmdbPosterUrl;
 
   const handleClick = () => {
     onSelect?.(item);
@@ -49,9 +58,9 @@ export function RecCard({
         {/* 1. Media / Poster Slot (Ratio 2:3 for movies/products; compact header for articles) */}
         {cardType !== 'article' ? (
           <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[4px] bg-[var(--color-elevated)] border border-[var(--color-border)]">
-            {item.image_url && !imageError ? (
+            {activeImageUrl && !imageError ? (
               <Image
-                src={item.image_url}
+                src={activeImageUrl}
                 alt={item.title}
                 fill
                 priority={priority}
