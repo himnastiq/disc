@@ -39,7 +39,8 @@ desktop.ini
 
 # Data and artifacts (large files)
 data/
-artifacts/
+artifacts*/
+audit/
 
 # Node / Frontend
 frontend/node_modules/
