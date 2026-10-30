@@ -668,6 +668,25 @@ Cold-start recommendations are protected against negative rating contamination (
 
 ---
 
+## D-027: Dynamic evaluation of positive interactions for products schema (2026-10-30)
+
+**Context:**
+Audit finding `F-005` (Author Decision Q2) noted a divergence between `MovieLensAdapter` (which materializes a static boolean `positive` column in `interactions.parquet`) and `AmazonProductsAdapter` (which stores raw ratings in `signal` and computes positive interactions dynamically via `signal >= positive_threshold`). The question was raised whether products interactions should explicitly materialize `positive: bool` in `interactions.parquet` or continue evaluating positivity dynamically.
+
+**Options considered:**
+1. Dynamically evaluate positive interactions via `signal >= positive_threshold` without materializing a static boolean column in products `interactions.parquet`.
+2. Rewrite `AmazonProductsAdapter.interactions()` to add a static `positive` column and retrain/re-export products artifacts.
+
+**Decision:**
+Option 1 (Author Decision Q2 confirmed by user). Continue evaluating positive interactions dynamically via `signal >= positive_threshold`.
+
+**Consequences:**
+Storage for products interactions remains compact and decoupled from a fixed threshold, allowing hyperparameter sweeps and threshold tuning without regenerating interaction parquet files. Downstream components (evaluation harness, tuning, and API lookup) evaluate `signal >= spec.signal.positive_threshold` dynamically as needed. Audit finding `F-005` is formally resolved as an intentional, documented architecture choice, unblocking task markers `P4.2` and `P6.5`.
+
+**Related tasks:** P4.2, P6.5, F-005, R1, R3
+
+---
+
 <!-- Add new entries above this line -->
 
 
