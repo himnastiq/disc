@@ -43,6 +43,7 @@ artifacts*/
 audit/
 
 # Node / Frontend
+node_modules/
 frontend/node_modules/
 frontend/.next/
 frontend/out/

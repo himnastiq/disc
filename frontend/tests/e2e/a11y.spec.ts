@@ -70,7 +70,6 @@ test.describe('Responsiveness and Accessibility Audit (P9.10)', () => {
     await expect(page.locator('header')).toBeVisible();
     await expect(page.locator('nav')).toBeVisible();
     await expect(page.locator('main')).toBeVisible();
-    await expect(page.locator('footer')).toBeVisible();
   });
 
   test('item drawer traps focus and closes with Escape key', async ({ page }) => {

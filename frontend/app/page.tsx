@@ -4,7 +4,6 @@ import React, { Suspense } from 'react';
 import { AlertCircle, Sparkles } from 'lucide-react';
 import { AppHeader } from '@/components/shell/AppHeader';
 import { TabNavigation } from '@/components/shell/TabNavigation';
-import { AppFooter } from '@/components/shell/AppFooter';
 import { useUrlState } from '@/lib/hooks/useUrlState';
 import { useTypes } from '@/lib/api/hooks';
 import { ForYouTab } from '@/components/tabs/ForYouTab';
@@ -70,7 +69,6 @@ function DashboardContent() {
             </Button>
           </div>
         </main>
-        <AppFooter />
       </div>
     );
   }
@@ -131,8 +129,6 @@ function DashboardContent() {
         onClose={() => setItem(null)}
         onSelectItem={(selected) => setItem(selected.item_id)}
       />
-
-      <AppFooter />
     </div>
   );
 }

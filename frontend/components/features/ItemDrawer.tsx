@@ -38,10 +38,12 @@ export function ItemDrawer({
   );
   const activeImageUrl = item?.image_url || tmdbPosterUrl;
   const [imageError, setImageError] = useState(false);
+  const [prevUrl, setPrevUrl] = useState(activeImageUrl);
 
-  useEffect(() => {
+  if (prevUrl !== activeImageUrl) {
+    setPrevUrl(activeImageUrl);
     setImageError(false);
-  }, [activeImageUrl]);
+  }
 
   // Store trigger element and restore focus on unmount
   useEffect(() => {

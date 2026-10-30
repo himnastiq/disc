@@ -6,6 +6,7 @@ import { useRecommendations } from '@/lib/api/hooks';
 import { ProfileCard } from '@/components/features/ProfileCard';
 import { RecCard } from '@/components/features/RecCard';
 import { ModeBadge } from '@/components/features/ModeBadge';
+import { MovieDiscoveryFeed } from '@/components/features/MovieDiscoveryFeed';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -32,6 +33,32 @@ export function ForYouTab({
     type === 'products' ? 'product' : type === 'articles' ? 'article' : 'movie';
 
   const kOptions = [5, 10, 20];
+
+  if (isError) {
+    return (
+      <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+        <ErrorState
+          title="Failed to fetch recommendations"
+          message={`Could not load recommendations for User #${user} in ${type}.`}
+          onRetry={refetch}
+        />
+      </div>
+    );
+  }
+
+  // Consumer Movie Discovery Feed for Movies domain (Option 1)
+  if (type === 'movies') {
+    return (
+      <MovieDiscoveryFeed
+        user={user}
+        k={k}
+        onKChange={onKChange}
+        onSelectItem={onSelectItem}
+        recData={recData}
+        isLoading={isLoading}
+      />
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -95,19 +122,8 @@ export function ForYouTab({
           </div>
         )}
 
-        {/* 4. Error State */}
-        {isError && (
-          <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-            <ErrorState
-              title="Failed to fetch recommendations"
-              message={`Could not load recommendations for User #${user} in ${type}.`}
-              onRetry={refetch}
-            />
-          </div>
-        )}
-
-        {/* 5. Empty State */}
-        {!isLoading && !isError && (!recData || recData.results.length === 0) && (
+        {/* 4. Empty State */}
+        {!isLoading && (!recData || recData.results.length === 0) && (
           <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8">
             <EmptyState
               title="No recommendations generated"
@@ -116,8 +132,8 @@ export function ForYouTab({
           </div>
         )}
 
-        {/* 6. Recommendation Cards Grid */}
-        {!isLoading && !isError && recData && recData.results.length > 0 && (
+        {/* 5. Recommendation Cards Grid */}
+        {!isLoading && recData && recData.results.length > 0 && (
           <div
             role="region"
             aria-label="Recommendation results"

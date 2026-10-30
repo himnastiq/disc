@@ -42,6 +42,14 @@ export const handlers = [
     return HttpResponse.json(recommendMovies1Fixture);
   }),
 
+  http.get('/api/types/:type/popular', () => {
+    return HttpResponse.json(recommendMovies1Fixture);
+  }),
+
+  http.get('/api/types/:type/similar', () => {
+    return HttpResponse.json(recommendMovies1Fixture);
+  }),
+
   http.get('/api/about', () => {
     return HttpResponse.json(aboutFixture);
   }),

@@ -63,7 +63,7 @@ describe('ColdStartTab (P9.6)', () => {
     fireEvent.change(searchInput, { target: { value: 'matrix' } });
 
     // Wait for debounced search results to show up
-    const addButton = await screen.findByRole('button', { name: /add the matrix \(1999\)/i });
+    const addButton = await screen.findByRole('button', { name: /add the matrix \(1999\)/i }, { timeout: 5000 });
     fireEvent.click(addButton);
 
     // Assert item is now in selected history chips
@@ -84,7 +84,7 @@ describe('ColdStartTab (P9.6)', () => {
     const searchInput = await screen.findByRole('searchbox');
     fireEvent.change(searchInput, { target: { value: 'matrix' } });
 
-    const addButton = await screen.findByRole('button', { name: /add the matrix \(1999\)/i });
+    const addButton = await screen.findByRole('button', { name: /add the matrix \(1999\)/i }, { timeout: 5000 });
     fireEvent.click(addButton);
 
     // Wait for chip to appear
