@@ -41,7 +41,6 @@ export function RecCard({
     <article
       role="button"
       tabIndex={0}
-      aria-label={`View details for ${item.title}`}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={`group flex flex-col justify-between rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-150 cursor-pointer hover:border-[#3E3E3E] hover:bg-[var(--color-elevated)]/50 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)] ${className}`}

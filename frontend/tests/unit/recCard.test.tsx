@@ -88,7 +88,7 @@ describe('RecCard & Badges (P9.3)', () => {
     const onSelect = vi.fn();
     render(<RecCard item={mockMovieItem} cardType="movie" onSelect={onSelect} />);
 
-    const card = screen.getByRole('button', { name: /view details for the matrix/i });
+    const card = screen.getByRole('button', { name: /the matrix/i });
     fireEvent.click(card);
     expect(onSelect).toHaveBeenCalledTimes(1);
 
