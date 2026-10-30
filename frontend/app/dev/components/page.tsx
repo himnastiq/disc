@@ -14,8 +14,8 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function DevComponentsPage() {
-  // Guard: Exclude in production builds if env is production
-  if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_ALLOW_DEV_ROUTES) {
+  // Guard: Exclude in production builds unless NEXT_PUBLIC_ALLOW_DEV_ROUTES is true
+  if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_ALLOW_DEV_ROUTES !== 'true') {
     notFound();
   }
 
