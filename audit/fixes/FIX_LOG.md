@@ -542,3 +542,21 @@
 - [x] Every decision and rejected option is in `docs/DECISIONS.md` and listed in the report.
 - [x] Every blank AUTHOR DECISION was left unguessed and its findings marked `BLOCKED-ON-HUMAN`.
 - [x] I did not merge, force-push, or rewrite history.
+
+---
+
+## Follow-up pass 2
+
+- **Start commit:** `ae07db1 Some changes`
+- **Baseline:**
+  - ruff check: `All checks passed!`
+  - ruff format: `125 files already formatted`
+  - mypy: `Success: no issues found in 46 source files` (note: `pyproject.toml: unused section(s): module = ['sklearn', 'tests.*']`)
+  - pytest: `1 failed, 439 passed, 1 skipped, 47 deselected, 1 warning in 355.27s (0:05:55)`
+  - Failing test: `FAILED tests/unit/test_conformance.py::test_conformance_up_to_date - AssertionError: Conformance document is out of date or failed check: Error: docs/CONFORMANCE.md is out of date. Run 'python tools/check_conformance.py'`
+- **Status:** STOPPED at S0.5 per rule: *"If the baseline already fails, STOP and tell the human (do not start fixing)."*
+- **Baseline Diagnostics:**
+  1. `backend/tests/unit/test_conformance.py::test_conformance_up_to_date` failed because committed `docs/CONFORMANCE.md` contains `R8: NOT-VERIFIED` ("Benchmark file is older than movies artifacts manifest"), whereas `tools/check_conformance.py --check` generates `R8: FAIL` ("Benchmark exceeded budget: worst p95 530.62 ms (budget 150.0 ms), RSS 2302.3 MB").
+  2. Git history shows earlier commits `51c4c00 FIX2 A: make CONFORMANCE.md truthful and machine-checked` and `0545473 FIX2 B: regenerate non-fast movies and products results after leakage fixes`. That previous FIX2 implementation added `backend/tests/unit/test_conformance.py` expecting `--check` and `compute_verdict`.
+  3. Subsequent commits `1cf712b` and `ae07db1` modified `backend/engine/adapters/mind.py` (line 223 has `{self.spec.type}` instead of `articles`, line 208 has `is_fallback = True`, lines 226-232 set `self.dataset_source`) and `backend/engine/train.py` (line 280 has `# 11. Save artifacts` instead of `# 10. Save artifacts`), causing anchor drift against `apply_fix2.py` / `FIX_PROMPT_2_DETAILED.md`.
+
