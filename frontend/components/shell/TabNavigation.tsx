@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, GitCompare, Zap, BarChart3, Info } from 'lucide-react';
+import { Sparkles, GitCompare, Zap, BarChart3 } from 'lucide-react';
 import type { TabKey } from '@/lib/hooks/useUrlState';
 
 export interface TabNavigationProps {
@@ -15,7 +15,6 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
     { id: 'compare', label: 'Compare', icon: <GitCompare className="h-4 w-4" /> },
     { id: 'cold-start', label: 'Cold Start', icon: <Zap className="h-4 w-4" /> },
     { id: 'evaluation', label: 'Evaluation', icon: <BarChart3 className="h-4 w-4" /> },
-    { id: 'about', label: 'About', icon: <Info className="h-4 w-4" /> },
   ];
 
   return (

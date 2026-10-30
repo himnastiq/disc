@@ -12,11 +12,11 @@ describe('URL State Parameter Normalization & Fallbacks (P8.5)', () => {
     expect(normalizeTab('compare')).toBe('compare');
     expect(normalizeTab('cold-start')).toBe('cold-start');
     expect(normalizeTab('evaluation')).toBe('evaluation');
-    expect(normalizeTab('about')).toBe('about');
   });
 
   it('falls back to default tab for invalid or missing values', () => {
     expect(normalizeTab('invalid-tab')).toBe(DEFAULT_TAB);
+    expect(normalizeTab('about')).toBe(DEFAULT_TAB);
     expect(normalizeTab('')).toBe(DEFAULT_TAB);
     expect(normalizeTab(null)).toBe(DEFAULT_TAB);
     expect(normalizeTab(undefined)).toBe(DEFAULT_TAB);

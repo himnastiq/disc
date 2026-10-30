@@ -195,3 +195,4 @@ def test_smoke_demo_backend_start_and_stop():
         demo.terminate_pid_tree(proc.pid, force=True)
         time.sleep(1.0)
         assert not demo.is_port_in_use(test_port), f"Port {test_port} was not released"
+

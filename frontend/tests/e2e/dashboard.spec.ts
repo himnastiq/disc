@@ -73,14 +73,6 @@ test.describe('Dashboard End-to-End User Journeys (P9.11)', () => {
     await expect(page.getByRole('heading', { name: /Evaluation Protocol & Verification/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Ranking & Retrieval Benchmarks/i })).toBeVisible();
     await expect(page.getByText('Catalog Coverage')).toBeVisible();
-
-    // 7. About Tab Flow
-    const aboutTabButton = page.getByRole('tab', { name: /about/i });
-    await aboutTabButton.click();
-    await expect(page).toHaveURL(/tab=about/);
-    await expect(page.getByText(/Recommenders Derivation Statement/i)).toBeVisible();
-    await expect(page.getByRole('img', { name: /System architecture diagram/i })).toBeVisible();
-    await expect(page.getByText(/Original vs. Derived Codebase Division/i)).toBeVisible();
   });
 
   test('type switcher resets user to first demo user while preserving active tab', async ({ page }) => {

@@ -64,20 +64,6 @@ test.describe('Responsiveness and Accessibility Audit (P9.10)', () => {
     expect(seriousOrCritical).toEqual([]);
   });
 
-  test('reports zero serious or critical accessibility violations on About tab', async ({ page }) => {
-    await page.goto('/?tab=about');
-    await page.waitForLoadState('networkidle');
-
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .analyze();
-
-    const seriousOrCritical = results.violations.filter(
-      (v) => v.impact === 'serious' || v.impact === 'critical'
-    );
-    expect(seriousOrCritical).toEqual([]);
-  });
-
   test('semantic landmarks are present across viewports', async ({ page }) => {
     await page.goto('/');
 

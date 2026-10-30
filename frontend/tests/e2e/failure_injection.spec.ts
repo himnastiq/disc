@@ -53,10 +53,10 @@ test.describe('Failure Injection & Robustness Suite (P10.2)', () => {
     const tryAgain = page.getByRole('button', { name: /try again/i });
     await expect(tryAgain).toBeVisible();
 
-    // Switch to About tab - must be completely unaffected
-    const aboutTab = page.getByRole('tab', { name: /about/i });
-    await aboutTab.click();
-    await expect(page.getByRole('heading', { name: 'Microsoft Recommenders' })).toBeVisible();
+    // Switch to Evaluation tab - must be completely unaffected
+    const evalTab = page.getByRole('tab', { name: /evaluation/i });
+    await evalTab.click();
+    await expect(page.getByRole('heading', { name: /Evaluation Protocol & Verification/i })).toBeVisible();
 
     // Switch back to For You tab
     const forYouTab = page.getByRole('tab', { name: /for you/i });

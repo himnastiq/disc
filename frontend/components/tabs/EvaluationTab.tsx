@@ -460,13 +460,24 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
               .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(idx)} ${getY(p.popVal)}`)
               .join(' ');
 
+            const chartDescription = points
+              .map(
+                (p) =>
+                  `History size ${p.step}: ${modelName.toUpperCase()} = ${formatMetric(
+                    p.modVal
+                  )}, Popularity = ${formatMetric(p.popVal)}`
+              )
+              .join('; ');
+
             return (
               <div className="space-y-2">
                 <svg
                   viewBox={`0 0 ${width} ${height}`}
                   className="w-full h-28 overflow-visible"
-                  aria-label="Cold-start degradation curve"
+                  role="img"
+                  aria-label={`Cold-start degradation curve (${selectedCurveMetric}): ${chartDescription}`}
                 >
+                  <desc>{chartDescription}</desc>
                   {/* Grid lines */}
                   <line x1={padX} y1={height - padY} x2={width - padX} y2={height - padY} stroke="#2A2A2A" strokeWidth="1" />
                   <line x1={padX} y1={padY} x2={width - padX} y2={padY} stroke="#2A2A2A" strokeWidth="1" strokeDasharray="2,2" />
@@ -485,9 +496,37 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
                       cy={getY(p.modVal)}
                       r="3"
                       className="fill-[var(--color-accent)]"
-                    />
+                      aria-label={`${modelName.toUpperCase()} history ${p.step}: ${formatMetric(p.modVal)}`}
+                      data-history-step={p.step}
+                      data-metric-value={formatMetric(p.modVal)}
+                    >
+                      <title>{`${modelName.toUpperCase()} history ${p.step}: ${formatMetric(p.modVal)}`}</title>
+                    </circle>
                   ))}
                 </svg>
+
+                {/* Accessible text alternative table for screen readers and automated consistency audits */}
+                <div className="sr-only" aria-label="Cold start curve data points">
+                  <table>
+                    <caption>Cold start curve points for {selectedCurveMetric}</caption>
+                    <thead>
+                      <tr>
+                        <th>History</th>
+                        <th>{modelName.toUpperCase()}</th>
+                        <th>Popularity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {points.map((p) => (
+                        <tr key={p.step} data-step={p.step}>
+                          <td>{p.step}</td>
+                          <td data-model-val>{formatMetric(p.modVal)}</td>
+                          <td data-pop-val>{formatMetric(p.popVal)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* X-axis history size labels */}
                 <div className="flex justify-between text-[10px] text-[var(--color-text-muted)] px-1">

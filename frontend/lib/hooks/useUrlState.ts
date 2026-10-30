@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
-export const VALID_TABS = ['for-you', 'compare', 'cold-start', 'evaluation', 'about'] as const;
+export const VALID_TABS = ['for-you', 'compare', 'cold-start', 'evaluation'] as const;
 export type TabKey = (typeof VALID_TABS)[number];
 
 export const VALID_TYPES = ['movies', 'products', 'articles'] as const;

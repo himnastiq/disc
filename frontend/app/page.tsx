@@ -11,7 +11,6 @@ import { ForYouTab } from '@/components/tabs/ForYouTab';
 import { CompareTab } from '@/components/tabs/CompareTab';
 import { ColdStartTab } from '@/components/tabs/ColdStartTab';
 import { EvaluationTab } from '@/components/tabs/EvaluationTab';
-import { AboutTab } from '@/components/tabs/AboutTab';
 import { ItemDrawer } from '@/components/features/ItemDrawer';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
@@ -122,11 +121,6 @@ function DashboardContent() {
         {/* Tab 4: Evaluation */}
         {tab === 'evaluation' && (
           <EvaluationTab type={type} />
-        )}
-
-        {/* Tab 5: About */}
-        {tab === 'about' && (
-          <AboutTab />
         )}
       </main>
 
