@@ -53,6 +53,8 @@ frontend/.cache/
 
 # Coverage and test artifacts
 htmlcov/
+coverage_report/
+coverage.json
 .coverage
 .coverage.*
 coverage.xml
