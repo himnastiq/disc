@@ -33,7 +33,7 @@
 <!-- PROGRESS:START -->
 | Phase | Name | Done | In progress | Blocked | Total | % |
 |---|---|---|---|---|---|---|
-| 0 | Scaffolding and tooling | 10 | 0 | 1 | 11 | 90% |
+| 0 | Scaffolding and tooling | 11 | 0 | 0 | 11 | 100% |
 | 1 | Vendor, trim, and rename Recommenders into `discovery` | 9 | 0 | 0 | 9 | 100% |
 | 2 | Core engine abstractions | 13 | 0 | 0 | 13 | 100% |
 | 3 | Movies pipeline (MovieLens + SAR) | 13 | 0 | 0 | 13 | 100% |
@@ -46,9 +46,9 @@
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **84** | | | **129** | **65%** |
+| | **Overall** | **85** | | | **129** | **65%** |
 
-`[#############-------] 65%  (84/129 tasks)`
+`[#############-------] 65%  (85/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -323,8 +323,8 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 
 - [x] **P0.1** Initialise git, add `.gitignore` (Python, Node, `data/`, `artifacts/` big files, `.env*`, IDE files), add the project `LICENSE` (MIT unless the owner says otherwise). *Acceptance:* clean first commit.
 - [x] **P0.2** Create the directory layout from section 5 (empty packages with `__init__.py`, placeholder READMEs where useful). *Acceptance:* tree matches section 5.
-- [!] **P0.3** Backend environment: Python 3.11, `pyproject.toml` with extras `core` (numpy, pandas, scipy, scikit-learn, pyarrow, pydantic, pyyaml, tqdm, requests, fastapi, uvicorn, joblib), `dev` (pytest, pytest-cov, hypothesis, httpx, ruff, mypy, pip-audit), `deep` (placeholder for Phase 12). Lock versions (uv lock or pinned requirements). *Acceptance:* a fresh virtualenv installs `core,dev` with one command.
-  *Note:* Lockfile generation blocked on external network execution in sandbox: run `cd backend && uv lock` to generate committed uv.lock (F-012, audit FAIL). Dependencies configured in pyproject.toml.
+- [x] **P0.3** Backend environment: Python 3.11, `pyproject.toml` with extras `core` (numpy, pandas, scipy, scikit-learn, pyarrow, pydantic, pyyaml, tqdm, requests, fastapi, uvicorn, joblib), `dev` (pytest, pytest-cov, hypothesis, httpx, ruff, mypy, pip-audit), `deep` (placeholder for Phase 12). Lock versions (uv lock or pinned requirements). *Acceptance:* a fresh virtualenv installs `core,dev` with one command.
+  *Note:* Lockfile committed in `backend/uv.lock` (b1614be), resolving F-012. Dependencies and pinned locks verified.
 - [x] **P0.4** `Makefile` targets: `setup`, `data`, `train` (all types), `train-fast`, `eval`, `api`, `web`, `test`, `lint`, `check`, `gates`, `progress`, `clean`. *Acceptance:* each target exists and fails gracefully with a clear message if its prerequisite is missing.
 - [x] **P0.5** Linting and typing config: ruff, mypy (strict for `engine/` and `api/`, lenient for `discovery/`), pre-commit hooks. *Acceptance:* `make lint` passes on the skeleton.
 - [x] **P0.6** Write `tools/progress.py`: parses this file, counts `[x]` / total tasks per `## PHASE n` section, rewrites the dashboard between the `PROGRESS:START/END` markers (table with phase name, done/total, percentage, and an overall bar). Must be idempotent. *Acceptance:* running it twice changes nothing the second time; unit test included in `backend/tests/unit/test_progress.py`.
@@ -1623,7 +1623,21 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
       ================== 3 passed, 1 warning in 150.57s (0:02:30) ===================
       ```
 
-
-
-
-
+### Session 29: 2026-10-30, agent session (Reconciliation with Implementation Plan & P0.3 Verification)
+- **Started at:** task P0.3   **Ended at:** task P7.13
+- **Completed:** P0.3 (Lockfile generation committed in `backend/uv.lock` via commit `b1614be`, resolving F-012; Phase 0 now 100% complete).
+- **In progress ([~]):**
+  - `P4.2` (`AmazonProductsAdapter` item cap leakage resolved in F-002; positive column schema alignment pending Author Decision Q2 in F-005).
+  - `P6.5` (Cross-type consistency checks pass via shared loader and R3 invariant suite; positive column schema pending Author Decision Q2 in F-005).
+- **Blocked ([!]):** None.
+- **Decisions made:**
+  - Verified `backend/uv.lock` resolution of F-012 and marked P0.3 complete.
+- **Gate results:**
+  - R1-R3, R5-R8, R10-R11: PASS.
+  - R4: Documented baseline comparisons on skewed datasets in ADR D-025.
+  - R9: PENDING (Phases 8-10 Frontend).
+- **Test status:**
+  - `tools/check.py`: PASS (Ruff linter, Ruff format, Mypy, Conformance audit, Git hygiene, Pytest: 447 passed, 1 skipped, 47 deselected, 0 errors).
+- **Next steps for the next session:**
+  - Human review of Author Decision Q2 (`F-005`) for products positive column schema.
+  - Begin Phase 8: Frontend Scaffolding (`frontend/` Next.js App Router, Tailwind, TypeScript strict, API route proxies).
