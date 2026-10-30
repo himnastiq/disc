@@ -8,9 +8,9 @@
 
 | Content Type | Dataset Variant | Git Commit | Config Hash | Seed | Evaluation Protocol |
 |---|---|---|---|---|---|
-| **Movies** | `1m` | `51c4c00` | `5611260f` | `42` | Chronological per-user split (80/20) |
-| **Products** | `video_games` | `51c4c00` | `1bdea414` | `42` | Chronological per-user split (budget-capped) |
-| **Articles** | `MIND-small` | `0545473` | `cb44f1bf` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
+| **Movies** | `1m` | `5ee8745` | `e26bc6e7` | `42` | Chronological per-user split (80/20) |
+| **Products** | `video_games` | `5ee8745` | `ed0ba7db` | `42` | Chronological per-user split (budget-capped) |
+| **Articles** | `MIND-small` | `5ee8745` | `1ce5e663` | `42` | Dual protocol: Impression ranking + 24h Window retrieval |
 
 ---
 
@@ -71,16 +71,6 @@ Evaluated on sparse verified purchase ratings under budget-capped SAR similarity
 | **Precision@20** | 0.0003 | 0.0025 [0.0019, 0.0030] | **0.0069 [0.0060, 0.0077]** | **+175.5%** | Model better (CIs separate) |
 
 - **Sanity Check (Model > Popularity):** `Passed`
-### Product-Specific Robustness Checks
-
-| Check | Measured Value | Target / Baseline | Status |
-|---|---|---|---|
-| **Sparse User Share (<= 5 ratings)** | `38.3%` (9302/24303 users) | Informative metric | Verified |
-| **Long-Tail Volume Share** | `42.5%` (6400/8000 items) | Informative baseline (catalog tail) | Verified |
-| **Long-Tail Rec Share @ 10** | `55.8%` of recommended items | > 5% tail exploration | Verified |
-| **Category Diversity @ 10** | `10.44` unique categories/user | Min: `3`, Max: `25` | Verified |
-| **Similar Alternatives Spot-Check** | `100.0%` shared categories | Target > 60% | Verified |
-
 ---
 
 ## 3. Articles (MIND + TF-IDF Content Model)
@@ -126,12 +116,12 @@ At $k=0$ likes, all models safely fall back to popularity.
 | History Size (Likes) | Movies Recall@10 | Movies NDCG@10 | Products HitRate@10 | Products NDCG@10 | Articles HitRate@10 | Articles NDCG@10 |
 |---|---|---|---|---|---|---|
 | **0 likes** | `0.0465` | `0.0642` | `0.0244` | `0.0077` | `0.0000` | `0.0000` |
-| **1 likes** | `0.0241` | `0.0293` | `0.0488` | `0.0195` | `0.0200` | `0.0126` |
-| **2 likes** | `0.0373` | `0.0431` | `0.0732` | `0.0396` | `0.0200` | `0.0077` |
-| **3 likes** | `0.0325` | `0.0436` | `0.0488` | `0.0158` | `0.0200` | `0.0077` |
-| **5 likes** | `0.0377` | `0.0527` | `0.1220` | `0.0639` | `0.0200` | `0.0077` |
-| **10 likes** | `0.0518` | `0.0627` | `0.1220` | `0.0764` | `0.0200` | `0.0077` |
-| **20 likes** | `0.0600` | `0.0786` | `0.1220` | `0.0764` | `0.0400` | `0.0139` |
+| **1 likes** | `0.0342` | `0.0427` | `0.0488` | `0.0195` | `0.0200` | `0.0126` |
+| **2 likes** | `0.0283` | `0.0398` | `0.0732` | `0.0396` | `0.0200` | `0.0077` |
+| **3 likes** | `0.0289` | `0.0385` | `0.0488` | `0.0158` | `0.0200` | `0.0077` |
+| **5 likes** | `0.0320` | `0.0428` | `0.1220` | `0.0622` | `0.0200` | `0.0077` |
+| **10 likes** | `0.0452` | `0.0598` | `0.1220` | `0.0748` | `0.0200` | `0.0077` |
+| **20 likes** | `0.0649` | `0.0780` | `0.1220` | `0.0748` | `0.0400` | `0.0139` |
 
 ![Cold Start Curves](figures/cold_start_curves.png)
 
