@@ -46,6 +46,16 @@ def get_env_config() -> dict[str, Any]:
     cors_str = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
     cors_origins = [o.strip() for o in cors_str.split(",") if o.strip()]
 
+    env_mode = os.environ.get("ENV", os.environ.get("ENVIRONMENT", "development")).lower()
+    if "*" in cors_origins:
+        if env_mode in ("prod", "production"):
+            raise ValueError(
+                "Insecure configuration: CORS wildcard '*' is not permitted when ENV=production."
+            )
+        logging.getLogger("api.main").warning(
+            "SECURITY WARNING: CORS wildcard '*' is active. Disabling credentials. Do not use wildcard CORS in production."
+        )
+
     log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 
     return {

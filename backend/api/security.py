@@ -145,17 +145,36 @@ class SecurityMiddleware:
 
         # 4. Streamed / chunked body size limiter
         received_bytes = 0
+        payload_too_large = False
 
         async def limited_receive() -> Message:
-            nonlocal received_bytes
+            nonlocal received_bytes, payload_too_large
             message = await receive()
             if message["type"] == "http.request":
                 chunk = message.get("body", b"")
                 received_bytes += len(chunk)
                 if received_bytes > self.max_body_bytes:
+                    payload_too_large = True
                     raise PayloadTooLargeError(
                         f"Request body exceeds maximum allowed size ({self.max_body_bytes} bytes)."
                     )
             return message
 
-        await self.app(scope, limited_receive, send)
+        async def tracking_send(message: Message) -> None:
+            if payload_too_large:
+                # Intercept downstream error responses (e.g. FastAPI wrapping body parse failure into 400)
+                return
+            await send(message)
+
+        try:
+            await self.app(scope, limited_receive, tracking_send)
+        except PayloadTooLargeError:
+            payload_too_large = True
+
+        if payload_too_large:
+            await _send_json_error(
+                send,
+                status_code=413,
+                code="payload_too_large",
+                message=f"Request body exceeds maximum allowed size ({self.max_body_bytes} bytes).",
+            )

@@ -43,12 +43,12 @@
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
-| 10 | Integration and robustness audit | 3 | 0 | 0 | 8 | 37% |
+| 10 | Integration and robustness audit | 4 | 0 | 0 | 8 | 50% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **111** | | | **129** | **86%** |
+| | **Overall** | **112** | | | **129** | **86%** |
 
-`[#################---] 86%  (111/129 tasks)`
+`[#################---] 86%  (112/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -557,7 +557,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
   - R9: tsc strict, ESLint, zod on every response, loading/empty/error/slow tests, axe on all tabs with zero serious or critical violations (P9.10), layouts at 360/768/1280 px, no hydration warnings, plus a manual keyboard-only walkthrough of every tab recorded as a short checklist. Displayed metrics equal `metrics.json` (P10.3).
   - R10: `tools/vendored_manifest.py --check`, grep for `import recommenders`, `pip show recommenders` fails, `NOTICE.md` and `ATTRIBUTION.md` current, About tab text matches `docs/ATTRIBUTION.md`.
   - R11: non-ASCII X-API-Key returns 401 not 500, CORS from env, body limit (see P10.5), no secrets in bundle, audits from P10.5.
-- [ ] **P10.5** Security and dependency review. *Acceptance:* zero critical or high issues in production dependencies, zero secrets in the repo history or bundle, CORS and body limit behave as specified; everything recorded in one decision entry.
+- [x] **P10.5** Security and dependency review. *Acceptance:* zero critical or high issues in production dependencies, zero secrets in the repo history or bundle, CORS and body limit behave as specified; everything recorded in one decision entry.
   - Python: export the lock, then audit it: `cd backend && uv export --format requirements-txt --no-hashes -o ../.tmp/req.txt` then `pip-audit -r ../.tmp/req.txt`. Needs network; if offline, mark `[!]` for this sub-step. `pip-audit --dry-run` does not perform the audit and must not be used as a substitute.
   - Node: `cd frontend && npm ci`, then `npm audit --omit=dev --audit-level=high` (must be clean) and a full `npm audit` for the record. Dev-only findings are documented, not hidden. Confirm the Next.js and React versions are not on a known-vulnerable line.
   - Secrets in history: use gitleaks or trufflehog if available; otherwise a script that greps every revision (`git rev-list --all`) for key patterns and private-key headers. Include the two commits that tracked `artifacts_backup_*` (Session 28). History is not rewritten; record the finding.

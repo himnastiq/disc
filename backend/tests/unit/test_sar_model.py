@@ -75,9 +75,7 @@ def test_recommend_history_ignores_subthreshold_items_as_evidence(
     base_ids = [r.item_id for r in recs_base]
 
     # Case 1: Add a 1-star item that is not in the base recommendation list
-    non_rec_item = next(
-        m for m in sar_test_model.catalogue if m != "movie_5" and m not in base_ids
-    )
+    non_rec_item = next(m for m in sar_test_model.catalogue if m != "movie_5" and m not in base_ids)
     recs_with_non_rec = sar_test_model.recommend_history(
         [("movie_5", 5.0), (non_rec_item, 1.0)], k=10
     )

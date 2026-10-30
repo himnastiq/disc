@@ -18,9 +18,20 @@ export async function proxyToBackend(
   const url = `${API_BASE_URL}${backendPath.startsWith('/') ? '' : '/'}${backendPath}`;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
+  // Sanitize headers: strictly block forwarding of client credentials or auth
+  const safeHeaders: Record<string, string> = {};
+  if (options.headers) {
+    for (const [key, val] of Object.entries(options.headers)) {
+      const lower = key.toLowerCase();
+      if (lower !== 'x-api-key' && lower !== 'authorization' && lower !== 'cookie') {
+        safeHeaders[key] = val;
+      }
+    }
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...safeHeaders,
   };
 
   if (API_KEY) {
@@ -61,7 +72,7 @@ export async function proxyToBackend(
         error: {
           code: errorCode,
           message,
-          details: err instanceof Error ? err.message : String(err),
+          details: null,
         },
       },
       { status: statusCode }

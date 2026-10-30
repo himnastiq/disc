@@ -74,6 +74,7 @@ frontend/test-results/
 
 # Demo runtime
 .demo/
+.tmp/
 
 # Lock files that should be committed are excluded from this ignore
 # uv.lock and package-lock.json ARE committed

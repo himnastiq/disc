@@ -783,6 +783,37 @@ Guarantees 100% data-versus-UI fidelity across all 3 content types with zero tol
 
 ---
 
+## D-032: Security and dependency review findings, CORS policy, and header sanitization (P10.5)
+
+**Date:** 2026-10-30
+**Status:** Approved
+
+**Context:**
+Task P10.5 requires a comprehensive security and dependency audit covering:
+1. Python dependency vulnerability scanning on exported lockfile.
+2. Node production and dev dependency vulnerability auditing.
+3. Repository git history scanning across all revisions for secrets and credentials, with specific inspection of Session 28 backup commits (`deff867` and `72d6d52`).
+4. Client bundle secret verification with canary `API_KEY` and positive control testing.
+5. CORS review and enforcement (unlisted origin rejection, preflight handling, wildcard rejection in production, credentials protection).
+6. Request body size limit enforcement on both Content-Length and chunked/streaming bodies (HTTP 413).
+7. Proxy header sanitization and security response headers (X-Content-Type-Options, Referrer-Policy, frame protection, CSP).
+
+**Audit Findings and Implementations:**
+1. **Python Dependencies:** Exported production runtime lockfile using `uv export --extra core --format requirements-txt --no-hashes --no-emit-project -o .tmp/req.txt` (35 packages resolved). Executed `pip-audit -r .tmp/req.txt`: **0 vulnerabilities found**.
+2. **Node Dependencies:** Executed `npm audit --omit=dev --audit-level=high` and full `npm audit`: **found 0 vulnerabilities**. Verified Next.js 16.4.3 and React 19.3.0 are not on known-vulnerable release branches.
+3. **Secrets in Git History:** Built `tools/audit_git_secrets.py` scanning 222 commits (`git rev-list --all`) for private key headers, AWS tokens, GitHub PATs, Slack tokens, and high-entropy API key patterns. Specifically audited Session 28 backup tracking commits `deff867` and `72d6d52`: **zero secrets or private credentials discovered**.
+4. **Bundle Secrets and Positive Control:** Built production bundle with canary `API_KEY` and ran `node frontend/scripts/check_bundle_secrets.mjs` across 15 client JavaScript chunks (0 leaks). Planted a synthetic canary in `frontend/.next/static/canary-test.js` to execute positive control: caught leak and exited with code 1.
+5. **CORS Architecture and Production Safety:** Layered `CORSMiddleware` alongside `SecurityMiddleware`. Added strict production guard in `get_env_config()` rejecting wildcard `*` with `ValueError` when `ENV=production`. In development, wildcard `*` automatically sets `allow_credentials=False`. Unit tests verify unlisted origins receive no `Access-Control-Allow-Origin` header.
+6. **Chunked Body Limit (HTTP 413):** Hardened `SecurityMiddleware` chunked stream limiter. FastAPI by default catches streaming exceptions during body parsing and transforms them into 400 Bad Request; `SecurityMiddleware` intercepts downstream response generation when `payload_too_large` is tripped, returning standard RFC 413 `payload_too_large` JSON envelope on both `Content-Length` and chunked transfer encoding.
+7. **Proxy Sanitization and Security Headers:** Hardened `frontend/lib/server/proxy.ts` to strip client auth headers (`x-api-key`, `authorization`, `cookie`) and sanitize upstream connection errors (`details: null`). Configured `frontend/next.config.ts` with `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, and strict `Content-Security-Policy`.
+
+**Consequences:**
+Quality Gate R11 security criteria are strictly satisfied across backend API, frontend proxy, and static bundle assets.
+
+**Related tasks:** P10.5, R11
+
+---
+
 <!-- Add new entries above this line -->
 
 

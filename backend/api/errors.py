@@ -77,7 +77,7 @@ class PayloadTooLargeError(APIError):
 
     def __init__(self, message: str = "Request body exceeds maximum allowed size (1MB).") -> None:
         super().__init__(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             code="payload_too_large",
             message=message,
             details=None,

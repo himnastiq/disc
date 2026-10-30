@@ -158,6 +158,91 @@ def test_payload_too_large_via_content_length(api_client: TestClient) -> None:
     assert data["error"]["code"] == "payload_too_large"
 
 
+def test_payload_too_large_via_chunked_streaming(api_client: TestClient) -> None:
+    """Verify chunked request without Content-Length exceeding 1MB returns 413 payload_too_large."""
+
+    def chunk_generator() -> Any:
+        # Stream > 1MB in chunks without Content-Length header
+        chunk = b"a" * 32768
+        for _ in range(35):  # 35 * 32768 = 1,146,880 bytes (> 1MB)
+            yield chunk
+
+    resp = api_client.post(
+        "/v1/recommend/cold-start",
+        content=chunk_generator(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status_code == 413
+    data = resp.json()
+    assert data["error"]["code"] == "payload_too_large"
+
+
+# ===========================================================================
+# 4. CORS Review and Policy Verification Tests (P10.5)
+# ===========================================================================
+
+
+def test_cors_unlisted_origin_receives_no_allow_origin_header(api_client: TestClient) -> None:
+    """Origins not listed in CORS_ORIGINS must not receive access-control-allow-origin."""
+    headers = {"Origin": "http://malicious-site.example.com"}
+    resp = api_client.get("/v1/health", headers=headers)
+    assert resp.status_code == 200
+    assert "access-control-allow-origin" not in resp.headers
+
+
+def test_cors_listed_origin_receives_allow_origin_header(api_client: TestClient) -> None:
+    """Origins listed in CORS_ORIGINS receive matching access-control-allow-origin."""
+    headers = {"Origin": "http://localhost:3000"}
+    resp = api_client.get("/v1/health", headers=headers)
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+
+def test_cors_preflight_behavior(api_client: TestClient) -> None:
+    """Valid preflight OPTIONS returns 200 with allowed methods and origin."""
+    headers = {
+        "Origin": "http://localhost:3000",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "Content-Type,X-API-Key",
+    }
+    resp = api_client.options("/v1/recommend/cold-start", headers=headers)
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == "http://localhost:3000"
+    assert "POST" in resp.headers.get("access-control-allow-methods", "")
+
+
+def test_cors_wildcard_rejected_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Wildcard CORS origin '*' is strictly prohibited in production mode."""
+    monkeypatch.setenv("ENV", "production")
+    monkeypatch.setenv("CORS_ORIGINS", "*")
+
+    from api.main import get_env_config
+
+    with pytest.raises(ValueError, match="CORS wildcard"):
+        get_env_config()
+
+
+def test_cors_wildcard_disables_credentials_in_development(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """In development, wildcard CORS origin '*' strictly disables allow_credentials."""
+    monkeypatch.setenv("ENV", "development")
+    monkeypatch.setenv("CORS_ORIGINS", "*")
+
+    from api.main import create_app
+
+    test_app = create_app()
+    # Inspect CORS middleware in middleware stack
+    cors_mw = None
+    for mw in test_app.user_middleware:
+        if getattr(mw.cls, "__name__", "") == "CORSMiddleware":
+            cors_mw = mw
+            break
+
+    assert cors_mw is not None
+    assert cors_mw.kwargs.get("allow_credentials") is False
+
+
 def test_search_query_length_limits(api_client: TestClient) -> None:
     """Acceptance criteria: search query max 100 characters; longer query returns 422."""
     # 1. Valid 100 character query -> accepted (200)
