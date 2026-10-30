@@ -50,6 +50,14 @@ discovery-engine/
 > [!NOTE]
 > **Articles Pipeline (SYNTHETIC DEMO):** Articles is currently executed as a **SYNTHETIC DEMO** using a local offline fixture (`backend/tests/fixtures/mind/`) because the MIND dataset requires manual download. Its evaluation metrics are for pipeline validation and architectural demonstration only, not real-world empirical evidence. Real-world benchmark evidence in this project comes strictly from **Movies (MovieLens 1M)** and **Products (Amazon Video Games)**.
 
+## Extensible Post-Train Evaluation Hooks
+
+The training pipeline supports generic, domain-agnostic post-training evaluation hooks configured per content type:
+
+- **Configuration:** Configured in the content type YAML under `evaluation.post_train` (e.g. `post_train: [product_checks]` in `backend/engine/configs/products.yaml`).
+- **Generic Execution:** During training (`python -m engine.train`), registered hooks are retrieved dynamically via `engine.registry.get_post_train_hook()` and executed without hardcoded content-type names in engine core. Hook results are automatically merged into `metrics.json`.
+- **Integrity Enforcement:** Report generation (`python tools/make_results.py`) strictly enforces that any content type declaring post-train hooks in its configuration contains the corresponding check keys in `metrics.json`, exiting with an error if missing.
+
 ## Dataset Citations
 
 - **MovieLens:** Harper, F.M. and Konstan, J.A. (2015). The MovieLens Datasets: History and Context. ACM TiiS.

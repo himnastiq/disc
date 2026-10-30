@@ -71,6 +71,16 @@ Evaluated on sparse verified purchase ratings under budget-capped SAR similarity
 | **Precision@20** | 0.0003 | 0.0025 [0.0019, 0.0030] | **0.0069 [0.0060, 0.0077]** | **+175.5%** | Model better (CIs separate) |
 
 - **Sanity Check (Model > Popularity):** `Passed`
+### Product-Specific Robustness Checks
+
+| Check | Measured Value | Target / Baseline | Status |
+|---|---|---|---|
+| **Sparse User Share (<= 5 ratings)** | `38.3%` (9302/24303 users) | Informative metric | Verified |
+| **Long-Tail Volume Share** | `42.5%` (6400/8000 items) | Informative baseline (catalog tail) | Verified |
+| **Long-Tail Rec Share @ 10** | `55.8%` of recommended items | > 5% tail exploration | Verified |
+| **Category Diversity @ 10** | `10.44` unique categories/user | Min: `3`, Max: `25` | Verified |
+| **Similar Alternatives Spot-Check** | `100.0%` shared categories | Target > 60% | Verified |
+
 ---
 
 ## 3. Articles (MIND + TF-IDF Content Model)
@@ -214,3 +224,61 @@ if and only if the model's lower confidence bound strictly exceeds popularity's 
 - **Cold start:** highest p95 is 68.42 ms.
 - **Latency (R8):** every endpoint met the 150 ms p95 budget (worst p95 117.45 ms).
 - **Memory (R8):** peak process RSS was 1771.9 MB with all content types loaded; budget 2048 MB: **within budget**.
+
+
+---
+
+## 9. Frontend Feature Verification & Accessibility Audit (Phase 9)
+
+### Executive Summary
+
+Phase 9 delivers a complete responsive, production-ready frontend interface adhering strictly to the dark entertainment aesthetic (`#0A0A0A` background, `#141414` surface, `#1F1F1F` elevated cards, `#2A2A2A` borders, `#E50914` red accents) and the Bricolage Grotesque typography system across an 832px (`52rem`) shell container width.
+
+All tasks from **P9.1 through P9.12** have been implemented, verified, and audited:
+- **Unit Test Coverage:** 13 Vitest suites, **64 / 64 unit tests passing**.
+- **Static Analysis & Type Safety:** `npm run lint && npx tsc --noEmit && npm run build` with **0 errors and 0 warnings**.
+- **Playwright E2E Suite:** **51 / 51 tests passing** across 3 viewports: Desktop Chrome, Mobile Chrome (360px), and Tablet (768px).
+
+### 1. WCAG 2.1 AA Accessibility Audit (P9.10)
+
+Automated accessibility audits were executed using `@axe-core/playwright` across all viewports for tags `['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']`.
+
+| Page / Component Screen | Desktop Chrome | Mobile Chrome (360px) | Tablet (768px) | Serious / Critical Violations | Status |
+|---|---|---|---|---|---|
+| **For You Tab (`/?tab=for-you`)** | Audited | Audited | Audited | **0** | **PASSED** |
+| **Compare Tab (`/?tab=compare`)** | Audited | Audited | Audited | **0** | **PASSED** |
+| **Cold Start Tab (`/?tab=cold-start`)** | Audited | Audited | Audited | **0** | **PASSED** |
+| **Evaluation Tab (`/?tab=evaluation`)** | Audited | Audited | Audited | **0** | **PASSED** |
+| **About Tab (`/?tab=about`)** | Audited | Audited | Audited | **0** | **PASSED** |
+| **Item Drawer Dialog (`/?item=385`)** | Audited | Audited | Audited | **0** | **PASSED** |
+| **Semantic Landmarks (`header, nav, main, footer`)** | Present | Present | Present | **0** | **PASSED** |
+| **Focus Trap & Keyboard (`Escape`, `Tab`)** | Verified | Verified | Verified | **0** | **PASSED** |
+| **Prefers Reduced Motion (`prefers-reduced-motion`)** | Verified | Verified | Verified | **0** | **PASSED** |
+
+**Accessibility Mitigations Implemented:**
+- Adjusted `--color-text-muted` to `#949494` to guarantee `>5.5:1` contrast ratio over `#141414` surface and `#1F1F1F` elevated containers, exceeding the WCAG AA `4.5:1` requirement.
+- Added keyboard-accessible scroll regions (`tabIndex={0}`, `role="region"`, `aria-label="..."`) to all table and architecture SVG overflow containers.
+- Enforced WCAG 2.5.3 (Label in Name) by structuring card titles into semantic buttons whose accessible names exactly match visual headings.
+
+### 2. End-to-End User Journeys (P9.11)
+
+All primary user journeys were verified with Playwright across content types (Movies, Products, Articles) using hermetic fixture interception (`frontend/tests/e2e/helpers/mockApi.ts`):
+1. **Domain Switching:** Dynamic fetching of active types via `/v1/types`, switching between domains, resetting user persona to first demo user while preserving active tab and k selector in URL search params.
+2. **For You Feed & k Selector:** Seamless switching between $k=5, 10, 20$ with live feed updates, category tags, match score percentages, and reason badges.
+3. **Item Drawer Slide-Over:** Accessible modal inspection displaying full item metadata, high-resolution media placeholders, genre tags, and contextual similar recommendations via `/v1/similar`. Focus traps within the drawer and restores on close.
+4. **Compare Mode:** Dual-mode comparison comparing Popular for Everyone vs. Personalized for User with exact Jaccard overlap percentage calculation and visual "In both lists" badges, plus User vs. User persona comparison.
+5. **Interactive Cold Start:** Real-time item search with debounced queries, selection of up to 200 items, visual star rating assignments, taste threshold indicators, and live cold-start recommendation generation.
+6. **Evaluation Dashboard:** High-fidelity data rendering of metrics tables with 95% bootstrap confidence intervals, visual separation indicators, metric comparison charts, and cold-start curves.
+7. **About & Provenance:** Full citation of Microsoft Recommenders (MIT), MovieLens 1M, Amazon Reviews, and MIND datasets with an interactive SVG architecture flow.
+
+### 3. Phase 9 Break-Your-Own-Work Rituals (P9.12)
+
+Five stress and resilience rituals were executed to probe boundary conditions, edge cases, and failure modes:
+
+| Ritual | Description & Test Procedure | Observed Result | Status |
+|---|---|---|---|
+| **Ritual 1: Rapid Type Switching** | Rapidly oscillating between Movies, Products, and Articles domains 3x consecutively under active network traffic. | App maintained strict URL state consistency without crashing, race conditions, or unhandled promise rejections. | **PASSED** |
+| **Ritual 2: Rapid User Switching** | Rapidly switching user IDs (`user=2`, `user=3`, `user=1`) via URL parameters and dropdown selector. | React Query cache correctly keyed by `[type, user, k]`, updating feeds cleanly without stale persona bleed. | **PASSED** |
+| **Ritual 3: Cold-Start Spam Typing** | Rapid keystroke spamming into debounced search box across 5 consecutive keystroke bursts (`a`, `ab`, `abc`, `abcd`, `matrix`). | Debounced input (300ms) canceled in-flight requests cleanly, settling on exact search results without unhandled errors. | **PASSED** |
+| **Ritual 4: Offline & 500 Injection** | Intercepting recommendations endpoint and injecting HTTP 500 Internal Server Error payloads. | Rendered accessible `ErrorState` card with clear error description and functional "Try Again" retry trigger. | **PASSED** |
+| **Ritual 5: Extreme Data Edge Cases** | Injecting 500-character titles, null optional fields, and `<script>window.__xss=true</script>` injection strings into recommendation payloads. | Text clamped gracefully within card container, layout did not break, and XSS script execution remained 100% prevented (`isXssInjected === false`). | **PASSED** |

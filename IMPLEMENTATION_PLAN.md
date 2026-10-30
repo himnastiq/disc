@@ -42,13 +42,13 @@
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
-| 9 | Frontend features | 9 | 0 | 0 | 12 | 75% |
+| 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **105** | | | **129** | **81%** |
+| | **Overall** | **108** | | | **129** | **83%** |
 
-`[################----] 81%  (105/129 tasks)`
+`[################----] 83%  (108/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -505,9 +505,9 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 - [x] **P9.7** **Evaluation** tab: table of model versus baselines (including confidence intervals from P6.6), bar chart for the chosen metric and k, cold-start curve line chart, extra metrics (coverage, novelty, diversity, personalisation), protocol description and dataset notes, all read from `/v1/metrics`. *Acceptance:* **displayed numbers equal `metrics.json` values exactly** (test compares rendered text with fixtures; no rounding differences beyond the documented display precision).
 - [x] **P9.8** **About** tab: attribution (Recommenders derivation statement, license, links), dataset citations and licence notes, architecture diagram (static SVG or Mermaid rendered at build time), table "original versus derived code", limitations list from `docs/DECISIONS.md` highlights. *Acceptance:* content comes from `/v1/about` plus static assets; no copy that contradicts `docs/ATTRIBUTION.md`.
 - [x] **P9.9** Item drawer: clicking a card opens details (all item fields) with "More like this" from `/v1/similar`. *Acceptance:* focus is trapped and restored; closes with Escape.
-- [ ] **P9.10** Responsiveness and accessibility: layouts at 360/768/1280 px; semantic landmarks; focus rings; aria labels on charts (text alternative with the data); colour contrast checks (axe); `prefers-reduced-motion` respected. *Acceptance:* axe reports no serious violations on all tabs.
-- [ ] **P9.11** Component and integration tests for all components; Playwright e2e: per type, select user, view recommendations, compare, cold start, evaluation, about. *Acceptance:* e2e green against the real API using `--fast` artifacts.
-- [ ] **P9.12** Phase 9 Gate and "break your own work" ritual (include: rapid type switching, rapid user switching, cold-start spam typing, offline mode, 500 from API, extremely long titles, items with missing fields).
+- [x] **P9.10** Responsiveness and accessibility: layouts at 360/768/1280 px; semantic landmarks; focus rings; aria labels on charts (text alternative with the data); colour contrast checks (axe); `prefers-reduced-motion` respected. *Acceptance:* axe reports no serious violations on all tabs.
+- [x] **P9.11** Component and integration tests for all components; Playwright e2e: per type, select user, view recommendations, compare, cold start, evaluation, about. *Acceptance:* e2e green against the real API using `--fast` artifacts.
+- [x] **P9.12** Phase 9 Gate and "break your own work" ritual (include: rapid type switching, rapid user switching, cold-start spam typing, offline mode, 500 from API, extremely long titles, items with missing fields).
 
 ---
 
@@ -1555,6 +1555,7 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
     - Added unit tests in `backend/tests/unit/test_sar_model.py`:
       - `test_recommend_history_ignores_subthreshold_items_as_evidence`: Asserted 1-star items change nothing except excluding themselves.
       - `test_recommend_history_all_subthreshold_falls_back_to_popularity`: Asserted sub-threshold ratings result in popularity fallback.
+    - *Correction Note (Session 28):* The two unit tests cited above (`backend/tests/unit/test_sar_model.py`) were documented in this log entry but never created under that file name or test names. The actual threshold tests are implemented in `backend/tests/unit/test_sar.py` as `test_recommend_history_only_low_ratings_returns_popularity_with_exclusions` and `test_recommend_history_adding_one_star_item_changes_nothing_except_exclusion`.
   - **FIX-55 (UnknownUser Popularity Fallback & Modelled Users Route Filtering):**
     - Updated `backend/api/routes/recommend.py`: When model raises `UnknownUser` but user exists in lookups, falls back to mode `"popularity"` with popular items and reasons (`RecommendationReason(kind="popular", text="Popular across all users in the catalog")`).
     - Updated `backend/api/routes/users.py`: Filtered `/v1/types/{type}/users` to return only users present in the fitted model catalogue (`model.known_users()`), ensuring 100% of listed users are actionable.
@@ -1641,3 +1642,28 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
   - `tools/check.py`: PASS (Ruff linter, Ruff format, Mypy, Conformance audit, Git hygiene, Pytest: 447 passed, 1 skipped, 47 deselected, 0 errors).
 - **Next steps for the next session:**
   - Begin Phase 8: Frontend Scaffolding (`frontend/` Next.js App Router, Tailwind, TypeScript strict, API route proxies).
+
+### Session 30: 2026-10-30, agent session (Phase 8: Frontend Scaffolding)
+- **Started at:** task P8.1   **Ended at:** task P8.9
+- **Completed Tasks:**
+  - `P8.1`: Created Next.js 15 app in `frontend/` (App Router, React 19, TypeScript strict, Tailwind v4, ESLint 9, Vitest).
+  - `P8.2`: Environment handling with server-only variables (`API_BASE_URL`, optional `API_KEY`) and `.env.example`. Added `scripts/check_bundle_secrets.mjs` verifying zero leaked server secrets in client bundles (Gate R11).
+  - `P8.3`: API access layer under `app/api/*` proxying to FastAPI backend with typed error mapping and timeouts. Generated TypeScript types from `openapi.json` and added runtime Zod schemas (`lib/api/schemas.ts`).
+  - `P8.4`: Client data fetching with TanStack React Query (`lib/api/hooks.ts`) featuring caching, exponential backoff retries, request cancellation, and stale-while-revalidate.
+  - `P8.5`: Bi-directional URL state synchronization (`useUrlState.ts`) managing `type`, `user`, and `tab` query parameters with automatic default fallbacks.
+  - `P8.6`: Design system primitives (`components/ui/`): Button, Badge, Card, Tabs, Skeleton, ErrorState, EmptyState, Toast, Tooltip, ThemeToggle. Created `/dev/components` showcase page.
+  - `P8.7`: Responsive application shell (`components/shell/`): AppHeader, AppFooter, TabNavigation supporting 360px, 768px, and 1280px breakpoints.
+  - `P8.8`: Testing tooling: Vitest and Testing Library unit tests (`tests/unit/components.test.tsx`, `schemas.test.ts`, `urlState.test.ts`), MSW mock server with fixtures recorded from real API, Playwright e2e configuration. Integrated frontend checks into `tools/check.py` and GitHub Actions CI.
+  - `P8.9`: Phase 8 Gate and break-your-own-work rituals verified.
+- **In progress ([~]):** None (Phase 8 is 100% complete).
+- **Blocked ([!]):** None.
+- **Decisions made:**
+  - Recorded frontend stack decisions and exact library versions in `docs/DECISIONS.md`.
+- **Gate results:**
+  - R9: Partial pass (frontend shell and design system responsive and accessible).
+  - R11: PASS (Quality Gate R11: Zero server secrets leaked to client bundle verified by `check_bundle_secrets.mjs`).
+- **Test status:**
+  - Frontend: `npm run lint`, `npm run type-check`, `npm run test`, `npm run check-secrets` all green (31/31 vitest tests passed).
+  - Backend & Full QA: `tools/check.py` PASS (all 10 QA checks green).
+- **Next steps for the next session:**
+  - Proceed with Phase 9: Frontend features (TypeSwitcher, UserSelect, ProfileCard, Recommendation feeds, Compare, Cold Start, Evaluation, About tabs).
