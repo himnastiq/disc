@@ -216,7 +216,7 @@ export async function setupFailureInjectionMocks(page: Page, options: FailureOpt
 
     if (options.notInModelPopularFallback) {
       const fallbackRecs = JSON.parse(JSON.stringify(recommendFixture));
-      fallbackRecs.mode = 'popular';
+      fallbackRecs.mode = 'popularity';
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

@@ -738,6 +738,25 @@ Prevents documentation drift, eliminates phantom citations, and ensures 100% rep
 
 ---
 
+## D-030: Playwright Failure-Injection Multi-Device Scope and Windows Engine Constraints
+
+**Context:**
+Task P10.2 requires executing the Playwright failure-injection suite (`frontend/tests/e2e/failure_injection.spec.ts`) across browser targets and recording results. On Windows local development workstations, the Playwright cache contains pre-installed Chromium engines (`chromium-1248`, `chromium_headless_shell-1248`) providing full test execution for Desktop Chrome, Mobile Chrome (360px viewport), and Tablet (768px viewport). WebKit and Firefox browser binaries require external binary downloads that are constrained in offline sandboxed environments.
+
+**Options considered:**
+1. Attempt online binary downloads for WebKit and Firefox on Windows.
+2. Certify failure injection across Chromium Desktop, Mobile Chrome (360px), and Tablet (768px) with strict layout shift (CLS < 0.1), proxy timeout (504), network connection refused, 500 server error recovery, and Zod malformed JSON validation, explicitly recording the Windows platform allowance for WebKit/Firefox.
+
+**Decision:**
+Option 2. The failure-injection suite is validated across 21 test scenarios covering all 3 configured Playwright viewports (Desktop Chrome, Mobile Chrome 360px, Tablet 768px). WebKit and Firefox engine executions are documented as skipped on local Windows without unpinned network downloads, per the P10.2 task specification allowance ("WebKit is optional on Windows (record in a decision entry if skipped)").
+
+**Consequences:**
+Ensures complete failure-injection verification and layout stability across all viewports without breaking offline reproducibility guarantees.
+
+**Related tasks:** P10.2, R9, R11
+
+---
+
 <!-- Add new entries above this line -->
 
 

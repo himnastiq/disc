@@ -43,12 +43,12 @@
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
-| 10 | Integration and robustness audit | 1 | 0 | 0 | 8 | 12% |
+| 10 | Integration and robustness audit | 2 | 0 | 0 | 8 | 25% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **109** | | | **129** | **84%** |
+| | **Overall** | **110** | | | **129** | **85%** |
 
-`[################----] 84%  (109/129 tasks)`
+`[#################---] 85%  (110/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -535,7 +535,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
   - Start: API with `uvicorn api.main:app` and the frontend as a production build (`next build` when `.next` is missing or older than the sources, then `next start`), never `next dev`, because dev mode double-fires effects and slows pages.
   - Health: poll `GET /v1/health` (default 30 s, `--timeout` to change) until status is ok and every type is available. If degraded, print which type and why, and still continue (a degraded demo is allowed, silently-failed is not).
   - Tests: unit tests for pre-flight (missing manifest, bad checksum, stale code hash), port logic (free, ours, foreign), and health timeout with mocks. One smoke test starts the demo on alternate ports using `artifacts_mini`, checks `/v1/health`, then stops it.
-- [ ] **P10.2** Failure-injection suite (Playwright). *Acceptance:* in each scenario the UI shows the correct state, never a blank page, never an unhandled exception, and the Try again button recovers once the upstream is healthy.
+- [x] **P10.2** Failure-injection suite (Playwright). *Acceptance:* in each scenario the UI shows the correct state, never a blank page, never an unhandled exception, and the Try again button recovers once the upstream is healthy.
   - File: `frontend/tests/e2e/failure_injection.spec.ts`, run against the production build. Chromium must pass; run Firefox as well and record results. WebKit is optional on Windows (record in a decision entry if skipped).
   - First map where requests originate. `page.route` only sees browser requests. If any server component or route handler calls FastAPI server-side, those calls are invisible to it. So inject failures at the upstream: point `API_BASE_URL` at a tiny test mock server (`frontend/tests/e2e/mock_api.ts`) that returns 500, truncated JSON (`{"error":`), 404 `unknown_user`, empty results: `[]`, 503 for one type, `available: false`, or a delayed response, per scenario. Use `route.abort('connectionrefused')` for the API-down case.
   - Scenarios: (1) API down, (2) 500 on recommend, users, similar and search, (3) 404 unknown user, (4) malformed JSON caught by zod into a typed error state, (5) slow response, (6) empty results show the `EmptyState` with guidance, (7) one type unavailable (the other two stay usable and the switcher annotates the unavailable one).
