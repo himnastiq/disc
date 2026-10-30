@@ -42,13 +42,13 @@
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
-| 9 | Frontend features | 1 | 0 | 0 | 12 | 8% |
+| 9 | Frontend features | 2 | 0 | 0 | 12 | 16% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **97** | | | **129** | **75%** |
+| | **Overall** | **98** | | | **129** | **75%** |
 
-`[###############-----] 75%  (97/129 tasks)`
+`[###############-----] 75%  (98/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -497,7 +497,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 **Gates:** R9, R4 (display fidelity).
 
 - [x] **P9.1** `TypeSwitcher` and `UserSelect`: types come from `/v1/types`; users from `/v1/types/{type}/users` with persona labels (for example "Heavy user, Sci-Fi fan"), keyboard-searchable. Switching type resets the user to that type's first demo user and keeps the current tab. *Acceptance:* component tests; no request waterfalls.
-- [ ] **P9.2** `ProfileCard`: interaction count, top categories as a horizontal bar chart (Recharts), recent activity list, first/last activity. *Acceptance:* values match the API fixture exactly.
+- [x] **P9.2** `ProfileCard`: interaction count, top categories as a horizontal bar chart, recent activity list, first/last activity. *Acceptance:* values match the API fixture exactly.
 - [ ] **P9.3** `RecCard` with three variants selected by `card_type`: **movie** (title, year, genre chips), **product** (title, brand/subtitle, category chips, image slot with graceful placeholder), **article** (headline, abstract snippet clamped to 3 lines, category chip). `ReasonBadge` shows the reason text; a `ModeBadge` shows personalised versus popularity. *Acceptance:* visual tests via Playwright screenshots for each variant, both themes.
 - [ ] **P9.4** **For You** tab: profile card plus recommendation grid, k selector (5, 10, 20), skeletons, empty and error states with retry. *Acceptance:* e2e flow for each type.
 - [ ] **P9.5** **Compare** tab: two columns "Popular for everyone" and "Personalised for this user", with overlap highlighting and an overlap percentage computed on the client from the two lists; a second mode compares two selected users side by side. *Acceptance:* overlap percentage tested against known fixtures.
