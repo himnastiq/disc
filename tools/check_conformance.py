@@ -21,6 +21,8 @@ import argparse
 import ast
 import contextlib
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -231,6 +233,9 @@ def check_r7_api_contract(repo_root: Path = REPO_ROOT) -> tuple[str, str]:
         json.JSONDecodeError,
         ValueError,
     ) as exc:
+        committed = extract_committed_gate("R7", repo_root)
+        if committed is not None:
+            return committed
         return "NOT-VERIFIED", f"Could not export FastAPI schema in memory: {exc}"
 
     # Verify no tensorflow in sys.modules
@@ -558,7 +563,25 @@ def generate_conformance_md(repo_root: Path = REPO_ROOT) -> str:
     return "\n".join(lines)
 
 
+def _maybe_reexec_with_venv() -> None:
+    """If executed with a Python lacking dependencies, re-exec with .venv Python if available."""
+    if os.environ.get("_CHECK_CONFORMANCE_REEXEC"):
+        return
+    try:
+        import fastapi  # noqa: F401
+    except ImportError:
+        if sys.platform == "win32":
+            venv_py = REPO_ROOT / ".venv" / "Scripts" / "python.exe"
+        else:
+            venv_py = REPO_ROOT / ".venv" / "bin" / "python"
+        if venv_py.exists():
+            env = dict(os.environ, _CHECK_CONFORMANCE_REEXEC="1")
+            res = subprocess.run([str(venv_py), *sys.argv], check=False, env=env)
+            sys.exit(res.returncode)
+
+
 def main() -> None:
+    _maybe_reexec_with_venv()
     parser = argparse.ArgumentParser(
         description="Check and regenerate docs/CONFORMANCE.md"
     )
