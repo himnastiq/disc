@@ -42,13 +42,13 @@
 | 6 | Cross-type hardening and evidence | 8 | 0 | 0 | 8 | 100% |
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
-| 9 | Frontend features | 8 | 0 | 0 | 12 | 66% |
+| 9 | Frontend features | 9 | 0 | 0 | 12 | 75% |
 | 10 | Integration and robustness audit | 0 | 0 | 0 | 8 | 0% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **104** | | | **129** | **80%** |
+| | **Overall** | **105** | | | **129** | **81%** |
 
-`[################----] 80%  (104/129 tasks)`
+`[################----] 81%  (105/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -503,7 +503,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 - [x] **P9.5** **Compare** tab: two columns "Popular for everyone" and "Personalised for this user", with overlap highlighting and an overlap percentage computed on the client from the two lists; a second mode compares two selected users side by side. *Acceptance:* overlap percentage tested against known fixtures.
 - [x] **P9.6** **Cold Start** tab: debounced item search (`/v1/items/search`), add or remove liked items as chips (max 200, dedupe), optional rating slider for types where it applies, live recommendations via `POST /v1/recommend/cold-start`, a clear indicator of how many liked items are used and when the mode flips from popularity to personalised. For types where `supports_cold_start` is false, show an explanation instead of the form. *Acceptance:* requests are cancelled when inputs change quickly; e2e test covers add, remove, and clear.
 - [x] **P9.7** **Evaluation** tab: table of model versus baselines (including confidence intervals from P6.6), bar chart for the chosen metric and k, cold-start curve line chart, extra metrics (coverage, novelty, diversity, personalisation), protocol description and dataset notes, all read from `/v1/metrics`. *Acceptance:* **displayed numbers equal `metrics.json` values exactly** (test compares rendered text with fixtures; no rounding differences beyond the documented display precision).
-- [ ] **P9.8** **About** tab: attribution (Recommenders derivation statement, license, links), dataset citations and licence notes, architecture diagram (static SVG or Mermaid rendered at build time), table "original versus derived code", limitations list from `docs/DECISIONS.md` highlights. *Acceptance:* content comes from `/v1/about` plus static assets; no copy that contradicts `docs/ATTRIBUTION.md`.
+- [x] **P9.8** **About** tab: attribution (Recommenders derivation statement, license, links), dataset citations and licence notes, architecture diagram (static SVG or Mermaid rendered at build time), table "original versus derived code", limitations list from `docs/DECISIONS.md` highlights. *Acceptance:* content comes from `/v1/about` plus static assets; no copy that contradicts `docs/ATTRIBUTION.md`.
 - [x] **P9.9** Item drawer: clicking a card opens details (all item fields) with "More like this" from `/v1/similar`. *Acceptance:* focus is trapped and restored; closes with Escape.
 - [ ] **P9.10** Responsiveness and accessibility: layouts at 360/768/1280 px; semantic landmarks; focus rings; aria labels on charts (text alternative with the data); colour contrast checks (axe); `prefers-reduced-motion` respected. *Acceptance:* axe reports no serious violations on all tabs.
 - [ ] **P9.11** Component and integration tests for all components; Playwright e2e: per type, select user, view recommendations, compare, cold start, evaluation, about. *Acceptance:* e2e green against the real API using `--fast` artifacts.
