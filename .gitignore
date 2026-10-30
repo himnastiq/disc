@@ -47,6 +47,8 @@ frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/.turbo/
+.cache/
+frontend/.cache/
 
 # Coverage and test artifacts
 htmlcov/
@@ -69,6 +71,9 @@ frontend/test-results/
 
 # Logs
 *.log
+
+# Demo runtime
+.demo/
 
 # Lock files that should be committed are excluded from this ignore
 # uv.lock and package-lock.json ARE committed
