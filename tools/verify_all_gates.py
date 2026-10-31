@@ -9,13 +9,11 @@ Generates `docs/gate_matrix.json` and updates `docs/RESULTS.md`.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import os
 import platform
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -41,7 +39,7 @@ def get_git_sha() -> str:
             check=True,
         )
         return res.stdout.strip()
-    except Exception:
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return "UNKNOWN"
 
 
@@ -152,7 +150,9 @@ def verify_gate_r6(code_hash: str) -> dict[str, Any]:
             m_code_hash = m.get("code_hash", "")
             if m_code_hash != code_hash:
                 results[ctype] = "FAIL"
-                evidence.append(f"{ctype}: stale code_hash ({m_code_hash[:8]} != {code_hash[:8]})")
+                evidence.append(
+                    f"{ctype}: stale code_hash ({m_code_hash[:8]} != {code_hash[:8]})"
+                )
             else:
                 ok = verify_artifacts(cdir)
                 if ok:
@@ -161,7 +161,7 @@ def verify_gate_r6(code_hash: str) -> dict[str, Any]:
                 else:
                     results[ctype] = "FAIL"
                     evidence.append(f"{ctype}: checksum mismatch")
-        except Exception as err:
+        except (json.JSONDecodeError, OSError, ValueError) as err:
             results[ctype] = "FAIL"
             evidence.append(f"{ctype}: error {err}")
 
@@ -248,9 +248,13 @@ def verify_gate_r11() -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Aggregate and verify all quality gates R1 to R11.")
-    parser.add_argument("--skip-tests", action="store_true", help="Skip re-executing unit gate suites")
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description="Aggregate and verify all quality gates R1 to R11."
+    )
+    parser.add_argument(
+        "--skip-tests", action="store_true", help="Skip re-executing unit gate suites"
+    )
+    parser.parse_args()
 
     print("=================================================================")
     print("  Discovery Engine: Quality Gates Aggregator & Verifier (P10.4)")
@@ -283,7 +287,7 @@ def main() -> None:
         print(f"[{g['verdict']:<30}] Gate {g['id']}: {g['name']}")
 
     matrix_data = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "git_sha": git_sha,
         "code_hash": code_hash,
         "system_info": {
