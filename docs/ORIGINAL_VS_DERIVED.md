@@ -7,9 +7,9 @@
 
 | Classification | Tracked Files | Total Lines | Code Lines | Comments & Blank | Share of Lines | Share of Code |
 |---|---|---|---|---|---|---|
-| **Original Discovery Engine** | 300 | 57,987 | 47,130 | 10,857 | **90.6%** | **90.9%** |
+| **Original Discovery Engine** | 301 | 58,209 | 47,293 | 10,916 | **90.6%** | **90.9%** |
 | **Derived (Microsoft Recommenders)** | 21 | 6,049 | 4,727 | 1,322 | **9.4%** | **9.1%** |
-| **Total Accounted** | **321** | **64,036** | **51,857** | **12,179** | **100.0%** | **100.0%** |
+| **Total Accounted** | **322** | **64,258** | **52,020** | **12,238** | **100.0%** | **100.0%** |
 
 ---
 
@@ -20,7 +20,7 @@
 | `Derived: Microsoft Recommenders (backend/discovery/)` | Derived (MIT) | 21 | 6,049 | 4,727 | 1,322 |
 | `Original: Recommender Core (backend/engine/)` | Original | 39 | 8,392 | 6,841 | 1,551 |
 | `Original: FastAPI Serving Layer (backend/api/)` | Original | 12 | 2,399 | 1,908 | 491 |
-| `Original: Next.js Frontend Dashboard (frontend/)` | Original | 107 | 15,723 | 13,562 | 2,161 |
+| `Original: Next.js Frontend Dashboard (frontend/)` | Original | 108 | 15,945 | 13,725 | 2,220 |
 | `Original: Automation & Quality Tools (tools/)` | Original | 25 | 9,180 | 7,949 | 1,231 |
 | `Original: Testing Suites & Harnesses (tests/)` | Original | 83 | 14,723 | 11,203 | 3,520 |
 | `Original: Specifications & Documentation (docs/)` | Original | 14 | 2,950 | 1,997 | 953 |

@@ -39,8 +39,19 @@ def run_step(name: str, cmd: list[str], cwd: Path) -> None:
     print(f"[PASSED]  {name}")
 
 
+def get_python_executable() -> str:
+    """Find the active or virtualenv Python binary."""
+    venv_py_win = REPO_ROOT / ".venv" / "Scripts" / "python.exe"
+    venv_py_unix = REPO_ROOT / ".venv" / "bin" / "python"
+    if sys.platform == "win32" and venv_py_win.exists():
+        return str(venv_py_win)
+    if venv_py_unix.exists():
+        return str(venv_py_unix)
+    return sys.executable
+
+
 def main() -> None:
-    py = sys.executable
+    py = get_python_executable()
 
     npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
 
