@@ -1,0 +1,38 @@
+name: Clean-Room Rehearsal (P10.6)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 0' # Weekly Sunday sanity run
+
+jobs:
+  rehearsal:
+    name: Rehearsal (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11"]
+        node-version: ["22"]
+
+    steps:
+      - name: Checkout repository (with full tags & history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Run Clean-Room Rehearsal Script
+        shell: bash
+        run: |
+          python tools/clean_room_rebuild.py --skip-demo
+

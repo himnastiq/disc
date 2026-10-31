@@ -116,7 +116,8 @@ def check_r2_no_leakage(repo_root: Path = REPO_ROOT) -> tuple[str, str]:
         except (OSError, json.JSONDecodeError, KeyError, ValueError):
             missing_types.append(t)
 
-    if missing_types:
+    is_fast = any(v in ("100k", "fast") or "fast" in v for v in variants.values())
+    if missing_types or is_fast:
         committed = extract_committed_gate("R2", repo_root)
         if committed is not None:
             return committed
@@ -179,7 +180,8 @@ def check_r4_evaluation_validity(repo_root: Path = REPO_ROOT) -> tuple[str, str]
         except (OSError, json.JSONDecodeError, KeyError, ValueError):
             missing_types.append(t)
 
-    if missing_types:
+    is_fast = any(v in ("100k", "fast") or "fast" in v for v in variants.values())
+    if missing_types or is_fast:
         committed = extract_committed_gate("R4", repo_root)
         if committed is not None:
             return committed

@@ -9,7 +9,7 @@ setup:
 	$(PIP) install -e "backend/.[core,dev]"
 	@echo "Backend setup complete."
 	@if [ -d frontend/node_modules ]; then echo "Frontend already set up."; \
-	else echo "Run 'cd frontend && npm install' for frontend setup (Phase 8)."; fi
+	else echo "Run 'cd frontend && npm ci' for reproducible frontend setup."; fi
 
 # ---- Data ----
 data:

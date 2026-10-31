@@ -8,6 +8,7 @@ An adaptive content recommendation engine that personalises recommendations acro
 
 ## Quick Start
 
+<!-- QUICKSTART:START -->
 ```bash
 # 1. Set up the environment
 make setup
@@ -23,6 +24,31 @@ make eval
 
 # 5. Launch the demo (API + frontend)
 make demo
+```
+<!-- QUICKSTART:END -->
+
+### PowerShell / Windows (Without Make)
+
+```powershell
+# 1. Virtualenv and dependencies
+python -m venv .venv
+.venv\Scripts\pip install -e backend/.[core,dev]
+cd frontend; npm ci; cd ..
+
+# 2. Download raw datasets
+python backend/scripts/fetch_data.py
+
+# 3. Train fast variants
+python -m engine.train --type movies --fast
+python -m engine.train --type products --fast
+python -m engine.train --type articles --fast
+
+# 4. Generate results report
+python tools/make_results.py
+
+# 5. Launch demo
+python tools/demo.py
+# (Stop demo with: python tools/demo.py --stop)
 ```
 
 ## Repository Structure

@@ -24,6 +24,14 @@ def test_clean_room_script_exists() -> None:
     import clean_room_rebuild
 
     assert hasattr(clean_room_rebuild, "clean_room_rebuild")
+    assert hasattr(clean_room_rebuild, "extract_quickstart_commands")
+
+    cmds = clean_room_rebuild.extract_quickstart_commands(REPO_ROOT / "README.md")
+    assert "make setup" in cmds
+    assert "make data" in cmds
+    assert "make train-fast" in cmds
+    assert "make eval" in cmds
+    assert "make demo" in cmds
 
 
 @pytest.mark.slow
