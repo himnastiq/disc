@@ -2,7 +2,7 @@
 
 An adaptive consumer recommendation engine that personalizes content discovery across Movies, Products, and News through a unified CPU-optimized pipeline.
 
-![Discovery Engine Dashboard](docs/screenshots/movies-foryou.png)
+![Discovery Engine Dashboard](docs/demo_video.mp4/)
 
 ## What It Is & Attribution Statement
 
