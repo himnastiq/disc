@@ -7,9 +7,9 @@
 
 | Classification | Tracked Files | Total Lines | Code Lines | Comments & Blank | Share of Lines | Share of Code |
 |---|---|---|---|---|---|---|
-| **Original Discovery Engine** | 294 | 56,602 | 45,958 | 10,644 | **90.3%** | **90.7%** |
-| **Derived (Microsoft Recommenders)** | 21 | 6,049 | 4,727 | 1,322 | **9.7%** | **9.3%** |
-| **Total Accounted** | **315** | **62,651** | **50,685** | **11,966** | **100.0%** | **100.0%** |
+| **Original Discovery Engine** | 297 | 57,039 | 46,308 | 10,731 | **90.4%** | **90.7%** |
+| **Derived (Microsoft Recommenders)** | 21 | 6,049 | 4,727 | 1,322 | **9.6%** | **9.3%** |
+| **Total Accounted** | **318** | **63,088** | **51,035** | **12,053** | **100.0%** | **100.0%** |
 
 ---
 
@@ -20,17 +20,17 @@
 | `Derived: Microsoft Recommenders (backend/discovery/)` | Derived (MIT) | 21 | 6,049 | 4,727 | 1,322 |
 | `Original: Recommender Core (backend/engine/)` | Original | 39 | 8,392 | 6,841 | 1,551 |
 | `Original: FastAPI Serving Layer (backend/api/)` | Original | 12 | 2,399 | 1,908 | 491 |
-| `Original: Next.js Frontend Dashboard (frontend/)` | Original | 103 | 14,938 | 12,883 | 2,055 |
-| `Original: Automation & Quality Tools (tools/)` | Original | 24 | 8,977 | 7,780 | 1,197 |
+| `Original: Next.js Frontend Dashboard (frontend/)` | Original | 105 | 15,188 | 13,081 | 2,107 |
+| `Original: Automation & Quality Tools (tools/)` | Original | 25 | 9,152 | 7,923 | 1,229 |
 | `Original: Testing Suites & Harnesses (tests/)` | Original | 83 | 14,723 | 11,203 | 3,520 |
 | `Original: Specifications & Documentation (docs/)` | Original | 13 | 2,633 | 1,731 | 902 |
-| `Original: Repository Root & Configurations` | Original | 20 | 4,540 | 3,612 | 928 |
+| `Original: Repository Root & Configurations` | Original | 20 | 4,552 | 3,621 | 931 |
 
 ---
 
 ## 3. Exclusion Rules & Accounting Standards
 
-Per Phase 11 Task P11.3 specification, exactly **52** tracked non-code, generated, or binary files are excluded from line counting:
+Per Phase 11 Task P11.3 specification, exactly **74** tracked non-code, generated, or binary files are excluded from line counting:
 - **Dependency Lockfiles:** `backend/uv.lock`, `frontend/package-lock.json` (auto-generated machine resolution graphs).
 - **API Schemas:** `backend/api/openapi.json` (machine export from FastAPI runtime models).
 - **Synthetic Test Fixtures:** `backend/tests/fixtures/artifacts_mini/*` (pre-built serialized mock tables for offline integration testing).

@@ -327,6 +327,7 @@ def main() -> int:
         DOCS_DIR / "ARCHITECTURE.md",
         DOCS_DIR / "ATTRIBUTION.md",
         DOCS_DIR / "DEMO_SCRIPT.md",
+        DOCS_DIR / "REPORT_OUTLINE.md",
     ]
 
     print("=" * 65)
