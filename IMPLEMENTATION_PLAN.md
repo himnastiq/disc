@@ -44,11 +44,11 @@
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
 | 10 | Integration and robustness audit | 8 | 0 | 0 | 8 | 100% |
-| 11 | Documentation and showcase preparation | 1 | 0 | 1 | 8 | 12% |
+| 11 | Documentation and showcase preparation | 2 | 0 | 1 | 8 | 25% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **117** | | | **129** | **90%** |
+| | **Overall** | **118** | | | **129** | **91%** |
 
-`[##################--] 90%  (117/129 tasks)`
+`[##################--] 91%  (118/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -641,7 +641,7 @@ E1 to E3, then P11.3, P11.2, P11.6, P11.4, P11.1, P11.5, P11.7 (human, in parall
   - Limitations: short list linking the limitation decision entry (D-018) and the Phase 10 findings (for example: no way to express dislike since sub-threshold ratings are ignored as evidence; single split and seed; item cap for products; MIND-small only).
   - Repository map: generated from the tracked top-level folders; each description is hand-written, each path verified to exist.
   - Citations: copy the exact text from `docs/DATASETS.md` and `docs/ATTRIBUTION.md`. Do not retype or recall citations from memory.
-- [ ] **P11.2** `docs/ARCHITECTURE.md` with Mermaid diagrams. *Acceptance:* every diagram parses; every file, class and endpoint named in a diagram or table exists in the repo; the per-type table and endpoint list are generated.
+- [x] **P11.2** `docs/ARCHITECTURE.md` with Mermaid diagrams. *Acceptance:* every diagram parses; every file, class and endpoint named in a diagram or table exists in the repo; the per-type table and endpoint list are generated.
   - Diagrams (5): system overview (datasets to adapter to registry to model to harness to artifacts to API to frontend); training pipeline (engine.train: load, validate, split with leakage check, tune on validation, fit, evaluate with bootstrap CIs, write artifacts and manifest); request flow as a sequence diagram (browser, Next route handler, FastAPI, loaded artifacts, response with mode, reason, meta); adapter and registry design (abstract DatasetAdapter and RecommenderModel, registration decorators, the three types plus the test-only toy); artifact layout (files, checksums, code_hash).
   - Generated blocks: the endpoint table from `openapi.json`; the "how the engine adapts" table (section 7 of this plan) filled from `data_report.json` and `metrics.json` per type (signal rule, split strategy, model, candidate pool, card type, dataset size).
   - Keep the `metrics.json` schema section written in P2.8 and update it if the schema changed. Include a short "what is deliberately not here" list (no accounts, no online learning, no deep-learning imports in the API) and the core-unchanged evidence from `tools/core_unchanged.py`.
