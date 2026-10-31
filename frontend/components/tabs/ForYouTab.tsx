@@ -61,15 +61,17 @@ export function ForYouTab({
   }
 
   return (
-    <div className="space-y-8">
-      {/* 1. User Profile Summary (P9.2) */}
-      <ProfileCard type={type} userId={user} />
+    <div className="grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
+      {/* 1. User Profile Summary (P9.2): sidebar on desktop, stacked above the feed below lg */}
+      <div>
+        <ProfileCard type={type} userId={user} />
+      </div>
 
       {/* 2. Personalized Feed Header */}
-      <div className="space-y-4">
+      <div className="space-y-5 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2.5">
-            <h3 className="text-base sm:text-lg font-bold text-[var(--color-text)]">
+            <h3 className="text-lg font-bold text-[var(--color-text)]">
               Personalized Recommendations
             </h3>
             {recData && <ModeBadge mode={recData.mode} />}
@@ -108,7 +110,7 @@ export function ForYouTab({
 
         {/* 3. Loading State */}
         {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
             {Array.from({ length: k }).map((_, i) => (
               <div
                 key={i}
@@ -137,7 +139,7 @@ export function ForYouTab({
           <div
             role="region"
             aria-label="Recommendation results"
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4"
+            className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5"
           >
             {recData.results.map((item, idx) => (
               <RecCard

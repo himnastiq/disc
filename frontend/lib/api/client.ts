@@ -36,7 +36,7 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(
-  schema: z.ZodSchema<T>,
+  schema: z.ZodType<T>,
   path: string,
   init?: RequestInit
 ): Promise<T> {
@@ -91,7 +91,7 @@ export async function apiFetch<T>(
       `Unexpected response from server: ${result.error.issues[0]?.message || 'schema validation failed'}`,
       res.status,
       'SCHEMA_VALIDATION_ERROR',
-      result.error.format()
+      z.treeifyError(result.error)
     );
   }
 
@@ -103,65 +103,73 @@ export async function apiFetch<T>(
 // ---------------------------------------------------------------------------
 
 export const apiClient = {
-  getTypes: () => apiFetch(TypesResponseSchema, '/api/types'),
+  getTypes: (signal?: AbortSignal) => apiFetch(TypesResponseSchema, '/api/types', { signal }),
 
-  getUsers: (type: string, query?: string) => {
+  getUsers: (type: string, query?: string, signal?: AbortSignal) => {
     const q = query ? `?query=${encodeURIComponent(query)}` : '';
-    return apiFetch(UsersResponseSchema, `/api/types/${encodeURIComponent(type)}/users${q}`);
+    return apiFetch(UsersResponseSchema, `/api/types/${encodeURIComponent(type)}/users${q}`, { signal });
   },
 
-  getUserProfile: (type: string, userId: string) =>
+  getUserProfile: (type: string, userId: string, signal?: AbortSignal) =>
     apiFetch(
       UserProfileResponseSchema,
-      `/api/types/${encodeURIComponent(type)}/users/${encodeURIComponent(userId)}/profile`
+      `/api/types/${encodeURIComponent(type)}/users/${encodeURIComponent(userId)}/profile`,
+      { signal }
     ),
 
-  getRecommendations: (type: string, userId?: string, k: number = 10) => {
+  getRecommendations: (type: string, userId?: string, k: number = 10, signal?: AbortSignal) => {
     const params = new URLSearchParams();
     if (userId) params.set('user_id', userId);
     params.set('k', String(k));
     return apiFetch(
       RecommendResponseSchema,
-      `/api/types/${encodeURIComponent(type)}/recommend?${params.toString()}`
+      `/api/types/${encodeURIComponent(type)}/recommend?${params.toString()}`,
+      { signal }
     );
   },
 
-  getPopular: (type: string, k: number = 10) =>
+  getPopular: (type: string, k: number = 10, signal?: AbortSignal) =>
     apiFetch(
       RecommendResponseSchema,
-      `/api/types/${encodeURIComponent(type)}/popular?k=${k}`
+      `/api/types/${encodeURIComponent(type)}/popular?k=${k}`,
+      { signal }
     ),
 
-  getSimilar: (type: string, itemId: string, k: number = 10) =>
+  getSimilar: (type: string, itemId: string, k: number = 10, signal?: AbortSignal) =>
     apiFetch(
       RecommendResponseSchema,
-      `/api/types/${encodeURIComponent(type)}/similar?item_id=${encodeURIComponent(itemId)}&k=${k}`
+      `/api/types/${encodeURIComponent(type)}/similar?item_id=${encodeURIComponent(itemId)}&k=${k}`,
+      { signal }
     ),
 
-  getItemDetail: (type: string, itemId: string) =>
+  getItemDetail: (type: string, itemId: string, signal?: AbortSignal) =>
     apiFetch(
       ItemDetailSchema,
-      `/api/types/${encodeURIComponent(type)}/items/${encodeURIComponent(itemId)}`
+      `/api/types/${encodeURIComponent(type)}/items/${encodeURIComponent(itemId)}`,
+      { signal }
     ),
 
-  searchItems: (type: string, query: string, limit: number = 20) =>
+  searchItems: (type: string, query: string, limit: number = 20, signal?: AbortSignal) =>
     apiFetch(
       SearchResponseSchema,
-      `/api/types/${encodeURIComponent(type)}/search?q=${encodeURIComponent(query)}&limit=${limit}`
+      `/api/types/${encodeURIComponent(type)}/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+      { signal }
     ),
 
-  postColdStart: (request: ColdStartRequest) =>
+  postColdStart: (request: ColdStartRequest, signal?: AbortSignal) =>
     apiFetch(RecommendResponseSchema, '/api/recommend/cold-start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
+      signal,
     }),
 
-  getMetrics: (type: string) =>
+  getMetrics: (type: string, signal?: AbortSignal) =>
     apiFetch(
       MetricsResponseSchema,
-      `/api/types/${encodeURIComponent(type)}/metrics`
+      `/api/types/${encodeURIComponent(type)}/metrics`,
+      { signal }
     ),
 
-  getAbout: () => apiFetch(AboutResponseSchema, '/api/about'),
+  getAbout: (signal?: AbortSignal) => apiFetch(AboutResponseSchema, '/api/about', { signal }),
 };

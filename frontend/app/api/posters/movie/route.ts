@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-export function normalizeMovieTitle(rawTitle: string): { title: string; year?: number } {
+function normalizeMovieTitle(rawTitle: string): { title: string; year?: number } {
   let title = rawTitle.trim();
   let year: number | undefined;
 

@@ -59,20 +59,20 @@ export async function proxyToBackend(
       headers: { 'Content-Type': contentType || 'text/plain' },
     });
   } catch (err: unknown) {
+    console.error('[proxy]', backendPath, err);
     const isTimeout =
       err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
     const statusCode = isTimeout ? 504 : 502;
     const errorCode = isTimeout ? 'GATEWAY_TIMEOUT' : 'BAD_GATEWAY';
     const message = isTimeout
-      ? `Backend request timed out after ${timeoutMs}ms: ${backendPath}`
-      : `Failed to connect to backend recommender service at ${API_BASE_URL}`;
+      ? 'The recommender service took too long to respond.'
+      : 'The recommender service is unavailable.';
 
     return NextResponse.json(
       {
         error: {
           code: errorCode,
           message,
-          details: null,
         },
       },
       { status: statusCode }

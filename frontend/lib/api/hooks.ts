@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, skipToken } from '@tanstack/react-query';
 import { apiClient } from './client';
 import type { ColdStartRequest } from './schemas';
 
@@ -10,7 +10,7 @@ const MINUTE = 60 * 1000;
 export function useTypes() {
   return useQuery({
     queryKey: ['types'],
-    queryFn: () => apiClient.getTypes(),
+    queryFn: ({ signal }) => apiClient.getTypes(signal),
     staleTime: 10 * MINUTE,
     gcTime: 30 * MINUTE,
   });
@@ -19,7 +19,7 @@ export function useTypes() {
 export function useUsers(type: string, query?: string) {
   return useQuery({
     queryKey: ['users', type, query || ''],
-    queryFn: () => apiClient.getUsers(type, query),
+    queryFn: ({ signal }) => apiClient.getUsers(type, query, signal),
     enabled: Boolean(type),
     staleTime: 5 * MINUTE,
   });
@@ -28,7 +28,7 @@ export function useUsers(type: string, query?: string) {
 export function useUserProfile(type: string, userId?: string) {
   return useQuery({
     queryKey: ['userProfile', type, userId],
-    queryFn: () => (userId ? apiClient.getUserProfile(type, userId) : null),
+    queryFn: userId ? ({ signal }) => apiClient.getUserProfile(type, userId, signal) : skipToken,
     enabled: Boolean(type && userId),
     staleTime: 2 * MINUTE,
   });
@@ -42,7 +42,7 @@ export function useRecommendations(
 ) {
   return useQuery({
     queryKey: ['recommendations', type, userId, k],
-    queryFn: () => apiClient.getRecommendations(type, userId, k),
+    queryFn: ({ signal }) => apiClient.getRecommendations(type, userId, k, signal),
     enabled: options?.enabled ?? Boolean(type),
     staleTime: 30 * 1000,
   });
@@ -51,7 +51,7 @@ export function useRecommendations(
 export function usePopular(type: string, k: number = 10) {
   return useQuery({
     queryKey: ['popular', type, k],
-    queryFn: () => apiClient.getPopular(type, k),
+    queryFn: ({ signal }) => apiClient.getPopular(type, k, signal),
     enabled: Boolean(type),
     staleTime: 5 * MINUTE,
   });
@@ -60,7 +60,7 @@ export function usePopular(type: string, k: number = 10) {
 export function useSimilar(type: string, itemId?: string, k: number = 10) {
   return useQuery({
     queryKey: ['similar', type, itemId, k],
-    queryFn: () => (itemId ? apiClient.getSimilar(type, itemId, k) : null),
+    queryFn: itemId ? ({ signal }) => apiClient.getSimilar(type, itemId, k, signal) : skipToken,
     enabled: Boolean(type && itemId),
     staleTime: 5 * MINUTE,
   });
@@ -69,7 +69,7 @@ export function useSimilar(type: string, itemId?: string, k: number = 10) {
 export function useItemDetail(type: string, itemId?: string) {
   return useQuery({
     queryKey: ['itemDetail', type, itemId],
-    queryFn: () => (itemId ? apiClient.getItemDetail(type, itemId) : null),
+    queryFn: itemId ? ({ signal }) => apiClient.getItemDetail(type, itemId, signal) : skipToken,
     enabled: Boolean(type && itemId),
     staleTime: 10 * MINUTE,
   });
@@ -78,7 +78,7 @@ export function useItemDetail(type: string, itemId?: string) {
 export function useItemSearch(type: string, query: string) {
   return useQuery({
     queryKey: ['search', type, query],
-    queryFn: () => apiClient.searchItems(type, query),
+    queryFn: ({ signal }) => apiClient.searchItems(type, query, 20, signal),
     enabled: Boolean(type && query.trim().length >= 1),
     staleTime: 1 * MINUTE,
   });
@@ -98,7 +98,7 @@ export function useColdStart(
 ) {
   return useQuery({
     queryKey: ['coldStart', type, history, k],
-    queryFn: () => apiClient.postColdStart({ type, history, k, exclude: [] }),
+    queryFn: ({ signal }) => apiClient.postColdStart({ type, history, k, exclude: [] }, signal),
     enabled: options?.enabled !== false && Boolean(type),
     staleTime: 30 * 1000,
   });
@@ -107,7 +107,7 @@ export function useColdStart(
 export function useMetrics(type: string) {
   return useQuery({
     queryKey: ['metrics', type],
-    queryFn: () => apiClient.getMetrics(type),
+    queryFn: ({ signal }) => apiClient.getMetrics(type, signal),
     enabled: Boolean(type),
     staleTime: 10 * MINUTE,
   });
@@ -116,7 +116,7 @@ export function useMetrics(type: string) {
 export function useAbout() {
   return useQuery({
     queryKey: ['about'],
-    queryFn: () => apiClient.getAbout(),
+    queryFn: ({ signal }) => apiClient.getAbout(signal),
     staleTime: Infinity,
   });
 }

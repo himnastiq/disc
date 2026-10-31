@@ -57,6 +57,11 @@ export function formatCi(ci: unknown, decimals: number = 4): string {
   return `[${formatMetric(ci[0], decimals)}, ${formatMetric(ci[1], decimals)}]`;
 }
 
+function formatPercent(val: unknown): string {
+  if (typeof val !== 'number' || Number.isNaN(val)) return '—';
+  return Math.round(val * 100) + '%';
+}
+
 export function EvaluationTab({ type }: EvaluationTabProps) {
   const { data: metricsData, isLoading, isError, refetch } = useMetrics(type);
 
@@ -140,22 +145,24 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
               Evaluation Protocol & Verification
             </h3>
           </div>
-          <div className="text-[11px] text-[var(--color-text-muted)] font-mono">
-            SHA: {rawData.git_sha ? String(rawData.git_sha).slice(0, 8) : 'clean'} · Hash: {rawData.config_hash ? String(rawData.config_hash).slice(0, 8) : 'valid'}
+          <div className="text-[12px] text-[var(--color-text-muted)] font-mono">
+            SHA: {rawData.git_sha ? String(rawData.git_sha).slice(0, 8) : '—'} · Hash: {rawData.config_hash ? String(rawData.config_hash).slice(0, 8) : '—'}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[12px]">
           <div>
             <span className="text-[var(--color-text-muted)] block">Split Strategy</span>
             <span className="font-semibold text-[var(--color-text)] capitalize">
-              {rawData.protocol?.split_strategy || 'Chronological'} ({rawData.protocol?.split_ratio ? `${rawData.protocol.split_ratio * 100}%` : '80%'} train)
+              {!rawData.protocol?.split_strategy && (rawData.protocol?.split_ratio == null || typeof rawData.protocol?.split_ratio !== 'number')
+                ? '—'
+                : `${rawData.protocol?.split_strategy ?? '—'} (${formatPercent(rawData.protocol?.split_ratio)} train)`}
             </span>
           </div>
           <div>
             <span className="text-[var(--color-text-muted)] block">Test Users Evaluated</span>
             <span className="font-semibold text-[var(--color-text)] tabular-nums">
-              {rawData.protocol?.evaluated_test_users || rawData.protocol?.total_test_users || '—'} users
+              {rawData.protocol?.evaluated_test_users ?? rawData.protocol?.total_test_users ?? '—'} users
             </span>
           </div>
           <div>
@@ -167,7 +174,11 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
           <div>
             <span className="text-[var(--color-text-muted)] block">Positive Threshold</span>
             <span className="font-semibold text-[var(--color-text)] tabular-nums">
-              &ge; {rawData.protocol?.positive_threshold || 1.0}
+              {typeof rawData.protocol?.positive_threshold === 'number' ? (
+                <>&ge; {rawData.protocol.positive_threshold}</>
+              ) : (
+                (rawData.protocol?.positive_threshold ?? '—')
+              )}
             </span>
           </div>
         </div>
@@ -182,11 +193,11 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
                 <BarChart3 className="h-4 w-4 text-[var(--color-accent)]" />
                 <span>Protocol (a): Impression Candidate Ranking (MIND Benchmark)</span>
               </h3>
-              <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+              <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
                 Evaluates candidate ranking within each impression list (1 positive click vs negative impressions).
               </p>
             </div>
-            <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums font-mono">
+            <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums font-mono">
               {rawData.protocols.impression_ranking.evaluated_impressions} impressions
             </span>
           </div>
@@ -222,16 +233,16 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
                         <span>{mKey === 'tfidf_profile' ? 'TF-IDF Profile' : mKey}</span>
                       </td>
                       <td className="py-2.5 px-3 tabular-nums">
-                        {formatMetric(mData.auc)} <span className="text-[10px] text-[var(--color-text-muted)]">{formatCi(mData.auc_ci95)}</span>
+                        {formatMetric(mData.auc)} <span className="text-[12px] text-[var(--color-text-muted)]">{formatCi(mData.auc_ci95)}</span>
                       </td>
                       <td className="py-2.5 px-3 tabular-nums">
-                        {formatMetric(mData.mrr)} <span className="text-[10px] text-[var(--color-text-muted)]">{formatCi(mData.mrr_ci95)}</span>
+                        {formatMetric(mData.mrr)} <span className="text-[12px] text-[var(--color-text-muted)]">{formatCi(mData.mrr_ci95)}</span>
                       </td>
                       <td className="py-2.5 px-3 tabular-nums">
-                        {formatMetric(mData['ndcg@5'])} <span className="text-[10px] text-[var(--color-text-muted)]">{formatCi(mData['ndcg@5_ci95'])}</span>
+                        {formatMetric(mData['ndcg@5'])} <span className="text-[12px] text-[var(--color-text-muted)]">{formatCi(mData['ndcg@5_ci95'])}</span>
                       </td>
                       <td className="py-2.5 px-3 tabular-nums">
-                        {formatMetric(mData['ndcg@10'])} <span className="text-[10px] text-[var(--color-text-muted)]">{formatCi(mData['ndcg@10_ci95'])}</span>
+                        {formatMetric(mData['ndcg@10'])} <span className="text-[12px] text-[var(--color-text-muted)]">{formatCi(mData['ndcg@10_ci95'])}</span>
                       </td>
                     </tr>
                   );
@@ -250,7 +261,7 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
               <TrendingUp className="h-4 w-4 text-[var(--color-accent)]" />
               <span>{isDualProtocol ? 'Protocol (b): Top-K Retrieval from Candidate Pool' : 'Ranking & Retrieval Benchmarks'}</span>
             </h3>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+            <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
               Verified metric estimates with bootstrap 95% confidence intervals against baseline models.
             </p>
           </div>
@@ -328,19 +339,19 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
                     </td>
                     <td className="py-2.5 px-3 tabular-nums">
                       <span className="text-[var(--color-text)]">{formatMetric(popVal)}</span>{' '}
-                      <span className="text-[10px] text-[var(--color-text-muted)]">{formatCi(popCi)}</span>
+                      <span className="text-[12px] text-[var(--color-text-muted)]">{formatCi(popCi)}</span>
                     </td>
                     <td className="py-2.5 px-3 tabular-nums font-bold text-[var(--color-text)]">
                       <span>{formatMetric(modVal)}</span>{' '}
-                      <span className="text-[10px] text-[var(--color-accent-text)]">{formatCi(modCi)}</span>
+                      <span className="text-[12px] text-[var(--color-accent-text)]">{formatCi(modCi)}</span>
                     </td>
                     <td className="py-2.5 px-3">
                       {isSeparated ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 px-2 py-0.5 text-[10px] font-semibold">
+                        <span className="inline-flex items-center gap-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 px-2 py-0.5 text-[12px] font-semibold">
                           <CheckCircle2 className="h-3 w-3" /> CIs Separate
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 px-2 py-0.5 text-[10px] font-semibold">
+                        <span className="inline-flex items-center gap-1 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 px-2 py-0.5 text-[12px] font-semibold">
                           <XCircle className="h-3 w-3 text-zinc-500" /> Overlap / Tied
                         </span>
                       )}
@@ -529,7 +540,7 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
                 </div>
 
                 {/* X-axis history size labels */}
-                <div className="flex justify-between text-[10px] text-[var(--color-text-muted)] px-1">
+                <div className="flex justify-between text-[12px] text-[var(--color-text-muted)] px-1">
                   {historySteps.map((s) => (
                     <span key={s} className="tabular-nums">
                       {s}h
@@ -537,7 +548,7 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
                   ))}
                 </div>
 
-                <div className="flex items-center justify-center gap-4 text-[11px] pt-1 text-[var(--color-text-secondary)]">
+                <div className="flex items-center justify-center gap-4 text-[12px] pt-1 text-[var(--color-text-secondary)]">
                   <span className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" /> {modelName.toUpperCase()}
                   </span>
@@ -559,41 +570,41 @@ export function EvaluationTab({ type }: EvaluationTabProps) {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-3 border border-[var(--color-border)] space-y-1">
-            <span className="text-[11px] text-[var(--color-text-muted)] block">Catalog Coverage</span>
+            <span className="text-[12px] text-[var(--color-text-muted)] block">Catalog Coverage</span>
             <span className="text-base font-bold text-[var(--color-text)] tabular-nums">
               {typeof currentModelData.coverage === 'number' ? `${(currentModelData.coverage * 100).toFixed(1)}%` : '—'}
             </span>
-            <span className="text-[10px] text-[var(--color-text-secondary)] block">
+            <span className="text-[12px] text-[var(--color-text-secondary)] block">
               % items recommended to &ge;1 user
             </span>
           </div>
 
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-3 border border-[var(--color-border)] space-y-1">
-            <span className="text-[11px] text-[var(--color-text-muted)] block">Novelty</span>
+            <span className="text-[12px] text-[var(--color-text-muted)] block">Novelty</span>
             <span className="text-base font-bold text-[var(--color-text)] tabular-nums">
               {typeof currentModelData.novelty === 'number' ? `${currentModelData.novelty.toFixed(2)} bits` : '—'}
             </span>
-            <span className="text-[10px] text-[var(--color-text-secondary)] block">
+            <span className="text-[12px] text-[var(--color-text-secondary)] block">
               Mean self-information (bits)
             </span>
           </div>
 
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-3 border border-[var(--color-border)] space-y-1">
-            <span className="text-[11px] text-[var(--color-text-muted)] block">Diversity</span>
+            <span className="text-[12px] text-[var(--color-text-muted)] block">Diversity</span>
             <span className="text-base font-bold text-[var(--color-text)] tabular-nums">
               {typeof currentModelData.diversity === 'number' ? formatMetric(currentModelData.diversity, 3) : '—'}
             </span>
-            <span className="text-[10px] text-[var(--color-text-secondary)] block">
+            <span className="text-[12px] text-[var(--color-text-secondary)] block">
               Mean intra-list cosine distance
             </span>
           </div>
 
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-3 border border-[var(--color-border)] space-y-1">
-            <span className="text-[11px] text-[var(--color-text-muted)] block">Personalisation</span>
+            <span className="text-[12px] text-[var(--color-text-muted)] block">Personalisation</span>
             <span className="text-base font-bold text-[var(--color-text)] tabular-nums">
               {typeof currentModelData.personalisation === 'number' ? `${(currentModelData.personalisation * 100).toFixed(1)}%` : '—'}
             </span>
-            <span className="text-[10px] text-[var(--color-text-secondary)] block">
+            <span className="text-[12px] text-[var(--color-text-secondary)] block">
               Inter-user recommendation distance
             </span>
           </div>

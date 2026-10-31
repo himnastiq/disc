@@ -180,7 +180,7 @@ export function ColdStartTab({
           {/* Search Dropdown Results */}
           {debouncedQuery.trim().length > 0 && searchData && searchData.results && (
             <div
-              role="listbox"
+              role="group"
               aria-label="Search results"
               className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-elevated)] p-1.5 shadow-lg space-y-1"
             >
@@ -333,13 +333,13 @@ export function ColdStartTab({
                         type="button"
                         aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                         onClick={() => handleSignalChange(item.item_id, star)}
-                        className="cursor-pointer text-[var(--color-text-muted)] hover:text-amber-400 transition-colors"
+                        className="p-1.5 cursor-pointer text-[var(--color-text-muted)] hover:text-amber-400 transition-colors"
                       >
                         <Star
                           className={`h-3 w-3 ${
                             star <= item.signal
                               ? 'fill-amber-400 text-amber-400'
-                              : 'text-neutral-600'
+                              : 'text-[var(--color-text-muted)]'
                           }`}
                         />
                       </button>
@@ -352,7 +352,7 @@ export function ColdStartTab({
                   type="button"
                   aria-label={`Remove ${item.title}`}
                   onClick={() => handleRemoveItem(item.item_id)}
-                  className="text-[var(--color-text-muted)] hover:text-[var(--color-accent-text)] cursor-pointer"
+                  className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent-text)] cursor-pointer"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>

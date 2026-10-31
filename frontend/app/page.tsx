@@ -28,13 +28,16 @@ function DashboardContent() {
     switchType,
   } = useUrlState();
 
+  const cardType: 'movie' | 'product' | 'article' =
+    type === 'products' ? 'product' : type === 'articles' ? 'article' : 'movie';
+
   const { isError: isTypesError, refetch: refetchTypes } = useTypes();
 
   if (isTypesError) {
     return (
       <div className="flex-1 flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] min-h-screen">
         <header className="sticky top-0 z-40 w-full border-b border-[var(--color-border)] bg-[var(--color-bg)]">
-          <div className="max-w-[52rem] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          <div className="max-w-shell mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="h-7 w-7 rounded-[4px] bg-[var(--color-accent)] text-white flex items-center justify-center font-bold text-xs shadow-sm">
                 <Sparkles className="h-4 w-4" />
@@ -45,7 +48,7 @@ function DashboardContent() {
             </div>
           </div>
         </header>
-        <main className="flex-1 max-w-[52rem] w-full mx-auto px-4 sm:px-6 py-12 flex items-center justify-center">
+        <main className="flex-1 max-w-shell w-full mx-auto px-4 sm:px-6 py-12 flex items-center justify-center">
           <div
             role="alert"
             className="rounded-[var(--radius-card)] border border-red-500/30 bg-red-950/20 p-8 max-w-lg w-full text-center space-y-4"
@@ -126,6 +129,7 @@ function DashboardContent() {
       <ItemDrawer
         type={type}
         itemId={item}
+        cardType={cardType}
         onClose={() => setItem(null)}
         onSelectItem={(selected) => setItem(selected.item_id)}
       />

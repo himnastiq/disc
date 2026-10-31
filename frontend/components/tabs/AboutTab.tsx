@@ -333,7 +333,7 @@ export function AboutTab() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-4 border border-[var(--color-border)] space-y-2">
-            <h5 className="font-bold text-[var(--color-text)]">1. Popularity Bias & Monoculture</h5>
+            <h4 className="font-bold text-[var(--color-text)]">1. Popularity Bias & Monoculture</h4>
             <p className="text-[var(--color-text-secondary)] leading-relaxed">
               Global popularity achieves high HitRate by concentrating on blockbuster items (~1.3% catalogue coverage in MovieLens).
               SAR mitigates this by expanding catalogue exploration by 3.5x with personalized genre matching.
@@ -341,7 +341,7 @@ export function AboutTab() {
           </div>
 
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-4 border border-[var(--color-border)] space-y-2">
-            <h5 className="font-bold text-[var(--color-text)]">2. Cold-Start Collaborative Matrix Sparsity</h5>
+            <h4 className="font-bold text-[var(--color-text)]">2. Cold-Start Collaborative Matrix Sparsity</h4>
             <p className="text-[var(--color-text-secondary)] leading-relaxed">
               Items with zero interactions in training have an all-zero row in co-occurrence matrices. While collaborative models cannot score unrated items,
               content-based TF-IDF models index new articles immediately from textual metadata.
@@ -349,28 +349,28 @@ export function AboutTab() {
           </div>
 
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-4 border border-[var(--color-border)] space-y-2">
-            <h5 className="font-bold text-[var(--color-text)]">3. Cross-Domain Signal Heterogeneity</h5>
+            <h4 className="font-bold text-[var(--color-text)]">3. Cross-Domain Signal Heterogeneity</h4>
             <p className="text-[var(--color-text-secondary)] leading-relaxed">
               Explicit ratings (Movies 1–5), verified transactions (Products), and implicit browsing clicks (Articles) carry fundamentally distinct semantic costs and acquisition dynamics.
             </p>
           </div>
 
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-4 border border-[var(--color-border)] space-y-2">
-            <h5 className="font-bold text-[var(--color-text)]">4. Cold-Start Valleys (&le; 5 Interactions)</h5>
+            <h4 className="font-bold text-[var(--color-text)]">4. Cold-Start Valleys (&le; 5 Interactions)</h4>
             <p className="text-[var(--color-text-secondary)] leading-relaxed">
               In sparse e-commerce, a single initial purchase can temporarily degrade performance below popularity fallback before recovering once &ge; 3 items establish a taste vector.
             </p>
           </div>
 
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-4 border border-[var(--color-border)] space-y-2">
-            <h5 className="font-bold text-[var(--color-text)]">5. News Freshness Horizon & Recency Decay</h5>
+            <h4 className="font-bold text-[var(--color-text)]">5. News Freshness Horizon & Recency Decay</h4>
             <p className="text-[var(--color-text-secondary)] leading-relaxed">
               Articles decay within 24 hours. The candidate pool is restricted to active recency windows, trading off long-term topic matching for guaranteed fresh content.
             </p>
           </div>
 
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] p-4 border border-[var(--color-border)] space-y-2">
-            <h5 className="font-bold text-[var(--color-text)]">6. Counterfactual Logging Policy Bias</h5>
+            <h4 className="font-bold text-[var(--color-text)]">6. Counterfactual Logging Policy Bias</h4>
             <p className="text-[var(--color-text-secondary)] leading-relaxed">
               Offline news metrics evaluate candidates pre-selected by historical production systems; live user engagement may differ due to presentation position bias and fatigue.
             </p>

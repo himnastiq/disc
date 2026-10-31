@@ -23,6 +23,7 @@ test.describe('Discovery Engine App Shell & Viewports (P8.7, P8.8)', () => {
   });
 
   test('renders design system primitives catalog on dev route', async ({ page }) => {
+    test.skip(process.env.NEXT_PUBLIC_ALLOW_DEV_ROUTES !== 'true', 'Dev route is disabled in production builds');
     await page.goto('/dev/components');
     await expect(page.getByText('Design System Primitives Catalog')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Primary' })).toBeVisible();

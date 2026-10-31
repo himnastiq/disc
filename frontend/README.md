@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Discovery Engine Frontend
 
-## Getting Started
+A Next.js dashboard that talks to the FastAPI recommender through its own `/api/*` route handlers.
 
-First, run the development server:
+## Requirements
+
+- Node.js 22
+
+## Setup
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `API_BASE_URL`: Base URL for the backend recommender service (defaults to `http://127.0.0.1:8000`).
+- `API_KEY` or `RECOMMENDER_API_KEY`: Optional secret key sent as `x-api-key` header to backend requests (server-only, never use a `NEXT_PUBLIC_` prefix).
+- `NEXT_PUBLIC_ALLOW_DEV_ROUTES`: Set to `'true'` at build time to expose `/dev/components` in production builds.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+- `npm run dev`: Starts the Next.js development server (`next dev`).
+- `npm run build`: Builds the application for production (`next build`).
+- `npm run start`: Starts the Next.js production server (`next start`).
+- `npm run lint`: Runs ESLint code style and syntax checks (`eslint`).
+- `npm run type-check`: Performs TypeScript type checking without emitting files (`tsc --noEmit`).
+- `npm run test`: Runs the Vitest test suite once (`vitest run`).
+- `npm run test:watch`: Runs the Vitest test suite in interactive watch mode (`vitest`).
+- `npm run test:e2e`: Runs Playwright end-to-end browser tests (`playwright test`).
+- `npm run check-secrets`: Scans client bundles to ensure no server secrets are leaked (`node scripts/check_bundle_secrets.mjs`).
+- `npm run generate:types`: Exports OpenAPI schema and generates TypeScript API types (`python ../tools/export_openapi.py && openapi-typescript openapi.json -o src/lib/api/generated.ts`).
+- `npm run record-fixtures`: Records live API responses into mock test fixtures (`node scripts/record_fixtures.mjs`).
 
-To learn more about Next.js, take a look at the following resources:
+## Folder Layout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `app`: Next.js App Router pages and `/api/*` server route handlers.
+- `components`: Reusable React components divided into `shell`, `tabs`, `features`, and `ui`.
+- `lib`: Core application utilities divided into `api`, `hooks`, and `server`.
+- `tests`: Test suites divided into `unit`, `e2e`, `fixtures`, and `mocks`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Notes
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Read `AGENTS.md` before changing Next.js code.
