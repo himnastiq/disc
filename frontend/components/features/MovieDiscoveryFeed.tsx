@@ -13,7 +13,7 @@ import {
 import { useUserState } from '@/lib/user-state';
 import { useHybridRecommendations } from '@/lib/hooks/useHybridRecommendations';
 import { CRITICALLY_ACCLAIMED_MOVIES } from '@/lib/curated';
-import { TasteProfiler } from './TasteProfiler';
+import { AIInsights } from './AIInsights';
 import { MovieCarouselRow } from './MovieCarouselRow';
 import { ProfileCard } from './ProfileCard';
 import type { ScoredItem } from '@/lib/api/schemas';
@@ -126,6 +126,23 @@ export function MovieDiscoveryFeed({
     return hookRecommendedMovies;
   }, [propRecData, hookRecommendedMovies]);
 
+  const insightItems: ScoredItem[] = useMemo(() => {
+    if (propRecData?.results && propRecData.results.length > 0) {
+      return propRecData.results;
+    }
+    return recommendedMovies.map((m) => ({
+      item_id: String(m.id),
+      title: m.title,
+      subtitle: m.reason ?? null,
+      categories: m.categories ?? [],
+      year: typeof m.year === 'number' ? m.year : null,
+      image_url: m.poster,
+      score: m.rating ? m.rating / 10 : 0.85,
+      display_score: m.matchPercentage ? m.matchPercentage / 100 : 0.85,
+      meta: {},
+    }));
+  }, [propRecData, recommendedMovies]);
+
   const handleCarouselSelect = (carouselMovie: CarouselMovie) => {
     if (!onSelectItem) return;
     const item: ScoredItem = {
@@ -181,163 +198,176 @@ export function MovieDiscoveryFeed({
         </div>
       </div>
 
-      {/* 2. User Profile Summary */}
-      <ProfileCard type="movies" userId={user} />
+      {/* 2. Grid: Sidebar (ProfileCard) + Main Content (Feed) */}
+      <div className="grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
+        {/* User Profile Summary (Sidebar as in Articles and Products) */}
+        <div>
+          <ProfileCard type="movies" userId={user} />
+        </div>
 
-      {/* 3. Interactive Taste Onboarding Card */}
-      <TasteProfiler />
+        {/* Main Content: AI Insights and Recommendations Feed */}
+        <div className="space-y-6 min-w-0">
+          {/* AI Insights Rectangle (Replaces TasteProfiler) */}
+          <AIInsights
+            items={insightItems}
+            cardType="movie"
+            onSelectItem={onSelectItem}
+            isLoading={propIsLoading}
+          />
 
-      {/* 4. Recommendations / Carousels */}
-      {hasTasteSignal ? (
-        <div className="space-y-6">
-          {/* Recently Watched */}
-          {recentlyWatched.length > 0 && (
-            <MovieCarouselRow
-              title="Recently Watched"
-              ids={recentlyWatched}
-              onSelectItem={handleCarouselSelect}
-            />
-          )}
+          {/* Recommendations / Carousels */}
+          {hasTasteSignal ? (
+            <div className="space-y-6">
+              {/* Recently Watched */}
+              {recentlyWatched.length > 0 && (
+                <MovieCarouselRow
+                  title="Recently Watched"
+                  ids={recentlyWatched}
+                  onSelectItem={handleCarouselSelect}
+                />
+              )}
 
-          {/* Your Watchlist */}
-          {watchlistIds.length > 0 && (
-            <MovieCarouselRow
-              title="Your Watchlist"
-              ids={watchlistIds}
-              onSelectItem={handleCarouselSelect}
-            />
-          )}
+              {/* Your Watchlist */}
+              {watchlistIds.length > 0 && (
+                <MovieCarouselRow
+                  title="Your Watchlist"
+                  ids={watchlistIds}
+                  onSelectItem={handleCarouselSelect}
+                />
+              )}
 
-          {/* Liked Movies */}
-          {likedIds.length > 0 && (
-            <MovieCarouselRow
-              title="Liked Movies"
-              ids={likedIds}
-              onSelectItem={handleCarouselSelect}
-            />
-          )}
+              {/* Liked Movies */}
+              {likedIds.length > 0 && (
+                <MovieCarouselRow
+                  title="Liked Movies"
+                  ids={likedIds}
+                  onSelectItem={handleCarouselSelect}
+                />
+              )}
 
-          {/* Top Rated by You */}
-          {ratedIds.length > 0 && (
-            <MovieCarouselRow
-              title="Top Rated by You"
-              ids={ratedIds}
-              onSelectItem={handleCarouselSelect}
-            />
-          )}
+              {/* Top Rated by You */}
+              {ratedIds.length > 0 && (
+                <MovieCarouselRow
+                  title="Top Rated by You"
+                  ids={ratedIds}
+                  onSelectItem={handleCarouselSelect}
+                />
+              )}
 
-          {/* Personalized Recommendations with k selector */}
-          {recommendedMovies.length > 0 && (
-            <div className="relative">
-              <div className="flex items-center justify-between mb-1">
-                <span className="sr-only">Personalized Recommendations Controls</span>
-                <div className="ml-auto flex items-center gap-2 mb-2">
-                  <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
-                    <SlidersHorizontal className="h-3 w-3" /> Show:
-                  </span>
-                  <div
-                    role="group"
-                    aria-label="Number of recommendations"
-                    className="inline-flex rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-0.5 text-xs"
-                  >
-                    {kOptions.map((kOpt) => {
-                      const isActive = k === kOpt;
-                      return (
-                        <button
-                          key={kOpt}
-                          type="button"
-                          onClick={() => onKChange(kOpt)}
-                          className={`px-2.5 py-1 text-xs font-semibold rounded-[4px] transition-all cursor-pointer tabular-nums focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)] ${
-                            isActive
-                              ? 'bg-[var(--color-elevated)] text-[var(--color-accent-text)] border border-[var(--color-border)]'
-                              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'
-                          }`}
-                        >
-                          k={kOpt}
-                        </button>
-                      );
-                    })}
+              {/* Personalized Recommendations with k selector */}
+              {recommendedMovies.length > 0 && (
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="sr-only">Personalized Recommendations Controls</span>
+                    <div className="ml-auto flex items-center gap-2 mb-2">
+                      <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
+                        <SlidersHorizontal className="h-3 w-3" /> Show:
+                      </span>
+                      <div
+                        role="group"
+                        aria-label="Number of recommendations"
+                        className="inline-flex rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-0.5 text-xs"
+                      >
+                        {kOptions.map((kOpt) => {
+                          const isActive = k === kOpt;
+                          return (
+                            <button
+                              key={kOpt}
+                              type="button"
+                              onClick={() => onKChange(kOpt)}
+                              className={`px-2.5 py-1 text-xs font-semibold rounded-[4px] transition-all cursor-pointer tabular-nums focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)] ${
+                                isActive
+                                  ? 'bg-[var(--color-elevated)] text-[var(--color-accent-text)] border border-[var(--color-border)]'
+                                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'
+                              }`}
+                            >
+                              k={kOpt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
+                  <MovieCarouselRow
+                    title="Personalized Recommendations"
+                    subtitle="Personalized discovery based on real-time interest"
+                    items={recommendedMovies.slice(0, k)}
+                    onSelectItem={handleCarouselSelect}
+                  />
+                </div>
+              )}
+
+              {/* Because You Liked / Rated Row */}
+              {becauseYouLiked && (
+                <MovieCarouselRow
+                  title={`Because You ${
+                    becauseYouLiked.sourceMovie.interaction === 'rated' ? 'Rated' : 'Liked'
+                  } ${becauseYouLiked.sourceMovie.title}`}
+                  subtitle="Curated titles sharing similar tone, genre blend, and story depth"
+                  items={becauseYouLiked.recommendations}
+                  onSelectItem={handleCarouselSelect}
+                />
+              )}
+
+              {/* Deep-Dive Top Genre Picks */}
+              {topGenrePicks && topGenrePicks.movies.length > 0 && (
+                <MovieCarouselRow
+                  title={`Top Picks in ${topGenrePicks.genreName}`}
+                  subtitle="Highest scoring recommendations in your primary genre focus"
+                  items={topGenrePicks.movies}
+                  onSelectItem={handleCarouselSelect}
+                />
+              )}
+
+              {/* Trending Now */}
+              {trendingMovies.length > 0 && (
+                <MovieCarouselRow
+                  title="Trending Now"
+                  subtitle="Top popular movies across the catalogue"
+                  items={trendingMovies}
+                  onSelectItem={handleCarouselSelect}
+                />
+              )}
+
+              {/* Critically Acclaimed Masterworks */}
               <MovieCarouselRow
-                title="Personalized Recommendations"
-                subtitle="Personalized discovery based on real-time interest"
-                items={recommendedMovies.slice(0, k)}
+                title="Critically Acclaimed Masterpieces"
+                subtitle="Universally praised cinema to build your taste profile"
+                items={CRITICALLY_ACCLAIMED_MOVIES}
                 onSelectItem={handleCarouselSelect}
               />
             </div>
+          ) : (
+            <MovieFeedEmptyState />
           )}
 
-          {/* Because You Liked / Rated Row */}
-          {becauseYouLiked && (
-            <MovieCarouselRow
-              title={`Because You ${
-                becauseYouLiked.sourceMovie.interaction === 'rated' ? 'Rated' : 'Liked'
-              } ${becauseYouLiked.sourceMovie.title}`}
-              subtitle="Curated titles sharing similar tone, genre blend, and story depth"
-              items={becauseYouLiked.recommendations}
-              onSelectItem={handleCarouselSelect}
-            />
-          )}
-
-          {/* Deep-Dive Top Genre Picks */}
-          {topGenrePicks && topGenrePicks.movies.length > 0 && (
-            <MovieCarouselRow
-              title={`Top Picks in ${topGenrePicks.genreName}`}
-              subtitle="Highest scoring recommendations in your primary genre focus"
-              items={topGenrePicks.movies}
-              onSelectItem={handleCarouselSelect}
-            />
-          )}
-
-          {/* Trending Now */}
-          {trendingMovies.length > 0 && (
-            <MovieCarouselRow
-              title="Trending Now"
-              subtitle="Top popular movies across the catalogue"
-              items={trendingMovies}
-              onSelectItem={handleCarouselSelect}
-            />
-          )}
-
-          {/* Critically Acclaimed Masterworks */}
-          <MovieCarouselRow
-            title="Critically Acclaimed Masterpieces"
-            subtitle="Universally praised cinema to build your taste profile"
-            items={CRITICALLY_ACCLAIMED_MOVIES}
-            onSelectItem={handleCarouselSelect}
-          />
-        </div>
-      ) : (
-        <MovieFeedEmptyState />
-      )}
-
-      {/* Quick Discovery Callout Banner */}
-      <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-sm sm:text-base font-bold text-[var(--color-text)]">
-            Ready to explore further?
-          </h3>
-          <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-0.5">
-            Compare model recommendations side-by-side or simulate cold-start user journeys.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href="/?type=movies&tab=compare"
-            className="px-4 py-2 bg-[var(--color-accent)] text-white text-xs font-bold rounded-[var(--radius-card)] hover:bg-[var(--color-accent-hover)] active:bg-[var(--color-accent-active)] transition-colors inline-flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)]"
-          >
-            <span>Compare Models</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-          <Link
-            href="/?type=movies&tab=cold-start"
-            className="px-4 py-2 bg-[var(--color-elevated)] text-[var(--color-text)] text-xs font-semibold rounded-[var(--radius-card)] hover:bg-[var(--color-elevated)]/80 border border-[var(--color-border)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)]"
-          >
-            Cold Start Demo
-          </Link>
+          {/* Quick Discovery Callout Banner */}
+          <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-[var(--color-text)]">
+                Ready to explore further?
+              </h3>
+              <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-0.5">
+                Compare model recommendations side-by-side or simulate cold-start user journeys.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/?type=movies&tab=compare"
+                className="px-4 py-2 bg-[var(--color-accent)] text-white text-xs font-bold rounded-[var(--radius-card)] hover:bg-[var(--color-accent-hover)] active:bg-[var(--color-accent-active)] transition-colors inline-flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)]"
+              >
+                <span>Compare Models</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link
+                href="/?type=movies&tab=cold-start"
+                className="px-4 py-2 bg-[var(--color-elevated)] text-[var(--color-text)] text-xs font-semibold rounded-[var(--radius-card)] hover:bg-[var(--color-elevated)]/80 border border-[var(--color-border)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)]"
+              >
+                Cold Start Demo
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -347,16 +377,23 @@ export function MovieDiscoveryFeed({
 function MovieFeedSkeleton() {
   return (
     <div className="space-y-6 animate-pulse" aria-hidden="true">
-      <div className="h-8 w-56 rounded bg-[var(--color-surface)]" />
-      <div className="h-4 w-80 max-w-full rounded bg-[var(--color-surface)]" />
-      <div className="h-32 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]" />
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="aspect-[2/3] rounded-[var(--radius-card)] bg-[var(--color-surface)]"
-          />
-        ))}
+      <div className="border-b border-[var(--color-border)] pb-4 space-y-2">
+        <div className="h-7 w-56 rounded bg-[var(--color-surface)]" />
+        <div className="h-4 w-80 max-w-full rounded bg-[var(--color-surface)]" />
+      </div>
+      <div className="grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
+        <div className="h-72 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]" />
+        <div className="space-y-6">
+          <div className="h-32 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="aspect-[2/3] rounded-[var(--radius-card)] bg-[var(--color-surface)]"
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

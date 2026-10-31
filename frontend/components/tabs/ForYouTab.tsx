@@ -7,6 +7,7 @@ import { ProfileCard } from '@/components/features/ProfileCard';
 import { RecCard } from '@/components/features/RecCard';
 import { ModeBadge } from '@/components/features/ModeBadge';
 import { MovieDiscoveryFeed } from '@/components/features/MovieDiscoveryFeed';
+import { AIInsights } from '@/components/features/AIInsights';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -107,6 +108,14 @@ export function ForYouTab({
             </div>
           </div>
         </div>
+
+        {/* AI Insights Rectangle */}
+        <AIInsights
+          items={recData?.results || []}
+          cardType={cardType}
+          onSelectItem={onSelectItem}
+          isLoading={isLoading}
+        />
 
         {/* 3. Loading State */}
         {isLoading && (

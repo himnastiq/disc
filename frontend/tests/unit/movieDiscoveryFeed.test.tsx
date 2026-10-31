@@ -153,6 +153,7 @@ describe('MovieDiscoveryFeed Component', () => {
 
     expect(screen.getByText('The Discovery Engine')).toBeInTheDocument();
     expect(screen.getByText('SAR model')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /ai insights/i })).toBeInTheDocument();
     expect(await screen.findByText('User #1')).toBeInTheDocument();
     expect(await screen.findByText('Personalized Recommendations')).toBeInTheDocument();
   });

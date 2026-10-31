@@ -55,10 +55,10 @@ describe('ForYouTab (P9.4)', () => {
       <ForYouTab type="movies" user="1" k={10} onKChange={vi.fn()} onSelectItem={onSelectItem} />
     );
 
-    const matrixCard = await screen.findByRole('button', {
+    const matrixCards = await screen.findAllByRole('button', {
       name: /the matrix \(1999\)/i,
     });
-    fireEvent.click(matrixCard);
+    fireEvent.click(matrixCards[0]);
 
     expect(onSelectItem).toHaveBeenCalledWith(
       expect.objectContaining({ item_id: '385', title: 'The Matrix (1999)' })
@@ -74,5 +74,13 @@ describe('ForYouTab (P9.4)', () => {
 
     expect(await screen.findByText('Failed to fetch recommendations')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+  });
+
+  it('renders AI Insights rectangle for products domain', async () => {
+    renderWithClient(
+      <ForYouTab type="products" user="B0001" k={10} onKChange={vi.fn()} />
+    );
+
+    expect(await screen.findByRole('heading', { name: /ai insights/i })).toBeInTheDocument();
   });
 });

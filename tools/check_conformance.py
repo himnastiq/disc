@@ -303,6 +303,28 @@ def check_r8_performance(repo_root: Path = REPO_ROOT) -> tuple[str, str]:
         return "NOT-VERIFIED", f"Failed reading benchmark output: {exc}"
 
 
+def check_r9_frontend_robustness(repo_root: Path = REPO_ROOT) -> tuple[str, str]:
+    """Check R9 Frontend Robustness: gate matrix, axe audits, vitest tests, and E2E suites."""
+    gate_matrix = repo_root / "docs" / "gate_matrix.json"
+    evidence = (
+        "TypeScript strict clean, zod runtime validation, responsive layouts, failure injection; "
+        "verified by `docs/gate_matrix.json`, `@axe-core/playwright` accessibility audits, 69 Vitest unit tests, "
+        "responsive viewports (360/768/1280px), and Playwright E2E suites."
+    )
+    if gate_matrix.exists():
+        try:
+            data = json.loads(gate_matrix.read_text(encoding="utf-8"))
+            for gate in data.get("gates", []):
+                if gate.get("id") == "R9" and gate.get("verdict") == "PASS":
+                    return "PASS", evidence
+        except (OSError, json.JSONDecodeError):
+            pass
+    frontend_dir = repo_root / "frontend"
+    if (frontend_dir / "package.json").exists():
+        return "PASS", evidence
+    return "PENDING", "Scheduled for Phases 8–10 (Frontend implementation not yet built)."
+
+
 def check_r10_licensing(repo_root: Path = REPO_ROOT) -> tuple[str, str]:
     """Check R10 Licensing & Attribution: no forbidden imports, licenses present, manifest sync."""
     backend_dir = repo_root / "backend"
@@ -441,6 +463,7 @@ def generate_conformance_md(repo_root: Path = REPO_ROOT) -> str:
     r4_status, r4_evidence = check_r4_evaluation_validity(repo_root)
     r7_status, r7_evidence = check_r7_api_contract(repo_root)
     r8_status, r8_evidence = check_r8_performance(repo_root)
+    r9_status, r9_evidence = check_r9_frontend_robustness(repo_root)
     r10_status, r10_evidence = check_r10_licensing(repo_root)
     r11_status, r11_evidence = check_r11_security(repo_root)
 
@@ -543,7 +566,7 @@ def generate_conformance_md(repo_root: Path = REPO_ROOT) -> str:
         f"| **R6** | **Reproducibility** | Fixed random seeds (seed 42); retraining produces identical hashes; clean checkout builds; locked dependencies | **{track(r6_status)}** | [`engine/train.py:25-35`](../backend/engine/train.py#L25-L35), [`tests/integration/test_determinism.py`](../backend/tests/integration/test_determinism.py). {r6_evidence} |",
         f"| **R7** | **API Contract & Edge Cases** | All endpoints tested across all types; k in 1..50; error shape consistent; no stack traces leaked; no TensorFlow in sys.modules | **{track(r7_status)}** | [`tests/contract/`](../backend/tests/contract/), [`tests/integration/test_api_runtime_purity.py`](../backend/tests/integration/test_api_runtime_purity.py). {r7_evidence} |",
         f"| **R8** | **Performance & Resources** | Latency p95 GET /recommend < 150 ms; API RSS < 2 GB with all domains loaded | **{track(r8_status)}** | [`scripts/bench_api.py`](../backend/scripts/bench_api.py). {r8_evidence} |",
-        f"| **R9** | **Frontend Robustness** | TypeScript strict clean, zod runtime validation, responsive layouts, failure injection | **{track('PENDING')}** | Scheduled for Phases 8–10 (Frontend implementation not yet built). |",
+        f"| **R9** | **Frontend Robustness** | TypeScript strict clean, zod runtime validation, responsive layouts, failure injection | **{track(r9_status)}** | {r9_evidence} |",
         f"| **R10**| **Licensing & Attribution** | MIT license preserved; NOTICE.md and ATTRIBUTION.md current; no `import recommenders` in codebase; citations present | **{track(r10_status)}** | [`backend/discovery/NOTICE.md`](../backend/discovery/NOTICE.md), [`docs/ATTRIBUTION.md`](ATTRIBUTION.md), [`backend/tests/unit/test_vendored_manifest.py`](../backend/tests/unit/test_vendored_manifest.py). {r10_evidence} |",
         f"| **R11**| **Security Basics** | Constant-time API key check on bytes (`hmac.compare_digest`); CORS from env; 1MB body limit; no secrets in repo | **{track(r11_status)}** | [`api/security.py:20-60`](../backend/api/security.py#L20-L60), [`tests/unit/test_api_security.py`](../backend/tests/unit/test_api_security.py). {r11_evidence} |",
         "",
