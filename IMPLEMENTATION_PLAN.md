@@ -43,12 +43,12 @@
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
-| 10 | Integration and robustness audit | 5 | 0 | 0 | 8 | 62% |
+| 10 | Integration and robustness audit | 6 | 0 | 0 | 8 | 75% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **113** | | | **129** | **87%** |
+| | **Overall** | **114** | | | **129** | **88%** |
 
-`[#################---] 87%  (113/129 tasks)`
+`[#################---] 88%  (114/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -549,7 +549,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
   - Compare tab: overlap percentage (and Jaccard only if the UI shows it) versus a set computation on the `/v1/popular` and `/v1/recommend` responses, 5 users per type.
   - Independent metric check: `tools/audit_ui_consistency.py` includes a standalone numpy implementation of Recall@10 and NDCG@10 (no engine or discovery imports) and compares it with `engine.evaluation.metrics` on a fixed 200-user sample per type (tolerance 1e-9). This catches a wrong number that is displayed correctly, like the FIX-16 NDCG bug.
   - Deliverables: `tools/audit_ui_consistency.py` and `frontend/tests/e2e/data_consistency.spec.ts`. Report counts compared and mismatches (must be zero) in the Session Log.
-- [ ] **P10.4** Re-run all gates R1 to R11 on final artifacts (frozen code, see the freeze rule). *Acceptance:* every cell of the gate-by-type matrix has recorded evidence and a verdict of PASS, PASS WITH DOCUMENTED LIMITATION (linked decision entry), or FAIL with a fix task.
+- [x] **P10.4** Re-run all gates R1 to R11 on final artifacts (frozen code, see the freeze rule). *Acceptance:* every cell of the gate-by-type matrix has recorded evidence and a verdict of PASS, PASS WITH DOCUMENTED LIMITATION (linked decision entry), or FAIL with a fix task.
   - `tools/verify_all_gates.py` aggregates, it does not re-implement: it runs the existing gate tests (`test_movies_gate.py`, `test_products_gate.py`, `test_articles_gate.py`, `test_phase6_gate.py`, `test_phase7_gate.py`, `test_real_artifacts_smoke.py`, with real_data included) and adds only the checks no gate test covers yet. Output: `docs/gate_matrix.json` (committed). `tools/make_results.py` renders it as the "Robustness audit" section of `docs/RESULTS.md` and must keep the existing benchmark section intact.
   - Definitions to pin: R2 is per user for chronological splits and global for impression-time splits. R4 sanity ordering is computed per metric and k from stored values plus CIs. Where the model is below Popularity (for example Movies NDCG@5 and Precision, and MIND-small per D-025), record PASS WITH DOCUMENTED LIMITATION and link the decision. Do not tune anything to turn it green. R5 reports non-monotonic cold-start points honestly.
   - R6: SHA-256 manifests verify, `code_hash` matches the current code, and the retrain-twice hash check passes in `--fast`.

@@ -22,7 +22,7 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
       aria-label="Main Navigation Tabs"
       className="w-full border-b border-[var(--color-border)] bg-[var(--color-bg)]"
     >
-      <div className="max-w-[52rem] mx-auto px-4 sm:px-6">
+      <div className="max-w-shell mx-auto px-4 sm:px-6">
         <div
           role="tablist"
           className="-mb-px flex space-x-2 sm:space-x-6 overflow-x-auto no-scrollbar"
@@ -36,7 +36,7 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
                 aria-selected={isActive}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => onTabChange(tab.id)}
-                className={`relative flex items-center gap-1.5 sm:gap-2 whitespace-nowrap py-3.5 px-2 text-xs font-medium min-h-[48px] transition-all cursor-pointer ${
+                className={`relative flex items-center gap-1.5 sm:gap-2 whitespace-nowrap py-3.5 px-2 text-sm font-medium min-h-[48px] transition-all cursor-pointer ${
                   isActive
                     ? 'text-[var(--color-accent-text)] font-semibold'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'

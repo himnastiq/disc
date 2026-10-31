@@ -1,0 +1,123 @@
+{
+  "timestamp": "2026-10-31T01:03:36.446624+00:00",
+  "git_sha": "9e31e65d1b4ca48646f7cc6d690e9c9cf669a0cd",
+  "code_hash": "d827101176ecb1e08c727cf5f9bf790b8f7850571457a935babf5c1e08fbf135",
+  "system_info": {
+    "os": "Windows-10-10.0.26100-SP0",
+    "python": "3.11.7",
+    "machine": "AMD64",
+    "processor": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel"
+  },
+  "gates": [
+    {
+      "id": "R1",
+      "name": "Data Validity & Reporting",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "Complete data validation reports generated and verified on all three domains.",
+      "evidence": "movies: verified (interactions=999611, sparsity=0.9516); products: verified (interactions=231780, sparsity=0.9991); articles: verified (interactions=2353960, sparsity=0.9995)"
+    },
+    {
+      "id": "R2",
+      "name": "Temporal Split Non-Leakage",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "Chronological per-user split for Movies/Products; impression-time split for Articles (F-003, D-021).",
+      "evidence": "Leakage tests pass on real data splits with zero future interactions in training."
+    },
+    {
+      "id": "R3",
+      "name": "Recommendation Invariants",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "Mode agreement, exclusions honored, reasons faithful, scores sorted descending.",
+      "evidence": "Verified across TestClient and real running server via test_phase7_gate.py and test_phase10_adversarial.py."
+    },
+    {
+      "id": "R4",
+      "name": "Evaluation Baselines & Sanity Ordering",
+      "movies": "PASS WITH DOCUMENTED LIMITATION",
+      "products": "PASS",
+      "articles": "PASS WITH DOCUMENTED LIMITATION",
+      "verdict": "PASS WITH DOCUMENTED LIMITATION",
+      "note": "Movies NDCG@5 below popularity on dense collaborative data (D-016); MIND-small impression sparsity documented in D-025.",
+      "evidence": "Bootstrap 95% confidence intervals computed; Random < Popularity < Model ordering verified where significant."
+    },
+    {
+      "id": "R5",
+      "name": "Cold-Start Degradation & Attribution",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "Cold-start curves computed across sizes 0..20; faithful explanations verified (P3.7, P5.7).",
+      "evidence": "Curves stored in metrics.json; fallback to popularity when likes < threshold verified in UI and API."
+    },
+    {
+      "id": "R6",
+      "name": "Reproducibility & Integrity",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "SHA-256 manifests match all artifact files; code_hash matches current frozen sources.",
+      "evidence": "movies: SHA-256 manifest and code_hash verified; products: SHA-256 manifest and code_hash verified; articles: SHA-256 manifest and code_hash verified"
+    },
+    {
+      "id": "R7",
+      "name": "Contract & Property Testing",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "OpenAPI schema synchronized; property-based fuzz tests pass with zero unhandled 500 errors.",
+      "evidence": "12 API endpoints contract-verified; standard error response shape enforced across all status codes."
+    },
+    {
+      "id": "R8",
+      "name": "Latency & Resource Budgets",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "p95 latency < 150ms for recommend, cold-start < 300ms, peak process RSS 1771.9 MB (< 2048 MB budget).",
+      "evidence": "Warm-up 50, load 500 requests per endpoint; pure numpy/scipy runtime without deep learning imports (P7.12)."
+    },
+    {
+      "id": "R9",
+      "name": "Frontend Quality & Accessibility",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "WCAG 2.1 AA certified with @axe-core/playwright (0 serious/critical violations); 100% data consistency verified.",
+      "evidence": "Responsive across 360/768/1280px; keyboard focus traps, reduced motion respected, Vitest 69/69 passing."
+    },
+    {
+      "id": "R10",
+      "name": "Licensing & Attribution",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "MIT attribution to Microsoft Recommenders preserved; dataset licenses documented in DATASETS.md.",
+      "evidence": "tools/vendored_manifest.py verified; zero external 'recommenders' pip dependency."
+    },
+    {
+      "id": "R11",
+      "name": "Security & Supply Chain",
+      "movies": "PASS",
+      "products": "PASS",
+      "articles": "PASS",
+      "verdict": "PASS",
+      "note": "pip-audit (0 vulns), npm audit (0 vulns), git secrets scan (0 leaks), CORS wildcard production guard (D-032).",
+      "evidence": "RFC 413 chunked body limits, constant-time API key comparisons, CSP/nosniff headers configured."
+    }
+  ]
+}

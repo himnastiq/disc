@@ -41,7 +41,7 @@ export function AboutTab() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8">
       {/* 1. Header & System Attribution Banner */}
       <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--color-border)] pb-4">
@@ -52,11 +52,11 @@ export function AboutTab() {
                 {aboutData.title} <span className="text-xs text-[var(--color-accent-text)] font-mono">v{aboutData.version}</span>
               </h2>
             </div>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
               {aboutData.description}
             </p>
           </div>
-          <div className="rounded bg-[var(--color-elevated)] border border-[var(--color-border)] px-3 py-1.5 text-[11px] text-[var(--color-text-muted)]">
+          <div className="rounded bg-[var(--color-elevated)] border border-[var(--color-border)] px-3 py-1.5 text-[12px] text-[var(--color-text-muted)]">
             MIT Licensed Reference Implementation
           </div>
         </div>
@@ -71,7 +71,7 @@ export function AboutTab() {
               href="https://github.com/recommenders-team/recommenders"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[var(--color-accent-text)] hover:underline text-[11px]"
+              className="inline-flex items-center gap-1 text-[var(--color-accent-text)] hover:underline text-[12px]"
             >
               <span>recommenders-team/recommenders</span>
               <ExternalLink className="h-3 w-3" />
@@ -84,7 +84,7 @@ export function AboutTab() {
             trimmed of heavy framework dependencies (TensorFlow, PyTorch, Azure, Spark) and patched for minimal compatibility
             while maintaining mathematical equivalence.
           </p>
-          <p className="text-[11px] text-[var(--color-text-muted)] italic">
+          <p className="text-[12px] text-[var(--color-text-muted)] italic">
             {aboutData.non_commercial_notice}
           </p>
         </div>
@@ -96,7 +96,7 @@ export function AboutTab() {
           <Layers className="h-4 w-4 text-[var(--color-accent)]" />
           <span>System Architecture & Pipeline Flow</span>
         </h3>
-        <p className="text-xs text-[var(--color-text-secondary)]">
+        <p className="text-sm text-[var(--color-text-secondary)]">
           Decoupled end-to-end architecture from raw multi-domain datasets to FastAPI serving and Next.js frontend.
         </p>
 
@@ -185,7 +185,7 @@ export function AboutTab() {
           <Code2 className="h-4 w-4 text-[var(--color-accent)]" />
           <span>Original vs. Derived Codebase Division</span>
         </h3>
-        <p className="text-xs text-[var(--color-text-secondary)]">
+        <p className="text-sm text-[var(--color-text-secondary)]">
           Full transparency regarding newly authored code versus third-party open-source algorithms.
         </p>
 
@@ -207,7 +207,7 @@ export function AboutTab() {
               <tr className="hover:bg-[var(--color-elevated)]/40 transition-colors">
                 <td className="py-2.5 pr-4 font-mono text-[var(--color-text)]">backend/discovery/</td>
                 <td className="py-2.5 px-3">
-                  <span className="rounded bg-amber-950/40 text-amber-400 border border-amber-800/40 px-2 py-0.5 text-[10px] font-semibold">
+                  <span className="rounded bg-amber-950/40 text-amber-400 border border-amber-800/40 px-2 py-0.5 text-[12px] font-semibold">
                     Derived (MIT)
                   </span>
                 </td>
@@ -218,7 +218,7 @@ export function AboutTab() {
               <tr className="hover:bg-[var(--color-elevated)]/40 transition-colors">
                 <td className="py-2.5 pr-4 font-mono text-[var(--color-text)]">backend/engine/</td>
                 <td className="py-2.5 px-3">
-                  <span className="rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 px-2 py-0.5 text-[10px] font-semibold">
+                  <span className="rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 px-2 py-0.5 text-[12px] font-semibold">
                     Original Work
                   </span>
                 </td>
@@ -229,7 +229,7 @@ export function AboutTab() {
               <tr className="hover:bg-[var(--color-elevated)]/40 transition-colors">
                 <td className="py-2.5 pr-4 font-mono text-[var(--color-text)]">backend/api/</td>
                 <td className="py-2.5 px-3">
-                  <span className="rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 px-2 py-0.5 text-[10px] font-semibold">
+                  <span className="rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 px-2 py-0.5 text-[12px] font-semibold">
                     Original Work
                   </span>
                 </td>
@@ -240,7 +240,7 @@ export function AboutTab() {
               <tr className="hover:bg-[var(--color-elevated)]/40 transition-colors">
                 <td className="py-2.5 pr-4 font-mono text-[var(--color-text)]">frontend/</td>
                 <td className="py-2.5 px-3">
-                  <span className="rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 px-2 py-0.5 text-[10px] font-semibold">
+                  <span className="rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 px-2 py-0.5 text-[12px] font-semibold">
                     Original Work
                   </span>
                 </td>
@@ -268,14 +268,14 @@ export function AboutTab() {
             >
               <div className="flex items-center justify-between">
                 <h4 className="font-bold text-[var(--color-text)]">{attr.name}</h4>
-                <span className="text-[10px] font-semibold text-[var(--color-accent-text)] bg-[var(--color-bg)] px-2 py-0.5 rounded border border-[var(--color-border)]">
+                <span className="text-[12px] font-semibold text-[var(--color-accent-text)] bg-[var(--color-bg)] px-2 py-0.5 rounded border border-[var(--color-border)]">
                   {attr.license}
                 </span>
               </div>
               <p className="text-[var(--color-text-secondary)] italic leading-relaxed font-serif">
                 &ldquo;{attr.citation}&rdquo;
               </p>
-              <div className="flex items-center justify-between pt-1 text-[11px]">
+              <div className="flex items-center justify-between pt-1 text-[12px]">
                 <span className="text-[var(--color-text-muted)]">{attr.original_vs_derived}</span>
                 <a
                   href={attr.source_url}
@@ -294,14 +294,14 @@ export function AboutTab() {
           <div className="rounded-[var(--radius-card)] bg-[var(--color-elevated)] border border-[var(--color-border)] p-4 space-y-1.5">
             <div className="flex items-center justify-between">
               <h4 className="font-bold text-[var(--color-text)]">MIND: Microsoft News Dataset</h4>
-              <span className="text-[10px] font-semibold text-neutral-300 bg-[var(--color-bg)] px-2 py-0.5 rounded border border-[var(--color-border)]">
+              <span className="text-[12px] font-semibold text-neutral-300 bg-[var(--color-bg)] px-2 py-0.5 rounded border border-[var(--color-border)]">
                 Microsoft Research MSR-LA License
               </span>
             </div>
             <p className="text-[var(--color-text-secondary)] italic leading-relaxed font-serif">
               &ldquo;Wu, F., et al. (2020). MIND: A Large-scale Dataset for News Recommendation. Proceedings of the 58th Annual Meeting of the ACL, 3597–3606.&rdquo;
             </p>
-            <p className="text-[11px] text-[var(--color-text-muted)] pt-0.5">
+            <p className="text-[12px] text-[var(--color-text-muted)] pt-0.5">
               Includes fallback support for synthetic offline test partitions (explicitly marked in provenance banners) to guarantee 100% offline reproducibility without external network downloads.
             </p>
           </div>
@@ -327,7 +327,7 @@ export function AboutTab() {
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <span>Known Limitations & Failure Modes (Decision Record D-018)</span>
         </h3>
-        <p className="text-xs text-[var(--color-text-secondary)]">
+        <p className="text-sm text-[var(--color-text-secondary)]">
           Intellectual honesty regarding collaborative filtering trade-offs and domain assumptions.
         </p>
 

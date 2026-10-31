@@ -1,11 +1,24 @@
 @import "tailwindcss";
 
+/* Tailwind v4 defaults `dark:` to prefers-color-scheme. The app is forced to the
+   `.dark` class, so bind the variant to that instead. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Hide scrollbar on horizontally scrolling tab strip (was referenced but never defined) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @theme {
   /* Surfaces */
   --color-bg: #0A0A0A;
   --color-surface: #141414;
   --color-elevated: #1F1F1F;
   --color-border: #2A2A2A;
+  --color-border-strong: #3E3E3E;
 
   /* Text */
   --color-text: #F5F5F1;
@@ -22,11 +35,13 @@
   --color-success: #46D369;
   --color-error: #FF7A59;
 
-  /* Type */
+  /* Type — lift the floor: Tailwind's 12px text-xs was the default for most UI copy */
   --font-sans: var(--font-bricolage), sans-serif;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
 
   /* Shape and size */
-  --container-shell: 52rem;
+  --container-shell: 72rem;
   --radius-card: 6px;
 }
 

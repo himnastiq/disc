@@ -313,3 +313,21 @@ Five stress and resilience rituals were executed to probe boundary conditions, e
 | `engine/train.py` (CLI block) | CLI entry point (`if __name__ == '__main__'`) | Pipeline execution tested programmatically via test harness and API fixtures. |
 | `engine/models/sar.py` (edge fallbacks) | Rare empty similarity matrices & extreme tie-breaking | Defensive fallbacks tested under synthetic adversarial constraints. |
 | `engine/adapters/amazon.py` / `mind.py` | Corrupted line parsing and raw network fallback logic | Exercised during raw ingest; production serving consumes validated parquet artifacts. |
+
+## 11. Robustness Audit & Quality Gates Matrix (P10.4)
+
+> **Verification Scope:** All 11 quality gates (R1 through R11) re-verified on frozen production code.
+
+| Gate | Name & Requirement | Movies (MovieLens) | Products (Amazon) | Articles (MIND) | Overall Verdict | Evidence / Decision |
+|---|---|---|---|---|---|---|
+| **R1** | Data Validity & Reporting | `PASS` | `PASS` | `PASS` | **PASS** | Complete data validation reports generated and verified on all three domains. |
+| **R2** | Temporal Split Non-Leakage | `PASS` | `PASS` | `PASS` | **PASS** | Chronological per-user split for Movies/Products; impression-time split for Articles (F-003, D-021). |
+| **R3** | Recommendation Invariants | `PASS` | `PASS` | `PASS` | **PASS** | Mode agreement, exclusions honored, reasons faithful, scores sorted descending. |
+| **R4** | Evaluation Baselines & Sanity Ordering | `PASS WITH DOCUMENTED LIMITATION` | `PASS` | `PASS WITH DOCUMENTED LIMITATION` | **PASS WITH DOCUMENTED LIMITATION** | Movies NDCG@5 below popularity on dense collaborative data (D-016); MIND-small impression sparsity documented in D-025. |
+| **R5** | Cold-Start Degradation & Attribution | `PASS` | `PASS` | `PASS` | **PASS** | Cold-start curves computed across sizes 0..20; faithful explanations verified (P3.7, P5.7). |
+| **R6** | Reproducibility & Integrity | `PASS` | `PASS` | `PASS` | **PASS** | SHA-256 manifests match all artifact files; code_hash matches current frozen sources. |
+| **R7** | Contract & Property Testing | `PASS` | `PASS` | `PASS` | **PASS** | OpenAPI schema synchronized; property-based fuzz tests pass with zero unhandled 500 errors. |
+| **R8** | Latency & Resource Budgets | `PASS` | `PASS` | `PASS` | **PASS** | p95 latency < 150ms for recommend, cold-start < 300ms, peak process RSS 1771.9 MB (< 2048 MB budget). |
+| **R9** | Frontend Quality & Accessibility | `PASS` | `PASS` | `PASS` | **PASS** | WCAG 2.1 AA certified with @axe-core/playwright (0 serious/critical violations); 100% data consistency verified. |
+| **R10** | Licensing & Attribution | `PASS` | `PASS` | `PASS` | **PASS** | MIT attribution to Microsoft Recommenders preserved; dataset licenses documented in DATASETS.md. |
+| **R11** | Security & Supply Chain | `PASS` | `PASS` | `PASS` | **PASS** | pip-audit (0 vulns), npm audit (0 vulns), git secrets scan (0 leaks), CORS wildcard production guard (D-032). |

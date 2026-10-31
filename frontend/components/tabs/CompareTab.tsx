@@ -202,7 +202,7 @@ export function CompareTab({
               <p className="font-semibold text-[var(--color-text)]">
                 {overlapInfo.overlapCount} of {k} items overlap ({overlapInfo.percentage}%)
               </p>
-              <p className="text-[11px] text-[var(--color-text-secondary)]">
+              <p className="text-[12px] text-[var(--color-text-secondary)]">
                 {compareMode === 'popular-vs-user'
                   ? `${100 - overlapInfo.percentage}% distinct personalized recommendations beyond the global popularity baseline.`
                   : `Pairwise Jaccard similarity: ${overlapInfo.jaccard}% between personas.`}
@@ -210,7 +210,7 @@ export function CompareTab({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-muted)]">
+          <div className="flex items-center gap-1.5 text-[12px] text-[var(--color-text-muted)]">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--color-accent)]" />
             <span>Illuminated cards indicate shared items</span>
           </div>
@@ -219,10 +219,10 @@ export function CompareTab({
 
       {/* 4. Loading State */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-3">
             <Skeleton className="h-6 w-1/3 bg-[var(--color-elevated)]" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="aspect-[2/3] bg-[var(--color-elevated)]" />
               ))}
@@ -230,7 +230,7 @@ export function CompareTab({
           </div>
           <div className="space-y-3">
             <Skeleton className="h-6 w-1/3 bg-[var(--color-elevated)]" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="aspect-[2/3] bg-[var(--color-elevated)]" />
               ))}
@@ -260,7 +260,7 @@ export function CompareTab({
 
       {/* 6. Side-by-Side Comparison Columns */}
       {!isLoading && !isError && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Column A */}
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2">
@@ -282,23 +282,18 @@ export function CompareTab({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
               {(compareMode === 'popular-vs-user' ? popularData?.results : userAData?.results)?.map((item) => {
                 const isShared = overlapInfo.sharedIds.has(item.item_id);
                 return (
-                  <div key={item.item_id} className="relative">
-                    <RecCard
-                      item={item}
-                      cardType={cardType}
-                      onSelect={onSelectItem}
-                      className={isShared ? 'ring-2 ring-[var(--color-accent)] border-[var(--color-accent)]/80' : ''}
-                    />
-                    {isShared && (
-                      <span className="absolute bottom-3 right-3 z-10 rounded-[3px] bg-[var(--color-accent)] px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
-                        In both lists
-                      </span>
-                    )}
-                  </div>
+                  <RecCard
+                    key={item.item_id}
+                    item={item}
+                    cardType={cardType}
+                    onSelect={onSelectItem}
+                    sharedLabel={isShared ? 'In both lists' : undefined}
+                    className={isShared ? 'ring-2 ring-[var(--color-accent)] border-[var(--color-accent)]/80' : ''}
+                  />
                 );
               })}
             </div>
@@ -325,23 +320,18 @@ export function CompareTab({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
               {(compareMode === 'popular-vs-user' ? userAData?.results : userBData?.results)?.map((item) => {
                 const isShared = overlapInfo.sharedIds.has(item.item_id);
                 return (
-                  <div key={item.item_id} className="relative">
-                    <RecCard
-                      item={item}
-                      cardType={cardType}
-                      onSelect={onSelectItem}
-                      className={isShared ? 'ring-2 ring-[var(--color-accent)] border-[var(--color-accent)]/80' : ''}
-                    />
-                    {isShared && (
-                      <span className="absolute bottom-3 right-3 z-10 rounded-[3px] bg-[var(--color-accent)] px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
-                        In both lists
-                      </span>
-                    )}
-                  </div>
+                  <RecCard
+                    key={item.item_id}
+                    item={item}
+                    cardType={cardType}
+                    onSelect={onSelectItem}
+                    sharedLabel={isShared ? 'In both lists' : undefined}
+                    className={isShared ? 'ring-2 ring-[var(--color-accent)] border-[var(--color-accent)]/80' : ''}
+                  />
                 );
               })}
             </div>

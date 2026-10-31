@@ -13,6 +13,8 @@ export interface RecCardProps {
   cardType?: 'movie' | 'product' | 'article';
   onSelect?: (item: ScoredItem) => void;
   priority?: boolean;
+  /** Optional chip rendered in the footer (e.g. "In both lists" on the Compare tab). */
+  sharedLabel?: string;
   className?: string;
 }
 
@@ -21,6 +23,7 @@ export function RecCard({
   cardType = 'movie',
   onSelect,
   priority = false,
+  sharedLabel,
   className = '',
 }: RecCardProps) {
   const [imageError, setImageError] = useState(false);
@@ -52,9 +55,9 @@ export function RecCard({
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={`group flex flex-col justify-between rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-150 cursor-pointer hover:border-[#3E3E3E] hover:bg-[var(--color-elevated)]/50 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)] ${className}`}
+      className={`group flex flex-col justify-between rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 sm:p-4 transition-all duration-150 cursor-pointer hover:border-[var(--color-border-strong)] hover:bg-[var(--color-elevated)]/50 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-text)] ${className}`}
     >
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {/* 1. Media / Poster Slot (Ratio 2:3 for movies/products; compact header for articles) */}
         {cardType !== 'article' ? (
           <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[4px] bg-[var(--color-elevated)] border border-[var(--color-border)]">
@@ -76,14 +79,14 @@ export function RecCard({
                 ) : (
                   <ShoppingBag className="h-8 w-8 mb-2 opacity-40 text-[var(--color-accent)]" />
                 )}
-                <span className="text-[11px] font-medium line-clamp-2 text-[var(--color-text-secondary)]">
+                <span className="text-[12px] font-medium line-clamp-2 text-[var(--color-text-secondary)]">
                   {item.title}
                 </span>
               </div>
             )}
 
             {/* Score Pill in Top Corner */}
-            <div className="absolute top-1.5 right-1.5 flex items-center gap-1 rounded-[3px] bg-[var(--color-bg)]/90 px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-text)] tabular-nums border border-[var(--color-border)] shadow-sm">
+            <div className="absolute top-1.5 right-1.5 flex items-center gap-1 rounded-[3px] bg-[var(--color-bg)]/90 px-1.5 py-0.5 text-[12px] font-bold text-[var(--color-text)] tabular-nums border border-[var(--color-border)] shadow-sm">
               <Star className="h-2.5 w-2.5 fill-[var(--color-accent)] text-[var(--color-accent)]" />
               <span>{matchPercentage}%</span>
             </div>
@@ -93,11 +96,11 @@ export function RecCard({
           <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2 text-xs">
             <div className="flex items-center gap-1.5 text-[var(--color-text-secondary)]">
               <Newspaper className="h-3.5 w-3.5 text-[var(--color-accent)]" />
-              <span className="text-[11px] font-semibold text-[var(--color-text)]">
+              <span className="text-[12px] font-semibold text-[var(--color-text)]">
                 {item.categories[0] || 'News'}
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[10px] font-bold text-[var(--color-text)] tabular-nums">
+            <div className="flex items-center gap-1 text-[12px] font-bold text-[var(--color-text)] tabular-nums">
               <Star className="h-2.5 w-2.5 fill-[var(--color-accent)] text-[var(--color-accent)]" />
               <span>{matchPercentage}%</span>
             </div>
@@ -107,7 +110,7 @@ export function RecCard({
         {/* 2. Text Content & Hierarchy */}
         <div className="space-y-1.5">
           {/* Title clamped to max 2 lines */}
-          <h4 className="font-bold text-xs sm:text-sm text-[var(--color-text)] line-clamp-2 leading-snug group-hover:text-[var(--color-accent-text)] transition-colors">
+          <h4 className="font-bold text-sm text-[var(--color-text)] line-clamp-2 leading-snug group-hover:text-[var(--color-accent-text)] transition-colors">
             {item.title}
           </h4>
 
@@ -142,7 +145,7 @@ export function RecCard({
                 <Badge
                   key={cat}
                   variant="outline"
-                  className="text-[10px] px-1.5 py-0 bg-[var(--color-elevated)]/40 border-[var(--color-border)] text-[var(--color-text-secondary)]"
+                  className="text-[12px] px-1.5 py-0 bg-[var(--color-elevated)]/40 border-[var(--color-border)] text-[var(--color-text-secondary)]"
                 >
                   {cat}
                 </Badge>
@@ -153,8 +156,13 @@ export function RecCard({
       </div>
 
       {/* 3. Footer: Attribution Reason */}
-      <div className="mt-3 pt-2 border-t border-[var(--color-border)]">
+      <div className="mt-4 pt-3 border-t border-[var(--color-border)] space-y-2">
         <ReasonBadge reason={item.reason} />
+        {sharedLabel && (
+          <span className="inline-flex rounded-[3px] bg-[var(--color-accent)] px-1.5 py-0.5 text-[12px] font-bold text-white">
+            {sharedLabel}
+          </span>
+        )}
       </div>
     </article>
   );

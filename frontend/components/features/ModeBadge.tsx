@@ -13,7 +13,7 @@ export function ModeBadge({ mode, className = '' }: ModeBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[10px] font-semibold tracking-wider uppercase border ${
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[12px] font-semibold tracking-wider uppercase border ${
         isPersonalized
           ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent-text)] border-[var(--color-accent)]/20'
           : 'bg-[var(--color-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border)]'

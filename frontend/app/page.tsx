@@ -83,7 +83,7 @@ function DashboardContent() {
       />
       <TabNavigation activeTab={tab} onTabChange={setTab} />
 
-      <main className="flex-1 max-w-[52rem] w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-shell w-full mx-auto px-4 sm:px-6 py-8 lg:py-10">
         {/* Tab 1: For You */}
         {tab === 'for-you' && (
           <ForYouTab
@@ -137,7 +137,7 @@ export default function DashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] p-6 space-y-6 max-w-[52rem] mx-auto">
+        <div className="min-h-screen flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] p-6 space-y-6 max-w-shell mx-auto">
           <Skeleton className="h-16 w-full rounded-[var(--radius-card)] bg-[var(--color-surface)]" />
           <Skeleton className="h-12 w-full rounded-[var(--radius-card)] bg-[var(--color-surface)]" />
           <Skeleton className="h-96 w-full rounded-[var(--radius-card)] bg-[var(--color-surface)]" />

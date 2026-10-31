@@ -20,8 +20,8 @@ export function AppHeader({
   onUserChange,
 }: AppHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[var(--color-border)] bg-[var(--color-bg)]">
-      <div className="max-w-[52rem] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+    <header className="sm:sticky sm:top-0 z-40 w-full border-b border-[var(--color-border)] bg-[var(--color-bg)]">
+      <div className="max-w-shell mx-auto px-4 sm:px-6 min-h-16 py-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         {/* Product Brand */}
         <div className="flex items-center gap-2.5">
           <div className="h-7 w-7 rounded-[4px] bg-[var(--color-accent)] text-white flex items-center justify-center font-bold text-xs shadow-sm">

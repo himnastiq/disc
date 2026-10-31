@@ -85,7 +85,7 @@ export function ProfileCard({ type, userId }: ProfileCardProps) {
             <h3 className="font-bold text-sm sm:text-base text-[var(--color-text)] flex items-center gap-2">
               <span>User #{profile.user_id}</span>
               {profile.persona && (
-                <span className="text-[10px] font-medium text-[var(--color-accent-text)] bg-[var(--color-accent)]/10 px-1.5 py-0.5 rounded-[4px] border border-[var(--color-accent)]/20">
+                <span className="text-[12px] font-medium text-[var(--color-accent-text)] bg-[var(--color-accent)]/10 px-1.5 py-0.5 rounded-[4px] border border-[var(--color-accent)]/20">
                   {profile.persona}
                 </span>
               )}
@@ -100,19 +100,19 @@ export function ProfileCard({ type, userId }: ProfileCardProps) {
       {/* Numerical Stats Grid */}
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="rounded-[4px] bg-[var(--color-elevated)]/60 border border-[var(--color-border)] p-2.5">
-          <span className="text-[11px] text-[var(--color-text-muted)] block">Total Interactions</span>
+          <span className="text-[12px] text-[var(--color-text-muted)] block">Total Interactions</span>
           <span className="text-base font-bold text-[var(--color-text)] tabular-nums">
             {profile.interaction_count}
           </span>
         </div>
         <div className="rounded-[4px] bg-[var(--color-elevated)]/60 border border-[var(--color-border)] p-2.5">
-          <span className="text-[11px] text-[var(--color-text-muted)] block">Positive Signals</span>
+          <span className="text-[12px] text-[var(--color-text-muted)] block">Positive Signals</span>
           <span className="text-base font-bold text-[var(--color-success)] tabular-nums">
             {profile.positive_count}
           </span>
         </div>
         <div className="rounded-[4px] bg-[var(--color-elevated)]/60 border border-[var(--color-border)] p-2.5">
-          <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1">
+          <span className="text-[12px] text-[var(--color-text-muted)] flex items-center gap-1">
             <Calendar className="h-3 w-3" /> First Active
           </span>
           <span className="text-xs font-semibold text-[var(--color-text-secondary)] tabular-nums mt-0.5 block">
@@ -120,7 +120,7 @@ export function ProfileCard({ type, userId }: ProfileCardProps) {
           </span>
         </div>
         <div className="rounded-[4px] bg-[var(--color-elevated)]/60 border border-[var(--color-border)] p-2.5">
-          <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1">
+          <span className="text-[12px] text-[var(--color-text-muted)] flex items-center gap-1">
             <Clock className="h-3 w-3" /> Last Active
           </span>
           <span className="text-xs font-semibold text-[var(--color-text-secondary)] tabular-nums mt-0.5 block">
@@ -146,7 +146,7 @@ export function ProfileCard({ type, userId }: ProfileCardProps) {
                       {cat.category}
                     </span>
                     <div className="flex items-center gap-2 tabular-nums text-xs">
-                      <span className="text-[11px] text-[var(--color-text-muted)]">
+                      <span className="text-[12px] text-[var(--color-text-muted)]">
                         {cat.count} items
                       </span>
                       <span className="font-semibold text-[var(--color-text)]">
@@ -192,7 +192,7 @@ export function ProfileCard({ type, userId }: ProfileCardProps) {
                   <p className="font-medium text-[var(--color-text)] truncate">
                     {item.title}
                   </p>
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+                  <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
                     {formatDateUtc(item.timestamp)}
                   </p>
                 </div>

@@ -19,7 +19,7 @@ export function ReasonBadge({ reason, className = '' }: ReasonBadgeProps) {
   return (
     <div
       title={reason.text}
-      className={`flex items-center gap-1.5 text-[11px] text-[var(--color-text-secondary)] overflow-hidden ${className}`}
+      className={`flex items-center gap-1.5 text-[12px] text-[var(--color-text-secondary)] overflow-hidden ${className}`}
     >
       {isPopular ? (
         <TrendingUp className="h-3 w-3 shrink-0 text-[var(--color-text-muted)]" />

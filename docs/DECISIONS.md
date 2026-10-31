@@ -852,6 +852,39 @@ Quality Gate R7 and R8 coverage requirements are satisfied, providing verified r
 
 ---
 
+## D-034: Full Quality Gates Aggregation and Code Freeze Record (P10.4)
+
+**Date:** 2026-10-31
+**Status:** Approved
+
+**Context:**
+Task P10.4 requires formal re-verification and aggregation of all 11 architectural quality gates (R1 through R11) across Movies, Products, and Articles domains on final frozen production artifacts. It mandates creating `tools/verify_all_gates.py`, persisting the aggregated gate results to `docs/gate_matrix.json`, embedding the matrix into `docs/RESULTS.md`, and enforcing the Code Freeze Rule.
+
+**Code Freeze Record:**
+- **Git Commit SHA:** `9e31e65d1b4ca48646f7cc6d690e9c9cf669a0cd`
+- **Code SHA-256 Digest:** `d827101176ecb1e08c727cf5f9bf790b8f7850571457a935babf5c1e08fbf135` (normalized LF SHA-256 across all Python source files in `engine/` and `discovery/`)
+- **Manifest Integrity:** All 3 production manifests (`artifacts/movies/manifest.json`, `artifacts/products/manifest.json`, `artifacts/articles/manifest.json`) verified against data file SHA-256 hashes with matching `code_hash`.
+
+**Gate Verdict Summary:**
+1. **Gate R1 (Data Validity & Reporting):** `PASS` (validation reports present with interaction counts, catalog sizes, sparsity, and temporal bounds across all 3 domains).
+2. **Gate R2 (Temporal Split Non-Leakage):** `PASS` (chronological per-user split for Movies/Products; impression-time split for Articles; zero future interaction leakage).
+3. **Gate R3 (Recommendation Invariants):** `PASS` (mode agreement, zero seen items in recommendations, k bounding, descending score order, and faithful explanations).
+4. **Gate R4 (Evaluation Baselines & Sanity Ordering):** `PASS WITH DOCUMENTED LIMITATION` (MovieLens collaborative dense corpus popularity trade-offs documented in D-016; MIND-small news impression sparsity documented in D-025).
+5. **Gate R5 (Cold-Start Degradation & Attribution):** `PASS` (degradation curves evaluated across history sizes 0..20; popularity fallback when signal evidence < threshold).
+6. **Gate R6 (Reproducibility & Integrity):** `PASS` (all manifest file hashes match disk contents; code_hash aligns with frozen codebase).
+7. **Gate R7 (Contract & Property Testing):** `PASS` (OpenAPI schema matches; fuzzing with Hypothesis yields zero 500 errors).
+8. **Gate R8 (Latency & Resource Budgets):** `PASS` (p95 < 150ms for recommend, cold-start < 300ms, peak RSS 1771.9 MB < 2048 MB budget; pure numpy/scipy runtime without deep learning imports).
+9. **Gate R9 (Frontend Quality & Accessibility):** `PASS` (WCAG 2.1 AA compliant via @axe-core/playwright; 0 serious/critical violations; exact numerical consistency with metrics.json).
+10. **Gate R10 (Licensing & Attribution):** `PASS` (MIT attribution to Microsoft Recommenders preserved; dataset terms documented in DATASETS.md; 0 external recommenders pip dependency).
+11. **Gate R11 (Security & Supply Chain):** `PASS` (pip-audit 0 vulns, npm audit 0 vulns, git secrets scan 0 leaks, RFC 413 chunked body limits, strict CORS production guard).
+
+**Consequences:**
+The codebase and artifacts are officially frozen. Any subsequent modifications to `engine/`, `api/`, `discovery/`, or `frontend/src/` require re-executing P10.4 and P10.7.
+
+**Related tasks:** P10.4, R1-R11
+
+---
+
 <!-- Add new entries above this line -->
 
 

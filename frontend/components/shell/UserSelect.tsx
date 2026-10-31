@@ -159,7 +159,7 @@ export function UserSelect({ currentType, currentUser, onUserChange }: UserSelec
                 {/* Demo Users Section */}
                 {demoUsers.length > 0 && (
                   <div>
-                    <div className="px-2 py-1 text-[10px] font-semibold tracking-wider uppercase text-[var(--color-text-muted)] flex items-center gap-1">
+                    <div className="px-2 py-1 text-[12px] font-semibold tracking-wider uppercase text-[var(--color-text-muted)] flex items-center gap-1">
                       <Sparkles className="h-3 w-3 text-[var(--color-accent)]" /> Demo Personas
                     </div>
                     {demoUsers.map((u) => {
@@ -186,16 +186,16 @@ export function UserSelect({ currentType, currentUser, onUserChange }: UserSelec
                           <div className="min-w-0 pr-2">
                             <div className="font-semibold text-[var(--color-text)] flex items-center gap-1.5">
                               <span>User #{u.user_id}</span>
-                              <span className="text-[10px] font-medium text-[var(--color-accent-text)] bg-[var(--color-accent)]/10 px-1 py-0.2 rounded">
+                              <span className="text-[12px] font-medium text-[var(--color-accent-text)] bg-[var(--color-accent)]/10 px-1 py-0.5 rounded">
                                 Demo
                               </span>
                             </div>
                             {u.persona && (
-                              <p className="text-[11px] text-[var(--color-text-secondary)] truncate">
+                              <p className="text-[12px] text-[var(--color-text-secondary)] truncate">
                                 {u.persona}
                               </p>
                             )}
-                            <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
                               {u.interaction_count} ratings · {u.top_categories.slice(0, 2).join(', ')}
                             </p>
                           </div>
@@ -212,7 +212,7 @@ export function UserSelect({ currentType, currentUser, onUserChange }: UserSelec
                 {regularUsers.length > 0 && (
                   <div className={demoUsers.length > 0 ? 'mt-2 pt-1 border-t border-[var(--color-border)]' : ''}>
                     {demoUsers.length > 0 && (
-                      <div className="px-2 py-1 text-[10px] font-semibold tracking-wider uppercase text-[var(--color-text-muted)]">
+                      <div className="px-2 py-1 text-[12px] font-semibold tracking-wider uppercase text-[var(--color-text-muted)]">
                         Sampled Users
                       </div>
                     )}
@@ -242,7 +242,7 @@ export function UserSelect({ currentType, currentUser, onUserChange }: UserSelec
                               User #{u.user_id}
                             </span>
                             {u.persona && (
-                              <span className="text-[11px] text-[var(--color-text-muted)] ml-2">
+                              <span className="text-[12px] text-[var(--color-text-muted)] ml-2">
                                 ({u.persona})
                               </span>
                             )}

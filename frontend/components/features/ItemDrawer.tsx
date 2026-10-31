@@ -276,17 +276,17 @@ export function ItemDrawer({
                           onSelectItem?.(sim);
                         }
                       }}
-                      className="group flex flex-col justify-between rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-elevated)]/40 p-2.5 transition-colors hover:border-[#3E3E3E] hover:bg-[var(--color-elevated)] cursor-pointer text-left"
+                      className="group flex flex-col justify-between rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-elevated)]/40 p-2.5 transition-colors hover:border-[var(--color-border-strong)] hover:bg-[var(--color-elevated)] cursor-pointer text-left"
                     >
                       <div>
                         <p className="font-semibold text-xs text-[var(--color-text)] line-clamp-2 group-hover:text-[var(--color-accent-text)]">
                           {sim.title}
                         </p>
-                        <p className="text-[11px] text-[var(--color-text-muted)] mt-1 truncate">
+                        <p className="text-[12px] text-[var(--color-text-muted)] mt-1 truncate">
                           {sim.categories.slice(0, 2).join(', ')}
                         </p>
                       </div>
-                      <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--color-text-secondary)] tabular-nums pt-1 border-t border-[var(--color-border)]/60">
+                      <div className="mt-2 flex items-center justify-between text-[12px] text-[var(--color-text-secondary)] tabular-nums pt-1 border-t border-[var(--color-border)]/60">
                         <span>Similar item</span>
                         <div className="flex items-center gap-0.5 text-[var(--color-accent)] font-semibold">
                           <Star className="h-2.5 w-2.5 fill-current" />

@@ -142,7 +142,7 @@ export function ColdStartTab({
             <Sparkles className="h-4 w-4 text-[var(--color-accent)]" />
             <span>Interactive Cold-Start Explorer</span>
           </h3>
-          <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
             Build a hypothetical taste profile by searching and selecting items from the catalog.
             Discover how recommendations adapt dynamically from popularity fallback to personalization.
           </p>
@@ -202,7 +202,7 @@ export function ColdStartTab({
                             {item.title}
                           </span>
                           {item.year && (
-                            <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums">
+                            <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums">
                               ({item.year})
                             </span>
                           )}
@@ -212,7 +212,7 @@ export function ColdStartTab({
                             {item.categories.slice(0, 3).map((cat) => (
                               <span
                                 key={cat}
-                                className="text-[10px] text-[var(--color-text-secondary)] bg-[var(--color-bg)] px-1.5 py-0.2 rounded"
+                                className="text-[12px] text-[var(--color-text-secondary)] bg-[var(--color-bg)] px-1.5 py-0.5 rounded"
                               >
                                 {cat}
                               </span>
@@ -229,7 +229,7 @@ export function ColdStartTab({
                         className={`inline-flex items-center gap-1 rounded-[4px] px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                           isAdded
                             ? 'bg-transparent text-[var(--color-accent-text)] border border-[var(--color-accent)]/40 cursor-default'
-                            : 'bg-[var(--color-accent)] text-white hover:bg-[#b80710]'
+                            : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-active)]'
                         }`}
                       >
                         {isAdded ? (
@@ -299,7 +299,7 @@ export function ColdStartTab({
               )}
             </span>
           </div>
-          <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums shrink-0">
+          <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums shrink-0">
             Max 200 items
           </span>
         </div>
@@ -322,7 +322,7 @@ export function ColdStartTab({
 
                 {/* Rating / Signal Control */}
                 {cardType === 'article' ? (
-                  <span className="rounded bg-[var(--color-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-accent-text)]">
+                  <span className="rounded bg-[var(--color-bg)] px-1.5 py-0.5 text-[12px] font-semibold text-[var(--color-accent-text)]">
                     Clicked
                   </span>
                 ) : (
