@@ -44,11 +44,11 @@
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
 | 10 | Integration and robustness audit | 8 | 0 | 0 | 8 | 100% |
-| 11 | Documentation and showcase preparation | 4 | 0 | 1 | 8 | 50% |
+| 11 | Documentation and showcase preparation | 5 | 0 | 1 | 8 | 62% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **120** | | | **129** | **93%** |
+| | **Overall** | **121** | | | **129** | **93%** |
 
-`[##################--] 93%  (120/129 tasks)`
+`[##################--] 93%  (121/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -633,7 +633,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
 ### Execution order
 E1 to E3, then P11.3, P11.2, P11.6, P11.4, P11.1, P11.5, P11.7 (human, in parallel with anything), P11.8. The README comes late because it embeds screenshots, results and links to everything else.
 
-- [ ] **P11.1** `README.md`. *Acceptance:* a reader with Python, Node and the datasets can run the project from the README alone; `check_docs.py` and `make_docs.py --check` pass; the rehearsal from P10.6 passes against it.
+- [x] **P11.1** `README.md`. *Acceptance:* a reader with Python, Node and the datasets can run the project from the README alone; `check_docs.py` and `make_docs.py --check` pass; the rehearsal from P10.6 passes against it.
   - Section order: title (exact name "Discovery Engine") and one-line description; one hero screenshot; what it is and the derivation statement (Recommenders, MIT, what is original versus derived, non-commercial and educational use) high up, before the quick start; how one engine adapts to three content types (short, link to ARCHITECTURE); quick start; dataset setup; results summary; testing and gates; repository map; limitations; citations; license and notices.
   - Quick start: keep the block wrapped in the `rehearsal:start` and `rehearsal:end` markers that `tools/clean_room_rebuild.py` extracts (P10.6). Give the make form and the PowerShell form side by side. State prerequisites (Python 3.11, Node version, uv) exactly as recorded in the Phase 10 environment record, and do not claim OS or Python versions that were never tested. Include `python tools/demo.py` and `python tools/demo.py --stop`.
   - Datasets: Movies is MovieLens 1M, Products is the Amazon Video Games 5-core (capped to the configured item budget), Articles is MIND-small. State that MIND needs a manual download (link to `docs/DATASETS.md`), that raw datasets are not redistributed, and what `--fast` mode uses instead. Generated table from the manifests, so the "fast or synthetic" labelling can never disagree with the artifacts.

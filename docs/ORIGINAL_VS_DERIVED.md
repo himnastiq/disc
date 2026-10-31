@@ -7,9 +7,9 @@
 
 | Classification | Tracked Files | Total Lines | Code Lines | Comments & Blank | Share of Lines | Share of Code |
 |---|---|---|---|---|---|---|
-| **Original Discovery Engine** | 297 | 57,039 | 46,308 | 10,731 | **90.4%** | **90.7%** |
-| **Derived (Microsoft Recommenders)** | 21 | 6,049 | 4,727 | 1,322 | **9.6%** | **9.3%** |
-| **Total Accounted** | **318** | **63,088** | **51,035** | **12,053** | **100.0%** | **100.0%** |
+| **Original Discovery Engine** | 298 | 57,356 | 46,557 | 10,799 | **90.5%** | **90.8%** |
+| **Derived (Microsoft Recommenders)** | 21 | 6,049 | 4,727 | 1,322 | **9.5%** | **9.2%** |
+| **Total Accounted** | **319** | **63,405** | **51,284** | **12,121** | **100.0%** | **100.0%** |
 
 ---
 
@@ -23,8 +23,8 @@
 | `Original: Next.js Frontend Dashboard (frontend/)` | Original | 105 | 15,188 | 13,081 | 2,107 |
 | `Original: Automation & Quality Tools (tools/)` | Original | 25 | 9,152 | 7,923 | 1,229 |
 | `Original: Testing Suites & Harnesses (tests/)` | Original | 83 | 14,723 | 11,203 | 3,520 |
-| `Original: Specifications & Documentation (docs/)` | Original | 13 | 2,633 | 1,731 | 902 |
-| `Original: Repository Root & Configurations` | Original | 20 | 4,552 | 3,621 | 931 |
+| `Original: Specifications & Documentation (docs/)` | Original | 14 | 2,883 | 1,932 | 951 |
+| `Original: Repository Root & Configurations` | Original | 20 | 4,619 | 3,669 | 950 |
 
 ---
 
