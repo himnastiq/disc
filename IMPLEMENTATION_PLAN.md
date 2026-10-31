@@ -43,12 +43,12 @@
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
-| 10 | Integration and robustness audit | 6 | 0 | 0 | 8 | 75% |
+| 10 | Integration and robustness audit | 7 | 0 | 0 | 8 | 87% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **114** | | | **129** | **88%** |
+| | **Overall** | **115** | | | **129** | **89%** |
 
-`[#################---] 88%  (114/129 tasks)`
+`[#################---] 89%  (115/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -566,7 +566,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
   - Body limit: send an oversize body with a Content-Length header and again with chunked encoding and no Content-Length; both must return 413 (fix if only the header is checked).
   - Proxy and headers: Next route handlers must not forward client X-API-Key, Authorization or Cookie upstream and must not pass internal upstream headers back. Add basic security headers in `next.config.js` if missing (X-Content-Type-Options, Referrer-Policy, frame protection, a basic CSP) and test the app still works. The UI must never display raw upstream error text.
   - Deliverable: security audit record in `docs/DECISIONS.md` (tool versions, commands, outputs, findings, exemptions).
-- [ ] **P10.6** Fresh-clone rehearsal. *Acceptance:* from a clean clone, following only the README, the project reaches a running demo with no undocumented step; deviations are fixed in the README or tools.
+- [x] **P10.6** Fresh-clone rehearsal. *Acceptance:* from a clean clone, following only the README, the project reaches a running demo with no undocumented step; deviations are fixed in the README or tools.
   - Extend `tools/clean_room_rebuild.py` to cover the frontend: git clone (full history and tags, so `core_unchanged` works) into `tempfile.mkdtemp()`, create a new venv with no inherited site-packages, `npm ci`, run the README commands, run backend and frontend tests, start the demo with `tools/demo.py`, check health, stop it, and verify nothing is left on ports 8000 and 3000.
   - Run the commands the README actually contains. Mark the quick-start block in the README (for example with HTML comment markers) so the rehearsal extracts it instead of using a hand-copied list, and so P11.1 can rewrite the README without breaking it. If a README command needs make and make is unavailable, that is a finding: add a python or PowerShell equivalent.
   - Allowed manual steps: only those documented in `docs/DATASETS.md` (the MIND manual download). Everything else must be unattended; use the MIND fixture for the articles `--fast` step and say so.

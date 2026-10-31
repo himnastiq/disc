@@ -885,6 +885,50 @@ The codebase and artifacts are officially frozen. Any subsequent modifications t
 
 ---
 
+## D-035: Fresh-Clone Clean-Room Rehearsal Verification (P10.6)
+
+**Date:** 2026-10-31
+**Status:** Approved
+
+**Context:**
+Task P10.6 requires end-to-end rehearsal of project setup, installation, training, evaluation, unit testing, and demo execution from a fresh clone in an isolated temporary directory (`tempfile.mkdtemp()`), verifying that standard README quickstart commands succeed unattended without undocumented steps.
+
+**Rehearsal Results & Timing Summary:**
+The rehearsal was executed via `tools/clean_room_rebuild.py` with full tags and commit history:
+1. **Git Clone (`--tags`):** `3.03 s`
+2. **Hermetic Virtualenv (`--clear`):** `13.16 s`
+3. **Backend Setup (`pip install -e backend/.[core,dev]`):** `157.38 s`
+4. **Frontend Setup (`npm ci`):** `59.03 s`
+5. **Data Ingest (`fetch_data.py`):** `53.52 s` (seeded MovieLens & Amazon; offline MIND fixture per P10.6)
+6. **Fast Training Pipelines:**
+   - Movies (MovieLens 100K + SAR): `19.45 s`
+   - Products (Amazon Instruments + SAR): `17.75 s`
+   - Articles (MIND Fixture + TF-IDF): `3.54 s`
+7. **Evaluation Report (`make eval`):** `2.76 s`
+8. **Test Verification:**
+   - Backend Unit Tests (`pytest tests/unit -m "not real_data"`): `37.25 s` (302 passed, 0 failed)
+   - Frontend Vitest Suite (`npm run test`): `24.02 s` (69 passed, 0 failed)
+9. **Demo Lifecycle & Port Hygiene:**
+   - Startup & Health Polling (`tools/demo.py --api-port 8018 --web-port 3018`): `60.42 s`
+   - Clean Shutdown & Port Release (`tools/demo.py --stop`): `0.29 s`
+   - Port Release Verification: ports 8018 and 3018 verified completely released without orphan processes.
+
+**Wall-Clock Timing Benchmark:**
+- **Total Rehearsal Time:** `451.61 s` (`7.53 min`)
+- **P6.4 Baseline:** `451.00 s` (`7.52 min`)
+The full multi-domain rebuild with frontend dependencies and demo verification completed within 0.6 seconds of the P6.4 backend-only baseline.
+
+**CI & Documentation Deliverables:**
+- **README Markers:** Enclosed quickstart block with `<!-- QUICKSTART:START -->` and `<!-- QUICKSTART:END -->`, and added native PowerShell / Windows commands for environments without GNU make.
+- **CI Workflow:** Created `.github/workflows/rehearsal.yml` with `workflow_dispatch` on Ubuntu and Windows runners.
+
+**Consequences:**
+Validates repo self-sufficiency, dependency closure, reproducible installs, and port cleanup guarantees.
+
+**Related tasks:** P10.6, P6.4, R6, R8
+
+---
+
 <!-- Add new entries above this line -->
 
 
