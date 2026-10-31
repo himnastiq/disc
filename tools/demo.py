@@ -612,4 +612,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    expected_py = Path(get_python_executable()).resolve()
+    current_py = Path(sys.executable).resolve()
+    if expected_py.exists() and expected_py != current_py:
+        res = subprocess.run([str(expected_py), *sys.argv], check=False)
+        sys.exit(res.returncode)
     sys.exit(main())
