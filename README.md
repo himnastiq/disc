@@ -2,14 +2,11 @@
 
 An adaptive consumer recommendation engine that personalizes content discovery across Movies, Products, and News through a unified CPU-optimized pipeline.
 
-![Discovery Engine Dashboard](docs/demo_video.mp4/)
+![Discovery Engine Dashboard]
 
-## What It Is & Attribution Statement
 
-Discovery Engine is an educational and research recommendation platform demonstrating how a single engine core adapts across disparate consumer content domains.
+https://github.com/user-attachments/assets/0bf935b3-5a58-4d38-b8b9-f4b8743b6711
 
-> [!NOTE]
-> **Non-Commercial Use:** This project is developed strictly for **non-commercial** educational and academic research evaluation.
 
 ## How One Engine Adapts Across Three Domains
 
