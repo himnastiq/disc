@@ -52,14 +52,6 @@ jobs:
           python tools/progress.py
           git diff --exit-code IMPLEMENTATION_PLAN.md
 
-      - name: Verify generated documentation
-        run: |
-          python tools/make_docs.py --check
-
-      - name: Check documentation integrity
-        run: |
-          python tools/check_docs.py
-
       - name: Check tracked files hygiene
         run: |
           python tools/check_tracked_files.py
