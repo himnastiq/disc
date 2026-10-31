@@ -43,12 +43,12 @@
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
-| 10 | Integration and robustness audit | 7 | 0 | 0 | 8 | 87% |
+| 10 | Integration and robustness audit | 8 | 0 | 0 | 8 | 100% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **115** | | | **129** | **89%** |
+| | **Overall** | **116** | | | **129** | **89%** |
 
-`[#################---] 89%  (115/129 tasks)`
+`[#################---] 89%  (116/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -577,7 +577,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
   - Golden tests (`test_movies_golden.py`) compare within the documented tolerance. Do not tighten to exact equality, because BLAS and platform differences can change low-order digits.
   - Coverage: `cd backend && pytest -m "not real_data" --cov=engine --cov=api --cov-branch --cov-report=term-missing --cov-report=html:../coverage_report --cov-report=json:../coverage.json`. Statement coverage of at least 80 percent on `engine/` and `api/` is the gate; branch coverage is reported for information. `discovery/` (vendored) is excluded. Make sure `coverage_report/` and `coverage.json` are gitignored (the tracked-files check enforces it) and that the numbers reach `docs/RESULTS.md` through `make_results.py`, not by hand.
   - For each uncovered block, either add a targeted test (rare error handlers in adapters, models/ and api/) or justify it in a short table in the decision entry. Frontend coverage (`vitest --coverage`) is reported, not gated.
-- [ ] **P10.8** Phase 10 gate and the last break-your-own-work ritual. *Acceptance:* all five hypotheses tested with recorded outcomes, every finding fixed or documented, and the sign-off steps below done.
+- [x] **P10.8** Phase 10 gate and the last break-your-own-work ritual. *Acceptance:* all five hypotheses tested with recorded outcomes, every finding fixed or documented, and the sign-off steps below done.
   - Test files: `backend/tests/integration/test_phase10_adversarial.py` (API level, against a real running uvicorn process where concurrency is involved, not TestClient) and `frontend/tests/e2e/adversarial.spec.ts` (UI level). Several cases below extend the Phase 7 gate on purpose; do not duplicate it, scale or vary it.
   - H1, extreme cold start. Very different items together (a children's cartoon plus an R-rated horror film); 200 items from one obscure genre; all items with the same signal; only sub-threshold ratings (they are ignored as evidence since FIX-46, so the result is popularity; the UI must say so, and the "no way to express dislike" limitation goes in the decision log); items outside the similarity budget; 200 of the most popular items (no seen items returned); articles with empty feature vectors (very short titles). Assert: scores finite and sorted, no NaN or divide-by-zero, no history item recommended, reasons only name history items, mode matches the results.
   - H2, input boundaries beyond P7.6. 200 versus 201 items (422 `duplicate_ids` is separate), k of 0, 1, 50, 51, a string signal "NaN", negative and huge signals, a mix of unknown and duplicate ids. Memory: 100 repeated 200-item requests must not grow RSS by more than 50 MB.
@@ -1807,3 +1807,48 @@ E:\discover\.venv\Lib\site-packages\fastapi\testclient.py:1
   ```
 - **Next steps for the next session:**
   - Begin Phase 10 execution with Task P10.1: Consolidated cross-platform demo supervisor (tools/demo.py), preflight checks, port management (.demo/pids.json), and production Next.js launcher.
+
+### Session 32: 2026-10-31, agent session (Phase 10 Complete: Integration and Robustness Audit, Code Freeze, and Final Sign-Off)
+- **Started at:** task P10.1   **Ended at:** task P10.8 (Phase 10 Complete)
+- **Completed Tasks:**
+  - `P10.1`: Consolidated cross-platform demo supervisor (`tools/demo.py`, Makefile targets, PowerShell compatibility). Implemented preflight checks, port conflict resolution with exponential backoff (demo PID state tracking), production Next.js build/start lifecycle, and graceful Ctrl+C/`--stop` port release on Windows.
+  - `P10.2`: Network and API failure injection test suites (`frontend/tests/e2e/failure_injection.spec.ts`, `frontend/tests/e2e/mock_api.ts`). Verified resilient handling of 500 internal server error, 503 service unavailable (partial domain outage), network drop (ERR_CONNECTION_REFUSED), API timeout (5s delay), slow response (3s delay with loading skeletons), and malformed JSON payloads across all tabs.
+  - `P10.3`: Multi-domain UI/API consistency audit (`tools/audit_ui_consistency.py`, `frontend/tests/e2e/data_consistency.spec.ts`). Verified 100% agreement between backend API responses and DOM rendered cards across all 3 domains (movies, products, articles) on item IDs, titles, categories, recommendation scores, ordering, and reason tags.
+  - `P10.4`: Robustness audit & Quality Gates Matrix R1–R11 on frozen code (`tools/verify_all_gates.py`, `docs/gate_matrix.json`, `docs/RESULTS.md` Section 11). Code frozen at git commit `9e31e65` / SHA-256 `d827101176ecb1e08c727cf5f9bf790b8f7850571457a935babf5c1e08fbf135`. Gates R1–R3, R5–R11 `PASS`; R4 `PASS WITH DOCUMENTED LIMITATION` (MovieLens 1M NDCG@5 below popularity per D-016; MIND-small impression sparsity per D-025). Recorded `D-034`.
+  - `P10.5`: Security audit and hardening (`docs/DECISIONS.md` D-032). Enforced CORS isolation in `SecurityMiddleware`, 1MB streaming body limits with 413 responses, Next.js server route header scrubbing (preventing upstream client token/cookie forwarding), and security headers (CSP, frame options, X-Content-Type-Options, Referrer-Policy).
+  - `P10.6`: Fresh-clone clean-room rehearsal (`tools/clean_room_rebuild.py`, `docs/DECISIONS.md` D-035). Extended rehearsal to full stack (git clone with tags, isolated virtualenv, npm ci, `make data`, `make train-fast`, `make eval`, backend and frontend test suites, demo supervisor startup/health/stop lifecycle, port 8018/3018 hygiene). Completed unattended in 451.61 s (7.53 min), matching the P6.4 backend baseline of 451.00 s. Added README quickstart markers and GitHub Actions workflow `.github/workflows/rehearsal.yml`.
+  - `P10.7`: Final regression and branch coverage audit (`tools/check.py`, `docs/RESULTS.md` Section 10). Backend statement coverage on `api/`: 90.26% (branch 79.58%); `engine/`: 89.33% (branch 74.37%); combined: 89.53% (branch 75.16%), comfortably exceeding the >= 80% gate threshold. All 10 checks green. Recorded `D-033`.
+  - `P10.8`: Phase 10 Gate and Break-Your-Own-Work ritual:
+    - Five adversarial hypotheses verified (`backend/tests/integration/test_phase10_adversarial.py`, `frontend/tests/e2e/adversarial.spec.ts`):
+      - **H1 (Extreme Cold Start):** Heterogeneous mixtures (children's animation + R-rated horror), monolithic 200-item single-genre blocks, uniform signals, sub-threshold signals falling back to popularity without crash (D-031), seen items exclusion, and articles with empty text features. All scores finite, sorted descending, zero NaNs, zero division by zero.
+      - **H2 (Hard Input Boundaries):** 200 items accepted vs 201 items rejected with 422 `validation_error`, k parameters (k=0 rejected, k=1 and k=50 accepted, k=51 rejected), signal validation (string "NaN", negative, >5.0 all return 422), duplicate history IDs rejected with 422 `duplicate_ids`, and RSS memory stability across 100 repeated 200-item requests (growth < 50MB; observed ~0.0 MB).
+      - **H3 (Concurrency at Scale):** 50 simultaneous requests alternating cold-start POSTs and personalized GETs across all three domains over three successive rounds (150 concurrent requests); zero 5xx errors, zero race conditions, and bit-for-bit equivalence with sequential baselines.
+      - **H4 (Hostile Search Strings):** Zero-width characters (`\u200B`, `\u200D`, `\uFEFF`), RTL Arabic text, Unicode NFC vs NFD accented strings, emoji sequences, 100-char query accepted vs 101-char rejected with 422, regex metacharacters (`.*(`, `\`), null bytes, lone surrogates, and zero-width-only queries. Zero 5xx, deterministic ranking, consistent total matches, and clean UI layout.
+      - **H5 (Fault Isolation & Availability):** Deliberate corruption of individual content type artifacts (missing manifest, invalid JSON manifest, checksum mismatch, missing items parquet, schema version mismatch). API boots successfully, `/v1/health` reports status `degraded` naming the broken type, that type returns 503 `type_unavailable`, while healthy domains serve 100% operational traffic with zero cross-domain cache bleed.
+    - **UI-Driven Nonsense Hunt:** Personas with 1 interaction vs >1,000 interactions, items with missing non-critical fields, extremely long non-Latin titles, rapid domain and user switching, and exotic cold-start combinations in the UI.
+- **In progress ([~]):** None (Phases 0 through 10 are 100% complete).
+- **Blocked ([!]):** None.
+- **Decisions made:**
+  - `D-030`: Demo supervisor architecture and port management (`tools/demo.py`).
+  - `D-031`: Sub-threshold interaction handling in cold-start recommendations.
+  - `D-032`: Security audit findings, HTTP security headers, and reverse proxy isolation.
+  - `D-033`: Test coverage measurement, branch analysis, and justification table.
+  - `D-034`: Code freeze verification and Phase 10 Quality Gates Matrix (R1–R11).
+  - `D-035`: Fresh-clone clean-room rehearsal verification (P10.6).
+- **Gate results:**
+  - R1: PASS (Data validity & reporting verified on all 3 domains).
+  - R2: PASS (Temporal split non-leakage strictly verified).
+  - R3: PASS (Recommendation invariants: exclusions honored, reasons faithful, sorted scores).
+  - R4: PASS WITH DOCUMENTED LIMITATION (MovieLens 1M NDCG@5 below popularity per D-016; MIND-small impression sparsity per D-025).
+  - R5: PASS (Latency and memory limits met across all domains).
+  - R6: PASS (Self-contained repository, clean-room rebuild in 451.61 s).
+  - R7: PASS (CLI and API contract adherence, openapi.json strictly synchronized).
+  - R8: PASS (Cross-type schema consistency and uniform error envelopes).
+  - R9: PASS (Responsive web dashboard, zero serious/critical Axe a11y violations).
+  - R10: PASS (Documentation truthfulness, zero broken links, conformance verified).
+  - R11: PASS (Security boundaries, zero secret leaks, CORS isolation, body limits).
+- **Test status:**
+  - `tools/check.py`: All 10 checks PASS.
+  - Session Log Audit (`tools/audit_session_log.py`): PASS (Zero phantom citations across 35 ADRs and 50 FIX items).
+- **Next steps for the next session:**
+  - Proceed with Phase 11: Documentation and showcase preparation (P11.1–P11.8: README overhaul, ARCHITECTURE.md with Mermaid diagrams, ATTRIBUTION.md generation, REPORT_OUTLINE.md, DEMO_SCRIPT.md, Playwright screenshots, and v1.0 release).
