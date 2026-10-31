@@ -73,9 +73,17 @@ def main() -> None:
         steps.extend(
             [
                 ("Frontend Linter (eslint)", [npm_cmd, "run", "lint"], FRONTEND_DIR),
-                ("Frontend Type Checker (tsc)", [npm_cmd, "run", "type-check"], FRONTEND_DIR),
+                (
+                    "Frontend Type Checker (tsc)",
+                    [npm_cmd, "run", "type-check"],
+                    FRONTEND_DIR,
+                ),
                 ("Frontend Vitest Suite", [npm_cmd, "run", "test"], FRONTEND_DIR),
-                ("Frontend Secret Leakage Check", [npm_cmd, "run", "check-secrets"], FRONTEND_DIR),
+                (
+                    "Frontend Secret Leakage Check",
+                    [npm_cmd, "run", "check-secrets"],
+                    FRONTEND_DIR,
+                ),
             ]
         )
 

@@ -185,7 +185,9 @@ def clean_room_rebuild(
             sub_src = src_data_raw / sub
             if sub_src.exists():
                 shutil.copytree(sub_src, dst_data_raw / sub, dirs_exist_ok=True)
-    print("[INFO] Seeded MovieLens and Amazon caches; using MIND fixture for fast articles per P10.6.")
+    print(
+        "[INFO] Seeded MovieLens and Amazon caches; using MIND fixture for fast articles per P10.6."
+    )
 
     timings["make_data"] = run_command(
         [str(venv_python), "backend/scripts/fetch_data.py"],

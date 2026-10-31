@@ -37,7 +37,9 @@ HOOK_METRICS_KEY_MAP = {
 }
 
 
-def validate_post_train_checks_presence(content_type: str, metrics: dict[str, Any]) -> None:
+def validate_post_train_checks_presence(
+    content_type: str, metrics: dict[str, Any]
+) -> None:
     """Validate that required post_train check keys exist in metrics.json if configured."""
     try:
         from engine.config import load_config
@@ -83,7 +85,9 @@ def format_pct_gain(val: float, baseline: float) -> str:
     return f"{prefix}{gain:.1f}%"
 
 
-def format_metric_with_ci(metric_dict: dict[str, Any], key: str, bold_val: bool = False) -> str:
+def format_metric_with_ci(
+    metric_dict: dict[str, Any], key: str, bold_val: bool = False
+) -> str:
     """Format metric value with 95% bootstrap confidence interval if available."""
     val = metric_dict.get(key, 0.0)
     val_str = f"**{val:.4f}**" if bold_val else f"{val:.4f}"
@@ -200,7 +204,9 @@ def generate_figures(
 
     # Configure clean styling
     plt.style.use(
-        "seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default"
+        "seaborn-v0_8-whitegrid"
+        if "seaborn-v0_8-whitegrid" in plt.style.available
+        else "default"
     )
     plt.rcParams.update(
         {
@@ -337,7 +343,9 @@ def generate_figures(
 
         # Extract model curve and popularity baseline
         y_model = [
-            curves[model_key][k].get("hit_rate@10", curves[model_key][k].get("recall@10", 0.0))
+            curves[model_key][k].get(
+                "hit_rate@10", curves[model_key][k].get("recall@10", 0.0)
+            )
             for k in history_keys
         ]
         y_pop = [
@@ -554,10 +562,22 @@ def is_fast_variant(
     products_manifest = products_manifest or {}
     articles_manifest = articles_manifest or {}
 
-    m_var = str(movies_manifest.get("dataset_variant") or movies_metrics.get("dataset_variant", "")).lower()
-    p_var = str(products_manifest.get("dataset_variant") or products_metrics.get("dataset_variant", "")).lower()
-    a_var = str(articles_manifest.get("dataset_variant") or articles_metrics.get("dataset_variant", "")).lower()
-    a_src = str(articles_manifest.get("dataset_source") or articles_metrics.get("dataset_source", "")).lower()
+    m_var = str(
+        movies_manifest.get("dataset_variant")
+        or movies_metrics.get("dataset_variant", "")
+    ).lower()
+    p_var = str(
+        products_manifest.get("dataset_variant")
+        or products_metrics.get("dataset_variant", "")
+    ).lower()
+    a_var = str(
+        articles_manifest.get("dataset_variant")
+        or articles_metrics.get("dataset_variant", "")
+    ).lower()
+    a_src = str(
+        articles_manifest.get("dataset_source")
+        or articles_metrics.get("dataset_source", "")
+    ).lower()
 
     return bool(
         m_var in ("100k", "fast", "toy")
@@ -565,7 +585,6 @@ def is_fast_variant(
         or a_var in ("fixture", "fast", "toy")
         or a_src != "mind-small"
     )
-
 
 
 def build_markdown_report(
@@ -587,7 +606,9 @@ def build_markdown_report(
     a_models = articles_metrics["models"]
     a_protocols = articles_metrics["protocols"]
 
-    m_var = movies_manifest.get("dataset_name") or movies_metrics.get("dataset_variant", "movies")
+    m_var = movies_manifest.get("dataset_name") or movies_metrics.get(
+        "dataset_variant", "movies"
+    )
     p_var = products_manifest.get("dataset_name") or products_metrics.get(
         "dataset_variant", "products"
     )
@@ -598,7 +619,8 @@ def build_markdown_report(
     m_heading = movies_manifest.get("section_heading") or f"Movies ({m_var} + SAR)"
     p_heading = products_manifest.get("section_heading") or f"Products ({p_var} + SAR)"
     a_heading = (
-        articles_manifest.get("section_heading") or f"Articles ({a_var} + TF-IDF Content Model)"
+        articles_manifest.get("section_heading")
+        or f"Articles ({a_var} + TF-IDF Content Model)"
     )
 
     fast_run = is_fast_variant(
@@ -618,7 +640,9 @@ def build_markdown_report(
 
     # Header and provenance
     if fast_run:
-        md.append("# FAST VARIANT, NOT FOR REPORT: Discovery Engine Evaluation & Cross-Type Results")
+        md.append(
+            "# FAST VARIANT, NOT FOR REPORT: Discovery Engine Evaluation & Cross-Type Results"
+        )
     else:
         md.append("# Discovery Engine: Comprehensive Evaluation & Cross-Type Results")
     md.append("")
@@ -643,11 +667,15 @@ def build_markdown_report(
         f"| **Products** | `{products_metrics.get('dataset_variant', 'video_games')}` | `{products_metrics.get('git_sha', 'HEAD')[:7]}` | `{products_metrics.get('config_hash', 'N/A')[:8]}` | `{products_metrics.get('seeds', {}).get('split', 42)}` | Chronological per-user split (budget-capped) |"
     )
 
-    a_source = articles_manifest.get("dataset_source") or articles_metrics.get("dataset_source")
+    a_source = articles_manifest.get("dataset_source") or articles_metrics.get(
+        "dataset_source"
+    )
     if a_source == "mind-small":
         articles_label = "MIND-small"
     else:
-        articles_label = a_source or articles_metrics.get("dataset_variant", "mind_offline")
+        articles_label = a_source or articles_metrics.get(
+            "dataset_variant", "mind_offline"
+        )
 
     md.append(
         f"| **Articles** | `{articles_label}` | `{articles_metrics.get('git_sha', 'HEAD')[:7]}` | `{articles_metrics.get('config_hash', 'N/A')[:8]}` | `{articles_metrics.get('seeds', {}).get('split', 42)}` | Dual protocol: Impression ranking + 24h Window retrieval |"
@@ -663,7 +691,9 @@ def build_markdown_report(
     m_sar10 = m_models["sar"]["10"]
     m_pop10 = m_models["popularity"]["10"]
     m_cov_ratio = (
-        (m_sar10["coverage"] / m_pop10["coverage"]) if m_pop10.get("coverage", 0) > 0 else 1.0
+        (m_sar10["coverage"] / m_pop10["coverage"])
+        if m_pop10.get("coverage", 0) > 0
+        else 1.0
     )
 
     p_p = products_metrics.get("protocol", {})
@@ -678,9 +708,11 @@ def build_markdown_report(
     a_tfidf_auc = imp_models["tfidf_profile"]
     a_pop_auc = imp_models["popularity"]
 
-    a_source = articles_manifest.get("dataset_source") or articles_metrics.get("dataset_source")
+    a_source = articles_manifest.get("dataset_source") or articles_metrics.get(
+        "dataset_source"
+    )
     if a_source is not None:
-        a_is_synthetic = (a_source == "fixture")
+        a_is_synthetic = a_source == "fixture"
     else:
         a_is_synthetic = (
             bool(articles_metrics.get("synthetic_fixture"))
@@ -722,7 +754,9 @@ def build_markdown_report(
             f"({compute_ci_verdict(a_tfidf_auc, a_pop_auc, 'mrr', n_samples=a_imp_n, is_synthetic=a_is_synthetic)})."
         )
     md.append("")
-    md.append("![Cross-Domain Recommendation Performance](figures/ranking_comparison.png)")
+    md.append(
+        "![Cross-Domain Recommendation Performance](figures/ranking_comparison.png)"
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -746,7 +780,9 @@ def build_markdown_report(
         gain_hr = format_pct_gain(sar["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(sar["ndcg"], pop["ndcg"])
         gain_rec = format_pct_gain(sar["recall"], pop["recall"])
-        gain_prec = format_pct_gain(sar.get("precision", 0.0), pop.get("precision", 0.0))
+        gain_prec = format_pct_gain(
+            sar.get("precision", 0.0), pop.get("precision", 0.0)
+        )
 
         md.append(
             f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(sar, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(sar, pop, 'hit_rate', n_samples=m_users)} |"
@@ -761,11 +797,15 @@ def build_markdown_report(
             f"| **Precision@{k}** | {rnd.get('precision', 0.0):.4f} | {format_metric_with_ci(pop, 'precision')} | **{format_metric_with_ci(sar, 'precision')}** | **{gain_prec}** | {compute_ci_verdict(sar, pop, 'precision', n_samples=m_users)} |"
         )
     md.append("")
-    mbp_status = compute_model_beats_popularity_sanity(m_models["sar"], m_models["popularity"])
+    mbp_status = compute_model_beats_popularity_sanity(
+        m_models["sar"], m_models["popularity"]
+    )
     md.append(f"- **Sanity Check (Model > Popularity):** `{mbp_status}`")
     m_checks = movies_metrics.get("sanity_checks", {})
     if "popularity_beats_random" in m_checks:
-        pbr_status = "Passed" if m_checks["popularity_beats_random"] else "Not satisfied"
+        pbr_status = (
+            "Passed" if m_checks["popularity_beats_random"] else "Not satisfied"
+        )
         md.append(f"- **Sanity Check (Popularity > Random):** `{pbr_status}`")
     if "all_bounds_valid" in m_checks:
         abv_status = "Passed" if m_checks["all_bounds_valid"] else "Not satisfied"
@@ -777,7 +817,9 @@ def build_markdown_report(
     # Section 2: Products
     md.append(f"## 2. {p_heading}")
     md.append("")
-    md.append("Evaluated on sparse verified purchase ratings under budget-capped SAR similarity.")
+    md.append(
+        "Evaluated on sparse verified purchase ratings under budget-capped SAR similarity."
+    )
     md.append("")
     md.append(
         "| Metric @ K | Random Baseline | Popularity Baseline (95% CI) | SAR (Personalised, 95% CI) | Gain vs Popularity | Statistical Verdict |"
@@ -791,7 +833,9 @@ def build_markdown_report(
         gain_hr = format_pct_gain(sar["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(sar["ndcg"], pop["ndcg"])
         gain_rec = format_pct_gain(sar["recall"], pop["recall"])
-        gain_prec = format_pct_gain(sar.get("precision", 0.0), pop.get("precision", 0.0))
+        gain_prec = format_pct_gain(
+            sar.get("precision", 0.0), pop.get("precision", 0.0)
+        )
 
         md.append(
             f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(sar, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(sar, pop, 'hit_rate', n_samples=p_users)} |"
@@ -806,7 +850,9 @@ def build_markdown_report(
             f"| **Precision@{k}** | {rnd.get('precision', 0.0):.4f} | {format_metric_with_ci(pop, 'precision')} | **{format_metric_with_ci(sar, 'precision')}** | **{gain_prec}** | {compute_ci_verdict(sar, pop, 'precision', n_samples=p_users)} |"
         )
     md.append("")
-    p_mbp_status = compute_model_beats_popularity_sanity(p_models["sar"], p_models["popularity"])
+    p_mbp_status = compute_model_beats_popularity_sanity(
+        p_models["sar"], p_models["popularity"]
+    )
     md.append(f"- **Sanity Check (Model > Popularity):** `{p_mbp_status}`")
 
     p_checks = products_metrics.get("product_specific_checks", {})
@@ -909,7 +955,9 @@ def build_markdown_report(
         gain_hr = format_pct_gain(tfidf["hit_rate"], pop["hit_rate"])
         gain_ndcg = format_pct_gain(tfidf["ndcg"], pop["ndcg"])
         gain_rec = format_pct_gain(tfidf["recall"], pop["recall"])
-        gain_prec = format_pct_gain(tfidf.get("precision", 0.0), pop.get("precision", 0.0))
+        gain_prec = format_pct_gain(
+            tfidf.get("precision", 0.0), pop.get("precision", 0.0)
+        )
 
         md.append(
             f"| **HitRate@{k}** | {rnd['hit_rate']:.4f} | {format_metric_with_ci(pop, 'hit_rate')} | **{format_metric_with_ci(tfidf, 'hit_rate')}** | **{gain_hr}** | {compute_ci_verdict(tfidf, pop, 'hit_rate', n_samples=a_imp_n, is_synthetic=a_is_synthetic)} |"
@@ -946,7 +994,9 @@ def build_markdown_report(
     p_cs = products_metrics["cold_start_curves"]["sar"]
     a_cs = articles_metrics["cold_start_curves"]["tfidf_profile"]
 
-    all_sizes = sorted(set(m_cs.keys()) | set(p_cs.keys()) | set(a_cs.keys()), key=lambda k: int(k))
+    all_sizes = sorted(
+        set(m_cs.keys()) | set(p_cs.keys()) | set(a_cs.keys()), key=lambda k: int(k)
+    )
     for s in all_sizes:
         m_r = m_cs.get(s, {}).get("recall@10", 0.0)
         m_n = m_cs.get(s, {}).get("ndcg@10", 0.0)
@@ -969,7 +1019,9 @@ def build_markdown_report(
     md.append(
         "Accuracy alone does not capture recommendation health. Popularity baseline achieves strong hit rates by concentrating"
     )
-    md.append("all recommendations on a microscopic sliver of the catalogue (< 2% coverage).")
+    md.append(
+        "all recommendations on a microscopic sliver of the catalogue (< 2% coverage)."
+    )
     md.append("")
     md.append(
         "| Content Type | Model | Coverage@10 | Intra-List Diversity@10 | Novelty@10 (bits) | Personalisation@10 |"
@@ -1056,7 +1108,10 @@ def build_markdown_report(
         m_worse = []
         for met in ["recall", "ndcg", "hit_rate", "precision"]:
             v = compute_ci_verdict(
-                m_models["sar"]["10"], m_models["popularity"]["10"], met, n_samples=m_users
+                m_models["sar"]["10"],
+                m_models["popularity"]["10"],
+                met,
+                n_samples=m_users,
             )
             m_str = f"{met.upper()}@10 ({format_metric_with_ci(m_models['sar']['10'], met)} vs Pop {format_metric_with_ci(m_models['popularity']['10'], met)})"
             if v == "Model better (CIs separate)":
@@ -1071,7 +1126,9 @@ def build_markdown_report(
                 f"   - **Statistically Significant Advantage (CIs separate):** {', '.join(m_sep)}."
             )
         if m_overlap:
-            md.append(f"   - **No Significant Difference (CIs overlap):** {', '.join(m_overlap)}.")
+            md.append(
+                f"   - **No Significant Difference (CIs overlap):** {', '.join(m_overlap)}."
+            )
         if m_worse:
             md.append(f"   - **Model Worse:** {', '.join(m_worse)}.")
 
@@ -1087,7 +1144,10 @@ def build_markdown_report(
         p_worse = []
         for met in ["recall", "ndcg", "hit_rate", "precision"]:
             v = compute_ci_verdict(
-                p_models["sar"]["10"], p_models["popularity"]["10"], met, n_samples=p_users
+                p_models["sar"]["10"],
+                p_models["popularity"]["10"],
+                met,
+                n_samples=p_users,
             )
             p_str = f"{met.upper()}@10 ({format_metric_with_ci(p_models['sar']['10'], met)} vs Pop {format_metric_with_ci(p_models['popularity']['10'], met)})"
             if v == "Model better (CIs separate)":
@@ -1102,7 +1162,9 @@ def build_markdown_report(
                 f"   - **Statistically Significant Advantage (CIs separate):** {', '.join(p_sep)}."
             )
         if p_overlap:
-            md.append(f"   - **No Significant Difference (CIs overlap):** {', '.join(p_overlap)}.")
+            md.append(
+                f"   - **No Significant Difference (CIs overlap):** {', '.join(p_overlap)}."
+            )
         if p_worse:
             md.append(f"   - **Model Worse:** {', '.join(p_worse)}.")
 
@@ -1224,7 +1286,12 @@ def generate_coverage_section(coverage_path: Path) -> str:
 
         if pkg != "other":
             if pkg not in packages:
-                packages[pkg] = {"stmts": 0, "covered": 0, "branches": 0, "cov_branches": 0}
+                packages[pkg] = {
+                    "stmts": 0,
+                    "covered": 0,
+                    "branches": 0,
+                    "cov_branches": 0,
+                }
             packages[pkg]["stmts"] += stmts
             packages[pkg]["covered"] += cov_lines
             packages[pkg]["branches"] += branches
@@ -1237,11 +1304,17 @@ def generate_coverage_section(coverage_path: Path) -> str:
     total_cov_branches = api_covered_branches + engine_covered_branches
 
     api_stmt_pct = (api_covered / api_stmts * 100) if api_stmts else 0.0
-    api_branch_pct = (api_covered_branches / api_branches * 100) if api_branches else 0.0
+    api_branch_pct = (
+        (api_covered_branches / api_branches * 100) if api_branches else 0.0
+    )
     engine_stmt_pct = (engine_covered / engine_stmts * 100) if engine_stmts else 0.0
-    engine_branch_pct = (engine_covered_branches / engine_branches * 100) if engine_branches else 0.0
+    engine_branch_pct = (
+        (engine_covered_branches / engine_branches * 100) if engine_branches else 0.0
+    )
     total_stmt_pct = (total_covered / total_stmts * 100) if total_stmts else 0.0
-    total_branch_pct = (total_cov_branches / total_branches * 100) if total_branches else 0.0
+    total_branch_pct = (
+        (total_cov_branches / total_branches * 100) if total_branches else 0.0
+    )
 
     lines = [
         "## 10. Code Coverage & Robustness Audit (Phase 10)",
@@ -1265,8 +1338,14 @@ def generate_coverage_section(coverage_path: Path) -> str:
 
     for pkg_name in sorted(packages.keys()):
         pdata = packages[pkg_name]
-        p_stmt_pct = (pdata["covered"] / pdata["stmts"] * 100) if pdata["stmts"] else 0.0
-        p_br_pct = (pdata["cov_branches"] / pdata["branches"] * 100) if pdata["branches"] else 0.0
+        p_stmt_pct = (
+            (pdata["covered"] / pdata["stmts"] * 100) if pdata["stmts"] else 0.0
+        )
+        p_br_pct = (
+            (pdata["cov_branches"] / pdata["branches"] * 100)
+            if pdata["branches"]
+            else 0.0
+        )
         lines.append(
             f"| `{pkg_name}` | {pdata['stmts']:,} | {pdata['covered']:,} | {p_stmt_pct:.2f}% | {p_br_pct:.2f}% |"
         )
@@ -1276,9 +1355,15 @@ def generate_coverage_section(coverage_path: Path) -> str:
     lines.append("")
     lines.append("| File / Block | Purpose | Justification |")
     lines.append("|---|---|---|")
-    lines.append("| `engine/train.py` (CLI block) | CLI entry point (`if __name__ == '__main__'`) | Pipeline execution tested programmatically via test harness and API fixtures. |")
-    lines.append("| `engine/models/sar.py` (edge fallbacks) | Rare empty similarity matrices & extreme tie-breaking | Defensive fallbacks tested under synthetic adversarial constraints. |")
-    lines.append("| `engine/adapters/amazon.py` / `mind.py` | Corrupted line parsing and raw network fallback logic | Exercised during raw ingest; production serving consumes validated parquet artifacts. |")
+    lines.append(
+        "| `engine/train.py` (CLI block) | CLI entry point (`if __name__ == '__main__'`) | Pipeline execution tested programmatically via test harness and API fixtures. |"
+    )
+    lines.append(
+        "| `engine/models/sar.py` (edge fallbacks) | Rare empty similarity matrices & extreme tie-breaking | Defensive fallbacks tested under synthetic adversarial constraints. |"
+    )
+    lines.append(
+        "| `engine/adapters/amazon.py` / `mind.py` | Corrupted line parsing and raw network fallback logic | Exercised during raw ingest; production serving consumes validated parquet artifacts. |"
+    )
     lines.append("")
     return "\n".join(lines)
 
@@ -1433,19 +1518,25 @@ def main() -> None:
             preserved_sections = s8_part.strip()
 
     if preserved_sections:
-        generated_report = generated_report.rstrip() + "\n\n" + preserved_sections + "\n"
+        generated_report = (
+            generated_report.rstrip() + "\n\n" + preserved_sections + "\n"
+        )
 
     coverage_json_path = REPO_ROOT / "coverage.json"
     if coverage_json_path.exists():
         cov_section = generate_coverage_section(coverage_json_path)
         if cov_section:
-            generated_report = generated_report.rstrip() + "\n\n" + cov_section.strip() + "\n"
+            generated_report = (
+                generated_report.rstrip() + "\n\n" + cov_section.strip() + "\n"
+            )
 
     gate_matrix_path = REPO_ROOT / "docs" / "gate_matrix.json"
     if gate_matrix_path.exists():
         gates_section = generate_gate_matrix_section(gate_matrix_path)
         if gates_section:
-            generated_report = generated_report.rstrip() + "\n\n" + gates_section.strip() + "\n"
+            generated_report = (
+                generated_report.rstrip() + "\n\n" + gates_section.strip() + "\n"
+            )
 
     if args.check:
         if not output_md.exists():

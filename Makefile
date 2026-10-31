@@ -56,6 +56,9 @@ demo:
 demo-stop:
 	$(PYTHON) tools/demo.py --stop
 
+screenshots:
+	$(PYTHON) tools/capture_screenshots.py
+
 # ---- Quality ----
 test:
 	cd backend && $(PYTHON) -m pytest tests/ -v --tb=short

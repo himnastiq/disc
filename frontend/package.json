@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check-secrets": "node scripts/check_bundle_secrets.mjs",
+    "screenshots": "node --experimental-strip-types scripts/capture_screenshots.ts",
     "generate:types": "python ../tools/export_openapi.py && openapi-typescript openapi.json -o src/lib/api/generated.ts",
     "record-fixtures": "node scripts/record_fixtures.mjs"
   },

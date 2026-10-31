@@ -44,11 +44,11 @@
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
 | 10 | Integration and robustness audit | 8 | 0 | 0 | 8 | 100% |
-| 11 | Documentation and showcase preparation | 2 | 0 | 1 | 8 | 25% |
+| 11 | Documentation and showcase preparation | 3 | 0 | 1 | 8 | 37% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **118** | | | **129** | **91%** |
+| | **Overall** | **119** | | | **129** | **92%** |
 
-`[##################--] 91%  (118/129 tasks)`
+`[##################--] 92%  (119/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -663,7 +663,7 @@ E1 to E3, then P11.3, P11.2, P11.6, P11.4, P11.1, P11.5, P11.7 (human, in parall
   - Likely questions with grounded answers (each cites a file or decision): why SAR; why TF-IDF for news; how cold start works; what is original versus derived; how leakage was prevented; what the limits are; why the Movies model is not clearly above Popularity on every metric (D-011); what MIND-small means for the Articles results (D-025); why the API imports no deep-learning framework; how adding a content type works (the extensibility test); is any LLM involved (no). Answers point to the Evaluation tab or `docs/RESULTS.md` instead of quoting numbers.
   - Pre-demo checklist: artifacts are the final (non-fast) variants; `python tools/demo.py` reports healthy; ports free; browser zoom and window size fixed; works with the network off (product images are remote URLs: confirm the placeholder renders and nothing blocks on them); screenshots and the recording are on hand.
   - Failure plan: if the API fails mid-demo, switch to the screenshots or recording; list what not to claim (no "beats Popularity" on Movies without the CI qualifier, no online-performance claims).
-- [ ] **P11.6** Screenshots by script. *Acceptance:* `docs/screenshots/` is produced by one command from the final artifacts and a production build, with no manual editing; each file is under 1 MB and passes the tracked-files check.
+- [x] **P11.6** Screenshots by script. *Acceptance:* `docs/screenshots/` is produced by one command from the final artifacts and a production build, with no manual editing; each file is under 1 MB and passes the tracked-files check.
   - `frontend/scripts/capture_screenshots.ts` (Playwright), started with `python tools/demo.py` on the final artifacts. For each type: For You, Compare, Cold Start (with a few items added), Evaluation, About; plus the item drawer once per type, and a 360 px mobile shot of For You per type. Light theme by default, plus one dark-theme shot.
   - Deterministic: fixed viewport (1280 by 800), the first demo user from `demo_users.json`, reduced motion on, wait until skeletons are gone and the network is idle. Name files `<type>-<tab>.png`. The README and DEMO_SCRIPT reference these paths, and `check_docs.py` verifies they exist.
   - Confirm every screenshot shows the correct dataset labelling for the artifacts used, with no stale "synthetic" or "fast" banner, no dev overlay, and no error toast.

@@ -257,7 +257,13 @@ def preflight_check(
                     f"    [WARN] Artifacts for '{t}' were built with earlier code. Consider retraining if models behave unexpectedly."
                 )
 
-        except (DiscoveryEngineError, ValueError, KeyError, OSError, json.JSONDecodeError) as exc:
+        except (
+            DiscoveryEngineError,
+            ValueError,
+            KeyError,
+            OSError,
+            json.JSONDecodeError,
+        ) as exc:
             print(f"  [{t.upper()}] CORRUPTED: {exc}")
             missing_types.append(t)
 
@@ -526,7 +532,15 @@ def main() -> int:
     frontend_env["API_BASE_URL"] = f"http://127.0.0.1:{args.api_port}"
 
     npx_cmd = get_npx_executable()
-    frontend_cmd = [npx_cmd, "next", "start", "-p", str(args.web_port)]
+    frontend_cmd = [
+        npx_cmd,
+        "next",
+        "start",
+        "-H",
+        "127.0.0.1",
+        "-p",
+        str(args.web_port),
+    ]
 
     frontend_proc = subprocess.Popen(
         frontend_cmd,
