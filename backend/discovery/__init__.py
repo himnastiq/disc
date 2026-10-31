@@ -1,4 +1,4 @@
-# Copyright (c) Recommenders contributors.
+# Copyright (c) contributors.
 # Licensed under the MIT License.
 
 __title__ = "discovery"

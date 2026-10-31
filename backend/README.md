@@ -15,8 +15,8 @@ The backend consists of three distinct packages:
    - `artifacts.py`: Checksum-verified artifact serialization (`manifest.json`, `items.parquet`, `interactions.parquet`, `model/`, `topn.parquet`, `metrics.json`).
    - `train.py`: Unified training CLI for offline artifact generation.
 
-2. **`discovery/` (Derived Recommenders Algorithms)**
-   - Vendored, trimmed, and renamed package derived from [Recommenders](https://github.com/recommenders-team/recommenders) under the MIT License.
+2. **`discovery/` (Derived Algorithms)**
+   - Vendored, trimmed, and renamed package derived from [upstream](https://github.com/recommenders-team/recommenders) under the MIT License.
    - Contains algorithmic building blocks (`SARSingleNode`, TF-IDF utilities, python splitters, python evaluation metrics).
    - Free of heavy runtime dependencies (`tensorflow`, `pyspark`, `torch`).
 

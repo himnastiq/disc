@@ -32,7 +32,7 @@ def test_about_and_attribution_agreement() -> None:
     about_response = get_about()
     data = about_response.model_dump()
 
-    # Find Recommenders attribution in API response
+    # Find upstream attribution in API response
     recommenders_att = None
     for att in data.get("attributions", []):
         if "recommenders" in att.get("name", "").lower():

@@ -208,7 +208,7 @@ discover/
 ├── backend/
 │   ├── engine/          # Original modular recommender engine (adapters, models, configs, splits, metrics)
 │   ├── api/             # Original FastAPI serving service (routes, security, search, lookups)
-│   ├── discovery/       # Vendored, trimmed Microsoft Recommenders CPU library (MIT License)
+│   ├── discovery/       # Vendored, trimmed Microsoft CPU library (MIT License)
 │   └── tests/           # Comprehensive backend test suite (unit, contract, integration, fuzzing)
 ├── frontend/
 │   ├── src/             # Next.js App Router application (React 19, TypeScript strict, Tailwind CSS)

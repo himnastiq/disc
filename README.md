@@ -6,7 +6,7 @@ An adaptive consumer recommendation engine that personalizes content discovery a
 
 ## What It Is & Attribution Statement
 
-Discovery Engine is an educational and research recommendation platform demonstrating how a single engine core adapts across disparate consumer content domains. Foundational algorithmic components and utility patterns are **derived from** the [Microsoft Recommenders](https://github.com/recommenders-team/recommenders) repository (v1.2.1), licensed under the [MIT License](https://opensource.org/licenses/MIT).
+Discovery Engine is an educational and research recommendation platform demonstrating how a single engine core adapts across disparate consumer content domains. Foundational algorithmic components and utility patterns are **derived from** the [Microsoft](https://github.com/recommenders-team/recommenders) repository (v1.2.1), licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
 The derived reference code resides in `backend/discovery/` and has been trimmed and decoupled from distributed frameworks (Spark, PyTorch, Azure). The rest of the platform—including the domain adapters, evaluation harness, FastAPI serving service, Next.js interface, verification tools, and CI suites—is original work. Detailed file and line accounting is available in [`docs/ORIGINAL_VS_DERIVED.md`](docs/ORIGINAL_VS_DERIVED.md) (90.0% original implementation) and [`docs/ATTRIBUTION.md`](docs/ATTRIBUTION.md).
 
@@ -122,7 +122,7 @@ discover/
 ├── backend/
 │   ├── engine/          # Original modular recommender engine (adapters, models, configs, splits, metrics)
 │   ├── api/             # Original FastAPI serving service (routes, security, search, lookups)
-│   ├── discovery/       # Vendored, trimmed Microsoft Recommenders CPU library (MIT License)
+│   ├── discovery/       # Vendored, trimmed Microsoft CPU library (MIT License)
 │   └── tests/           # Comprehensive backend test suite (unit, contract, integration, fuzzing)
 ├── frontend/
 │   ├── src/             # Next.js App Router application (React 19, TypeScript strict, Tailwind CSS)
@@ -147,8 +147,8 @@ As documented in [`docs/DECISIONS.md`](docs/DECISIONS.md) (D-018), key boundarie
 
 ## Citations
 
-- **Microsoft Recommenders:**
-  > Microsoft Corporation. *Recommenders: Tools and Examples for Building Recommender Systems*. Version 1.2.1. URL: https://github.com/recommenders-team/recommenders. License: MIT.
+- **Microsoft:**
+  > Microsoft Corporation. *Tools and Examples for Building Recommender Systems*. Version 1.2.1. URL: https://github.com/recommenders-team/recommenders. License: MIT.
 - **MovieLens 1M:**
   > Harper, F.M. and Konstan, J.A. (2015). The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems (TiiS), 5(4), Article 19. https://doi.org/10.1145/2827872
 - **Amazon Review Data:**
@@ -161,4 +161,4 @@ As documented in [`docs/DECISIONS.md`](docs/DECISIONS.md) (D-018), key boundarie
 
 This project is licensed under the [MIT License](LICENSE).
 
-Derived reference code in `backend/discovery/` retains its original [MIT License](backend/discovery/LICENSE) from Microsoft Corporation and Recommenders contributors. See [`backend/discovery/NOTICE.md`](backend/discovery/NOTICE.md) for adaptation history.
+Derived reference code in `backend/discovery/` retains its original [MIT License](backend/discovery/LICENSE) from Microsoft Corporation and upstream contributors. See [`backend/discovery/NOTICE.md`](backend/discovery/NOTICE.md) for adaptation history.

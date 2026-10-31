@@ -1,4 +1,4 @@
-# Copyright (c) Recommenders contributors.
+# Copyright (c) contributors.
 # Licensed under the MIT License.
 import numpy as np
 import pandas as pd

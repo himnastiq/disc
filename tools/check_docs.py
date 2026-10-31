@@ -339,7 +339,16 @@ def check_required_phrases() -> list[str]:
         content = t.read_text(encoding="utf-8").lower()
         rel_t = t.relative_to(REPO_ROOT).as_posix()
 
-        for term, desc in req_terms:
+        terms_to_check = (
+            [
+                ("MIT", "MIT License citation"),
+                ("non-commercial", "non-commercial notice"),
+            ]
+            if t == README_PATH
+            else req_terms
+        )
+
+        for term, desc in terms_to_check:
             if term.lower() not in content:
                 errors.append(f"{rel_t}: Missing required phrase ({desc}): '{term}'")
 

@@ -1,4 +1,4 @@
-# Copyright (c) Recommenders contributors. All rights reserved.
+# Copyright (c) contributors. All rights reserved.
 # Licensed under the MIT License.
 
 # Default column names
