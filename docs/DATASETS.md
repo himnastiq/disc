@@ -73,6 +73,46 @@
 
 ---
 
+## Redistribution Audit
+
+Per Phase 11 Task P11.3 specification, every tracked repository asset potentially containing dataset-derived content has been formally audited against dataset license terms:
+
+| Tracked Asset / File Pattern | Content Classification | Basis for Inclusion / Legal Compliance |
+|---|---|---|
+| `backend/tests/fixtures/artifacts_mini/movies/*` | **100% Synthetic** | Auto-generated mock tables via `scripts/make_mini_artifacts.py`. Zero real MovieLens rows or user IDs. |
+| `backend/tests/fixtures/artifacts_mini/products/*` | **100% Synthetic** | Auto-generated mock tables via `scripts/make_mini_artifacts.py`. Zero real Amazon review texts or ASINs. |
+| `backend/tests/fixtures/artifacts_mini/articles/*` | **100% Synthetic** | Auto-generated mock tables via `scripts/make_mini_artifacts.py`. Zero real MSN article rows or clicks. |
+| `backend/tests/fixtures/mind/train/*` | **100% Synthetic** | Hand-authored mock news articles (15 items) and synthesized impression logs. Zero real Microsoft News text. |
+| `backend/tests/fixtures/mind/dev/*` | **100% Synthetic** | Hand-authored mock news articles and synthesized impression logs. Zero real Microsoft News text. |
+| `backend/tests/fixtures/golden_movies_100k.json` | **Aggregate Statistics** | Offline validation metric summaries (NDCG, Recall, MAP) computed on ml-100k; contains no raw records or PII. |
+| `docs/figures/*.png` | **Aggregate Visualizations** | Plot charts depicting offline metric curves and CI whiskers. Zero raw dataset rows exposed. |
+| `docs/figures/architecture.svg` | **Original Architecture** | Vector diagram illustrating system components. Zero dataset content. |
+| `docs/screenshots/*.png` | **UI Showcase** | Captured browser views of the interactive dashboard. |
+| `data/raw/*` | **Not Tracked** | Completely gitignored. Raw datasets are never committed to git. |
+
+**Audit Conclusion:** Zero raw or copyrighted dataset records are redistributed in the repository. All committed test fixtures are 100% synthetic.
+
+---
+
+## License Terms Re-Check
+
+The terms and access conditions for all three external dataset providers were actively re-checked on **2026-10-31**:
+
+1. **MovieLens (GroupLens Research):**
+   - **URL Checked:** https://grouplens.org/datasets/movielens/
+   - **Verification Date:** 2026-10-31
+   - **Status:** Active. License permits non-commercial research and educational use. Redistribution prohibited. Attribution required and satisfied.
+2. **Amazon Reviews (UCSD / Julian McAuley):**
+   - **URL Checked:** https://cseweb.ucsd.edu/~jmcauley/datasets/amazon_v2/
+   - **Verification Date:** 2026-10-31
+   - **Status:** Active. License permits non-commercial academic research. Redistribution prohibited without attribution. Attribution required and satisfied.
+3. **Microsoft News Dataset (MIND):**
+   - **URL Checked:** https://msnews.github.io/
+   - **Verification Date:** 2026-10-31
+   - **Status:** Active. MSR-LA for Data restricts usage to non-commercial academic research. Direct blob download deprecated; access instructions via Hugging Face documented in `docs/DATASETS.md`. Attribution required and satisfied.
+
+---
+
 ## General Notes
 
 - Raw datasets are **not committed** to the repository (listed in `.gitignore`).

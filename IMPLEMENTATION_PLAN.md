@@ -44,11 +44,11 @@
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
 | 10 | Integration and robustness audit | 8 | 0 | 0 | 8 | 100% |
-| 11 | Documentation and showcase preparation | 0 | 0 | 1 | 8 | 0% |
+| 11 | Documentation and showcase preparation | 1 | 0 | 1 | 8 | 12% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **116** | | | **129** | **89%** |
+| | **Overall** | **117** | | | **129** | **90%** |
 
-`[#################---] 89%  (116/129 tasks)`
+`[##################--] 90%  (117/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -645,7 +645,7 @@ E1 to E3, then P11.3, P11.2, P11.6, P11.4, P11.1, P11.5, P11.7 (human, in parall
   - Diagrams (5): system overview (datasets to adapter to registry to model to harness to artifacts to API to frontend); training pipeline (engine.train: load, validate, split with leakage check, tune on validation, fit, evaluate with bootstrap CIs, write artifacts and manifest); request flow as a sequence diagram (browser, Next route handler, FastAPI, loaded artifacts, response with mode, reason, meta); adapter and registry design (abstract DatasetAdapter and RecommenderModel, registration decorators, the three types plus the test-only toy); artifact layout (files, checksums, code_hash).
   - Generated blocks: the endpoint table from `openapi.json`; the "how the engine adapts" table (section 7 of this plan) filled from `data_report.json` and `metrics.json` per type (signal rule, split strategy, model, candidate pool, card type, dataset size).
   - Keep the `metrics.json` schema section written in P2.8 and update it if the schema changed. Include a short "what is deliberately not here" list (no accounts, no online learning, no deep-learning imports in the API) and the core-unchanged evidence from `tools/core_unchanged.py`.
-- [ ] **P11.3** Attribution, licensing and original-versus-derived accounting. *Acceptance:* `NOTICE.md`, `ATTRIBUTION.md` and `VENDORED_FILES.md` are current and regenerate identically; the original-versus-derived table is generated; the redistribution audit is recorded; required phrases are present everywhere section 3 requires them.
+- [x] **P11.3** Attribution, licensing and original-versus-derived accounting. *Acceptance:* `NOTICE.md`, `ATTRIBUTION.md` and `VENDORED_FILES.md` are current and regenerate identically; the original-versus-derived table is generated; the redistribution audit is recorded; required phrases are present everywhere section 3 requires them.
   - Regenerate `docs/VENDORED_FILES.md` with `tools/vendored_manifest.py` and confirm `--check` passes. Re-read `backend/discovery/NOTICE.md` against the actual patches (each minimal compatibility patch listed, including the TLS verification change).
   - Original versus derived (generated): `tools/loc_report.py` writes `docs/ORIGINAL_VS_DERIVED.md` with file counts and line counts per area (discovery/ derived; engine/, api/, frontend/src/, tools/, tests/, docs/ original). Count from `git ls-files` only, and state the exclusions in the file: lock files, `openapi.json`, `tests/fixtures/artifacts_mini`, build output, vendored `LICENSE`. Deterministic, with `--check`.
   - Redistribution audit: list every tracked file that contains dataset-derived content (test fixtures, artifacts_mini, figures, screenshots) and record in `docs/DATASETS.md` whether it is synthetic or derived and the basis for including it. MovieLens and MIND terms restrict redistribution, so if any tracked fixture holds real rows, replace it with synthetic data, or mark the question `[!]` for the human. Do not guess at permission.

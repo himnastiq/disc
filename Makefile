@@ -77,6 +77,13 @@ gates: check
 progress:
 	$(PYTHON) tools/progress.py
 
+docs:
+	$(PYTHON) tools/make_docs.py
+
+docs-check:
+	$(PYTHON) tools/make_docs.py --check
+	$(PYTHON) tools/check_docs.py
+
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
