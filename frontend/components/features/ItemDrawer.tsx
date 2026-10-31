@@ -208,9 +208,9 @@ export function ItemDrawer({
               {/* Categories */}
               {item.categories.length > 0 && (
                 <div className="flex items-center gap-1.5 pt-1 flex-wrap">
-                  {item.categories.map((cat) => (
+                  {Array.from(new Set(item.categories)).map((cat, idx) => (
                     <Badge
-                      key={cat}
+                      key={`${cat}-${idx}`}
                       variant="secondary"
                       className="text-xs px-2 py-0.5 bg-[var(--color-elevated)] text-[var(--color-text-secondary)] border border-[var(--color-border)]"
                     >

@@ -79,6 +79,7 @@ pytest_log.txt
 # Demo runtime
 .demo/
 .tmp/
+demo_backup/
 
 # Lock files that should be committed are excluded from this ignore
 # uv.lock and package-lock.json ARE committed

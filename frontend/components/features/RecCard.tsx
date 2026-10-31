@@ -48,6 +48,7 @@ export function RecCard({
   };
 
   const matchPercentage = Math.round(item.display_score * 100);
+  const uniqueCategories = Array.from(new Set(item.categories || []));
 
   return (
     <article
@@ -118,16 +119,16 @@ export function RecCard({
           {cardType === 'movie' && (
             <p className="text-[12px] text-[var(--color-text-secondary)] tabular-nums flex items-center gap-1.5 flex-wrap">
               {item.year && <span>{item.year}</span>}
-              {item.year && item.categories.length > 0 && <span>·</span>}
-              <span className="truncate">{item.categories.slice(0, 2).join(', ')}</span>
+              {item.year && uniqueCategories.length > 0 && <span>·</span>}
+              <span className="truncate">{uniqueCategories.slice(0, 2).join(', ')}</span>
             </p>
           )}
 
           {cardType === 'product' && (
             <p className="text-[12px] text-[var(--color-text-secondary)] tabular-nums flex items-center gap-1.5 truncate">
               {item.subtitle && <span className="font-medium text-[var(--color-text)]">{item.subtitle}</span>}
-              {item.subtitle && item.categories.length > 0 && <span>·</span>}
-              <span className="text-[var(--color-text-muted)] truncate">{item.categories.slice(0, 2).join(', ')}</span>
+              {item.subtitle && uniqueCategories.length > 0 && <span>·</span>}
+              <span className="text-[var(--color-text-muted)] truncate">{uniqueCategories.slice(0, 2).join(', ')}</span>
             </p>
           )}
 
@@ -139,11 +140,11 @@ export function RecCard({
           )}
 
           {/* Category Chips */}
-          {item.categories.length > 0 && (
+          {uniqueCategories.length > 0 && (
             <div className="flex items-center gap-1 pt-0.5 flex-wrap">
-              {item.categories.slice(0, 2).map((cat) => (
+              {uniqueCategories.slice(0, 2).map((cat, idx) => (
                 <Badge
-                  key={cat}
+                  key={`${cat}-${idx}`}
                   variant="outline"
                   className="text-[12px] px-1.5 py-0 bg-[var(--color-elevated)]/40 border-[var(--color-border)] text-[var(--color-text-secondary)]"
                 >

@@ -14,14 +14,15 @@ function renderWithClient(ui: React.ReactElement) {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
-describe('ForYouTab (P9.4)', () => {
+describe('ForYouTab (P9.4 & Universal UI Consistency)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(apiClient, 'getUserProfile').mockResolvedValue(profileFixture);
     vi.spyOn(apiClient, 'getRecommendations').mockResolvedValue(recommendFixture as RecommendResponse);
+    vi.spyOn(apiClient, 'getPopular').mockResolvedValue(recommendFixture as RecommendResponse);
   });
 
-  it('renders profile card and recommendations from fixtures', async () => {
+  it('renders profile card and recommendations from fixtures for movies', async () => {
     renderWithClient(
       <ForYouTab type="movies" user="1" k={10} onKChange={vi.fn()} />
     );
@@ -30,8 +31,9 @@ describe('ForYouTab (P9.4)', () => {
     expect(await screen.findByText('User #1')).toBeInTheDocument();
 
     // Recommendation card presence
-    expect(await screen.findByRole('heading', { name: 'The Matrix (1999)' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Blade Runner (1982)' })).toBeInTheDocument();
+    const matrixHeadings = await screen.findAllByRole('heading', { name: 'The Matrix (1999)' });
+    expect(matrixHeadings.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole('heading', { name: 'Blade Runner (1982)' })[0]).toBeInTheDocument();
   });
 
   it('renders k selector and triggers onKChange when options are clicked', async () => {
@@ -76,11 +78,46 @@ describe('ForYouTab (P9.4)', () => {
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
-  it('renders AI Insights rectangle for products domain', async () => {
-    renderWithClient(
+  it('renders consistent model badges, trending, and explore links across movies, products, and articles', async () => {
+    // 1. Movies domain
+    const { unmount: unmountMovies } = renderWithClient(
+      <ForYouTab type="movies" user="1" k={10} onKChange={vi.fn()} />
+    );
+    expect(await screen.findByText('SAR model')).toBeInTheDocument();
+    expect(screen.getByText('MovieLens 1M')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /trending now in movies/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /compare models/i })).toHaveAttribute('href', '/?type=movies&tab=compare');
+    unmountMovies();
+
+    // 2. Products domain
+    const { unmount: unmountProducts } = renderWithClient(
       <ForYouTab type="products" user="B0001" k={10} onKChange={vi.fn()} />
     );
+    expect(await screen.findByText('SAR model')).toBeInTheDocument();
+    expect(screen.getByText('Amazon Video Games')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /trending now in products/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /compare models/i })).toHaveAttribute('href', '/?type=products&tab=compare');
+    unmountProducts();
 
-    expect(await screen.findByRole('heading', { name: /ai insights/i })).toBeInTheDocument();
+    // 3. Articles domain
+    renderWithClient(
+      <ForYouTab type="articles" user="U1030" k={10} onKChange={vi.fn()} />
+    );
+    expect(await screen.findByText('TF-IDF model')).toBeInTheDocument();
+    expect(screen.getByText('MIND News Feed')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /trending now in articles/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /compare models/i })).toHaveAttribute('href', '/?type=articles&tab=compare');
+  });
+
+  it('renders AI Insights and explore banner across all three domains', async () => {
+    for (const domain of ['movies', 'products', 'articles']) {
+      const { unmount } = renderWithClient(
+        <ForYouTab type={domain} user="demo" k={10} onKChange={vi.fn()} />
+      );
+      expect(await screen.findByRole('heading', { name: /ai insights/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /ready to explore further\?/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /cold start demo/i })).toHaveAttribute('href', `/?type=${domain}&tab=cold-start`);
+      unmount();
+    }
   });
 });

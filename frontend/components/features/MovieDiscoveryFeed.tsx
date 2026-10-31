@@ -106,7 +106,6 @@ export function MovieDiscoveryFeed({
     trending: trendingMovies,
     becauseYouLiked,
     topGenrePicks,
-    source,
   } = useHybridRecommendations(user, propRecData);
 
   const recommendedMovies = useMemo(() => {
@@ -167,38 +166,7 @@ export function MovieDiscoveryFeed({
 
   return (
     <div className="space-y-6">
-      {/* 1. Welcome Headline & Real-time Status */}
-      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 border-b border-[var(--color-border)] pb-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text)]">
-            {hasActivity ? 'Welcome back' : 'The Discovery Engine'}
-          </h2>
-          <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-0.5">
-            {hasActivity
-              ? 'Your personalized entertainment feed and curated discovery'
-              : 'Personalized movie discovery powered by real-time interest'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          {source === 'ml-sar' && (
-            <span
-              className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-1 rounded-[4px]"
-              title="Recommendations served by the SAR collaborative-filtering backend"
-            >
-              SAR model
-            </span>
-          )}
-          {hasActivity && (
-            <div className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface)] px-3 py-1 rounded-[4px] border border-[var(--color-border)] tabular-nums">
-              {activeEntries.length} saved{' '}
-              {activeEntries.length === 1 ? 'title' : 'titles'}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Grid: Sidebar (ProfileCard) + Main Content (Feed) */}
+      {/* Grid: Sidebar (ProfileCard) + Main Content (Feed) */}
       <div className="grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
         {/* User Profile Summary (Sidebar as in Articles and Products) */}
         <div>

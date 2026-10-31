@@ -283,11 +283,11 @@ export function CompareTab({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
-              {(compareMode === 'popular-vs-user' ? popularData?.results : userAData?.results)?.map((item) => {
+              {(compareMode === 'popular-vs-user' ? popularData?.results : userAData?.results)?.map((item, idx) => {
                 const isShared = overlapInfo.sharedIds.has(item.item_id);
                 return (
                   <RecCard
-                    key={item.item_id}
+                    key={`${item.item_id}-${idx}`}
                     item={item}
                     cardType={cardType}
                     onSelect={onSelectItem}
@@ -321,11 +321,11 @@ export function CompareTab({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
-              {(compareMode === 'popular-vs-user' ? userAData?.results : userBData?.results)?.map((item) => {
+              {(compareMode === 'popular-vs-user' ? userAData?.results : userBData?.results)?.map((item, idx) => {
                 const isShared = overlapInfo.sharedIds.has(item.item_id);
                 return (
                   <RecCard
-                    key={item.item_id}
+                    key={`${item.item_id}-${idx}`}
                     item={item}
                     cardType={cardType}
                     onSelect={onSelectItem}

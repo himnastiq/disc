@@ -124,4 +124,28 @@ describe('RecCard & Badges (P9.3)', () => {
     rerender(<ModeBadge mode="popularity" />);
     expect(screen.getByText(/Popularity Fallback/i)).toBeInTheDocument();
   });
+
+  it('deduplicates category chips and renders without duplicate key errors', () => {
+    const errorSpy = vi.spyOn(console, 'error');
+    const itemWithDuplicateCategories: ScoredItem = {
+      ...mockProductItem,
+      categories: ['Gift Cards', 'Gift Cards'],
+    };
+
+    const { container } = renderWithClient(
+      <RecCard item={itemWithDuplicateCategories} cardType="product" />
+    );
+
+    // Verify no React duplicate key warning occurred
+    const keyWarnings = errorSpy.mock.calls.filter((call) =>
+      typeof call[0] === 'string' && call[0].includes('same key')
+    );
+    expect(keyWarnings).toHaveLength(0);
+
+    // Verify only 1 badge chip is rendered
+    const badgeChips = Array.from(container.querySelectorAll('div')).filter(
+      (el) => el.textContent === 'Gift Cards' && el.className.includes('rounded')
+    );
+    expect(badgeChips.length).toBe(1);
+  });
 });

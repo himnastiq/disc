@@ -141,7 +141,7 @@ describe('MovieDiscoveryFeed Component', () => {
     vi.spyOn(apiClient, 'getPopular').mockResolvedValue(recommendFixture as RecommendResponse);
   });
 
-  it('renders welcome banner, profile, and recommended carousels', async () => {
+  it('renders profile and recommended carousels', async () => {
     renderWithClient(
       <MovieDiscoveryFeed
         user="1"
@@ -151,8 +151,6 @@ describe('MovieDiscoveryFeed Component', () => {
       />
     );
 
-    expect(screen.getByText('The Discovery Engine')).toBeInTheDocument();
-    expect(screen.getByText('SAR model')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /ai insights/i })).toBeInTheDocument();
     expect(await screen.findByText('User #1')).toBeInTheDocument();
     expect(await screen.findByText('Personalized Recommendations')).toBeInTheDocument();

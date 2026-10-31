@@ -209,9 +209,9 @@ export function ColdStartTab({
                         </div>
                         {item.categories && item.categories.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-0.5">
-                            {item.categories.slice(0, 3).map((cat) => (
+                            {Array.from(new Set(item.categories)).slice(0, 3).map((cat, idx) => (
                               <span
-                                key={cat}
+                                key={`${cat}-${idx}`}
                                 className="text-[12px] text-[var(--color-text-secondary)] bg-[var(--color-bg)] px-1.5 py-0.5 rounded"
                               >
                                 {cat}
@@ -425,9 +425,9 @@ export function ColdStartTab({
         {/* Success Grid */}
         {!isRecsLoading && !isRecsError && coldStartData && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {coldStartData.results.map((item) => (
+            {coldStartData.results.map((item, idx) => (
               <RecCard
-                key={item.item_id}
+                key={`${item.item_id}-${idx}`}
                 item={item}
                 cardType={cardType}
                 onSelect={onSelectItem}
