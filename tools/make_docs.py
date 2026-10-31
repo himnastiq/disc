@@ -54,7 +54,7 @@ def load_json(path: Path) -> dict[str, Any] | list[Any]:
 # =========================================================================
 
 
-def render_dataset_table() -> str:
+def render_dataset_table() -> str | None:
     """Render table of dataset properties from manifest.json and data_report.json."""
     lines = [
         "| Content Type | Dataset | Variant | Items | Users | Interactions | Sparsity | Code Hash |",
@@ -68,6 +68,8 @@ def render_dataset_table() -> str:
 
         if not isinstance(manifest, dict) or not isinstance(report, dict):
             continue
+        if not manifest or not report:
+            continue
 
         c_type = manifest.get("content_type", d)
         d_name = manifest.get("dataset_name", d)
@@ -78,16 +80,26 @@ def render_dataset_table() -> str:
         sparsity = report.get("sparsity", 0.0)
         code_hash = manifest.get("code_hash", "")[:8]
 
+        items_str = f"{items:,}" if isinstance(items, (int, float)) else str(items)
+        users_str = f"{users:,}" if isinstance(users, (int, float)) else str(users)
+        interactions_str = (
+            f"{interactions:,}"
+            if isinstance(interactions, (int, float))
+            else str(interactions)
+        )
         sparsity_str = (
             f"{sparsity:.4f}" if isinstance(sparsity, float) else str(sparsity)
         )
         lines.append(
-            f"| **{c_type.capitalize()}** | {d_name} | `{variant}` | {items:,} | {users:,} | {interactions:,} | {sparsity_str} | `{code_hash}` |"
+            f"| **{c_type.capitalize()}** | {d_name} | `{variant}` | {items_str} | {users_str} | {interactions_str} | {sparsity_str} | `{code_hash}` |"
         )
+
+    if len(lines) <= 2:
+        return None
     return "\n".join(lines)
 
 
-def render_results_summary() -> str:
+def render_results_summary() -> str | None:
     """Render offline benchmark summary table from metrics.json (k=10)."""
     lines = [
         "| Domain | Model | HitRate@10 (95% CI) | NDCG@10 (95% CI) | Popularity NDCG@10 | Benchmark Verdict |",
@@ -130,6 +142,9 @@ def render_results_summary() -> str:
         lines.append(
             f"| **{d.capitalize()}** | {model_label} | {hr_str} | {ndcg_str} | {pop_ndcg_str} | {verdict} |"
         )
+
+    if len(lines) <= 2:
+        return None
 
     lines.append("")
     lines.append(
@@ -178,7 +193,7 @@ def render_adapts_table() -> str:
 | **UI Presentation** | Movie poster & year card | Product image, price & brand card | Headline, category & recency card |"""
 
 
-def render_personas_table() -> str:
+def render_personas_table() -> str | None:
     """Render demo personas table from artifacts/*/demo_users.json."""
     lines = [
         "| Domain | User ID | Persona Label | Interaction Count | Top Affinity Categories |",
@@ -194,10 +209,14 @@ def render_personas_table() -> str:
             uid = str(u.get("user_id", ""))
             persona = str(u.get("persona", ""))
             count = u.get("interaction_count", 0)
+            count_str = f"{count:,}" if isinstance(count, (int, float)) else str(count)
             cats = ", ".join(u.get("top_categories", [])[:3])
             lines.append(
-                f"| **{d.capitalize()}** | `{uid}` | `{persona}` | {count} | {cats} |"
+                f"| **{d.capitalize()}** | `{uid}` | `{persona}` | {count_str} | {cats} |"
             )
+
+    if len(lines) <= 2:
+        return None
     return "\n".join(lines)
 
 
@@ -208,7 +227,7 @@ discover/
 ├── backend/
 │   ├── engine/          # Original modular recommender engine (adapters, models, configs, splits, metrics)
 │   ├── api/             # Original FastAPI serving service (routes, security, search, lookups)
-│   ├── discovery/       # Vendored, trimmed Microsoft CPU library (MIT License)
+│   ├── discovery/       # Vendored, trimmed CPU library (MIT License)
 │   └── tests/           # Comprehensive backend test suite (unit, contract, integration, fuzzing)
 ├── frontend/
 │   ├── src/             # Next.js App Router application (React 19, TypeScript strict, Tailwind CSS)
@@ -296,6 +315,9 @@ def process_markdown_file(path: Path, check_only: bool = False) -> tuple[bool, i
 
         block_count += 1
         rendered_body = RENDERERS[name]()
+        if rendered_body is None:
+            # Source files for this generator are not available (e.g. artifacts in clean CI)
+            return match.group(0)
         return f"<!-- GENERATED:{name}:START -->\n{rendered_body}\n<!-- GENERATED:{name}:END -->"
 
     pattern = re.compile(

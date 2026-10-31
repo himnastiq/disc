@@ -1,6 +1,6 @@
 """Discovery Engine - MIND Articles Dataset Adapter (Phase 5, P5.2).
 
-Parses the Microsoft News Dataset (MIND):
+Parses the MIND News Dataset:
 - news.tsv (8 columns: id, category, subcategory, title, abstract, url, title_entities, abstract_entities)
   into Items with title, categories=[category, subcategory], abstract as text, URL in extra.
 - behaviors.tsv (5 columns: impression_id, user_id, time, history, impressions)

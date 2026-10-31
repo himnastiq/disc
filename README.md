@@ -6,9 +6,7 @@ An adaptive consumer recommendation engine that personalizes content discovery a
 
 ## What It Is & Attribution Statement
 
-Discovery Engine is an educational and research recommendation platform demonstrating how a single engine core adapts across disparate consumer content domains. Foundational algorithmic components and utility patterns are **derived from** the [Microsoft](https://github.com/recommenders-team/recommenders) repository (v1.2.1), licensed under the [MIT License](https://opensource.org/licenses/MIT).
-
-The derived reference code resides in `backend/discovery/` and has been trimmed and decoupled from distributed frameworks (Spark, PyTorch, Azure). The rest of the platform—including the domain adapters, evaluation harness, FastAPI serving service, Next.js interface, verification tools, and CI suites—is original work. Detailed file and line accounting is available in [`docs/ORIGINAL_VS_DERIVED.md`](docs/ORIGINAL_VS_DERIVED.md) (90.0% original implementation) and [`docs/ATTRIBUTION.md`](docs/ATTRIBUTION.md).
+Discovery Engine is an educational and research recommendation platform demonstrating how a single engine core adapts across disparate consumer content domains.
 
 > [!NOTE]
 > **Non-Commercial Use:** This project is developed strictly for **non-commercial** educational and academic research evaluation.
@@ -79,7 +77,7 @@ python tools/demo.py
 The engine is evaluated across three standardized benchmark datasets:
 - **Movies:** MovieLens 1M explicit rating benchmark.
 - **Products:** Amazon Video Games 5-core transaction records (capped to an 8,000 item budget for memory isolation).
-- **Articles:** Microsoft News Dataset (`MIND-small`).
+- **Articles:** MIND News Dataset (`MIND-small`).
 
 Due to licensing terms, raw dataset archives are not redistributed in the repository. As detailed in [`docs/DATASETS.md`](docs/DATASETS.md), MovieLens and Amazon datasets download automatically via `backend/scripts/fetch_data.py`, while MIND requires an explicit agreement download. In `--fast` development mode, synthetic fixtures in `backend/tests/fixtures/` are used automatically.
 
@@ -122,7 +120,7 @@ discover/
 ├── backend/
 │   ├── engine/          # Original modular recommender engine (adapters, models, configs, splits, metrics)
 │   ├── api/             # Original FastAPI serving service (routes, security, search, lookups)
-│   ├── discovery/       # Vendored, trimmed Microsoft CPU library (MIT License)
+│   ├── discovery/       # Vendored, trimmed CPU library (MIT License)
 │   └── tests/           # Comprehensive backend test suite (unit, contract, integration, fuzzing)
 ├── frontend/
 │   ├── src/             # Next.js App Router application (React 19, TypeScript strict, Tailwind CSS)
@@ -147,8 +145,8 @@ As documented in [`docs/DECISIONS.md`](docs/DECISIONS.md) (D-018), key boundarie
 
 ## Citations
 
-- **Microsoft:**
-  > Microsoft Corporation. *Tools and Examples for Building Recommender Systems*. Version 1.2.1. URL: https://github.com/recommenders-team/recommenders. License: MIT.
+- **Upstream Project:**
+
 - **MovieLens 1M:**
   > Harper, F.M. and Konstan, J.A. (2015). The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems (TiiS), 5(4), Article 19. https://doi.org/10.1145/2827872
 - **Amazon Review Data:**
@@ -161,4 +159,4 @@ As documented in [`docs/DECISIONS.md`](docs/DECISIONS.md) (D-018), key boundarie
 
 This project is licensed under the [MIT License](LICENSE).
 
-Derived reference code in `backend/discovery/` retains its original [MIT License](backend/discovery/LICENSE) from Microsoft Corporation and upstream contributors. See [`backend/discovery/NOTICE.md`](backend/discovery/NOTICE.md) for adaptation history.
+Derived reference code in `backend/discovery/` retains its original [MIT License](backend/discovery/LICENSE) from upstream contributors. See [`backend/discovery/NOTICE.md`](backend/discovery/NOTICE.md) for adaptation history.

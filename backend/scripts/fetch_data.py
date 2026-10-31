@@ -267,7 +267,7 @@ def fetch_amazon(target_dir: Path, variant: str = "both") -> bool:
 def fetch_mind(target_dir: Path, variant: str = "small") -> bool:
     """Download and extract MIND dataset (train and dev splits).
 
-    If direct network download is blocked due to Microsoft licensing/authentication,
+    If direct network download is blocked due to licensing/authentication,
     prints clear manual instructions with exact expected file paths.
     """
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -333,11 +333,11 @@ def fetch_mind(target_dir: Path, variant: str = "small") -> bool:
 
     if not download_success:
         print("\n" + "=" * 60)
-        print("  [!] AUTOMATED DOWNLOAD BLOCKED: MIND (Microsoft News Dataset)")
+        print("  [!] AUTOMATED DOWNLOAD BLOCKED: MIND (News Dataset)")
         print("=" * 60)
-        print("  Direct public blob access to the Microsoft Azure storage container")
+        print("  Direct public blob access to the Azure storage container")
         print("  is restricted. The official MIND repository now requires accepting")
-        print("  the Microsoft Research License Agreement.")
+        print("  the Research License Agreement.")
         print("\n  MANUAL SETUP INSTRUCTIONS:")
         print("  1. Visit the official Hugging Face mirror:")
         print("     https://huggingface.co/datasets/yjw1029/MIND")
