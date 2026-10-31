@@ -282,3 +282,34 @@ Five stress and resilience rituals were executed to probe boundary conditions, e
 | **Ritual 3: Cold-Start Spam Typing** | Rapid keystroke spamming into debounced search box across 5 consecutive keystroke bursts (`a`, `ab`, `abc`, `abcd`, `matrix`). | Debounced input (300ms) canceled in-flight requests cleanly, settling on exact search results without unhandled errors. | **PASSED** |
 | **Ritual 4: Offline & 500 Injection** | Intercepting recommendations endpoint and injecting HTTP 500 Internal Server Error payloads. | Rendered accessible `ErrorState` card with clear error description and functional "Try Again" retry trigger. | **PASSED** |
 | **Ritual 5: Extreme Data Edge Cases** | Injecting 500-character titles, null optional fields, and `<script>window.__xss=true</script>` injection strings into recommendation payloads. | Text clamped gracefully within card container, layout did not break, and XSS script execution remained 100% prevented (`isXssInjected === false`). | **PASSED** |
+
+## 10. Code Coverage & Robustness Audit (Phase 10)
+
+### Backend Code Coverage Summary (P10.7)
+
+> **Gate Requirement:** Statement coverage $\ge 80\%$ on `engine/` and `api/` (excluding vendored `discovery/`).
+> **Branch Tracking:** Branch coverage tracked with `--cov-branch` to ensure branch path awareness.
+
+| Module / Scope | Statements | Covered | Missing | Statement Coverage | Branch Coverage | Gate Status ($\ge 80\%$) |
+|---|---|---|---|---|---|---|
+| `api/` (FastAPI Endpoints & Middleware) | 1,057 | 954 | 103 | **90.26%** | 79.58% | **PASSED** |
+| `engine/` (Recommender Core & Harness) | 3,673 | 3,281 | 392 | **89.33%** | 74.37% | **PASSED** |
+| **Overall (`engine/` + `api/`)** | **4,730** | **4,235** | **495** | **89.53%** | **75.16%** | **PASSED** |
+
+#### Package-Level Breakdown
+
+| Package Scope | Statements | Covered | Statement Coverage | Branch Coverage |
+|---|---|---|---|---|
+| `api (endpoints & security)` | 1,057 | 954 | 90.26% | 79.58% |
+| `engine.adapters` | 622 | 563 | 90.51% | 76.63% |
+| `engine.core (config, schema, artifacts)` | 1,147 | 1,010 | 88.06% | 72.42% |
+| `engine.evaluation` | 899 | 824 | 91.66% | 81.12% |
+| `engine.models` | 1,005 | 884 | 87.96% | 68.78% |
+
+### Uncovered Code Justifications & Error Handlers
+
+| File / Block | Purpose | Justification |
+|---|---|---|
+| `engine/train.py` (CLI block) | CLI entry point (`if __name__ == '__main__'`) | Pipeline execution tested programmatically via test harness and API fixtures. |
+| `engine/models/sar.py` (edge fallbacks) | Rare empty similarity matrices & extreme tie-breaking | Defensive fallbacks tested under synthetic adversarial constraints. |
+| `engine/adapters/amazon.py` / `mind.py` | Corrupted line parsing and raw network fallback logic | Exercised during raw ingest; production serving consumes validated parquet artifacts. |

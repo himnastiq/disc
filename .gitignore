@@ -74,6 +74,7 @@ frontend/test-results/
 
 # Logs
 *.log
+pytest_log.txt
 
 # Demo runtime
 .demo/

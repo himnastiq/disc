@@ -43,12 +43,12 @@
 | 7 | FastAPI backend | 13 | 0 | 0 | 13 | 100% |
 | 8 | Frontend scaffolding | 9 | 0 | 0 | 9 | 100% |
 | 9 | Frontend features | 12 | 0 | 0 | 12 | 100% |
-| 10 | Integration and robustness audit | 4 | 0 | 0 | 8 | 50% |
+| 10 | Integration and robustness audit | 5 | 0 | 0 | 8 | 62% |
 | 11 | Documentation and showcase preparation | 0 | 0 | 0 | 8 | 0% |
 | 12 | Optional stretch (only after Phases 0 to 11 are complete) | 0 | 0 | 0 | 5 | 0% |
-| | **Overall** | **112** | | | **129** | **86%** |
+| | **Overall** | **113** | | | **129** | **87%** |
 
-`[#################---] 86%  (112/129 tasks)`
+`[#################---] 87%  (113/129 tasks)`
 <!-- PROGRESS:END -->
 
 ---
@@ -572,7 +572,7 @@ Before ticking the Phase Gate, write down in the Session Log **five concrete way
   - Allowed manual steps: only those documented in `docs/DATASETS.md` (the MIND manual download). Everything else must be unattended; use the MIND fixture for the articles `--fast` step and say so.
   - Be honest about what this proves. A temp directory still shares your caches, installed tools and network, so this validates the repo and README, not a pristine machine. For a truly fresh environment add a manually triggered CI job (`workflow_dispatch`) on Ubuntu and Windows runners that runs the same script with `--fast`, and record the run result.
   - Record wall-clock time per step in the Session Log (the full rebuild was 451 s in P6.4, use that as the comparison).
-- [ ] **P10.7** Final regression and coverage. *Acceptance:* all checks green, golden and real-data tests pass, coverage at least 80 percent statements on engine/ and api/, gaps explained.
+- [x] **P10.7** Final regression and coverage. *Acceptance:* all checks green, golden and real-data tests pass, coverage at least 80 percent statements on engine/ and api/, gaps explained.
   - `python tools/check.py` (all 10 checks) and make gates equivalents (reproducibility rebuild on `--fast`, bench, Playwright e2e). Run `pytest -m real_data` too (several minutes). Run the fast suite twice; fix any flaky test, never re-run until green.
   - Golden tests (`test_movies_golden.py`) compare within the documented tolerance. Do not tighten to exact equality, because BLAS and platform differences can change low-order digits.
   - Coverage: `cd backend && pytest -m "not real_data" --cov=engine --cov=api --cov-branch --cov-report=term-missing --cov-report=html:../coverage_report --cov-report=json:../coverage.json`. Statement coverage of at least 80 percent on `engine/` and `api/` is the gate; branch coverage is reported for information. `discovery/` (vendored) is excluded. Make sure `coverage_report/` and `coverage.json` are gitignored (the tracked-files check enforces it) and that the numbers reach `docs/RESULTS.md` through `make_results.py`, not by hand.

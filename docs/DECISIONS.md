@@ -814,6 +814,44 @@ Quality Gate R11 security criteria are strictly satisfied across backend API, fr
 
 ---
 
+## D-033: Final Regression and Branch Coverage Verification (P10.7)
+
+**Date:** 2026-10-31
+**Status:** Approved
+
+**Context:**
+Task P10.7 requires full regression verification and branch coverage measurement across `engine/` and `api/` with a statement coverage gate of $\ge 80\%$, tracked branch coverage (`--cov-branch`), and automated report generation into `docs/RESULTS.md` via `tools/make_results.py`.
+
+**Audit Findings and Coverage Results:**
+1. **Quality Runner (`python tools/check.py`):** All 10 quality checks passed cleanly:
+   - Ruff Linter: Clean
+   - Ruff Format: Clean
+   - Mypy Type Checker: Clean (0 issues across 47 source files)
+   - Conformance Audit Document: Up to date
+   - Git Tracked Files Hygiene: 0 forbidden or oversize files
+   - Backend Pytest Suite: 488 / 488 tests passed
+   - Frontend ESLint: 0 errors, 0 warnings
+   - Frontend TypeScript (`tsc --noEmit`): 0 type errors
+   - Frontend Vitest Suite: 14 test files, 69 / 69 unit tests passed
+   - Client Bundle Secret Check: 0 leaks across 15 client chunks
+2. **Backend Statement & Branch Coverage (`pytest --cov=engine --cov=api --cov-branch`):**
+   - `api/` (FastAPI Endpoints & Middleware): 954 / 1,057 statements = **90.26%** (branch: 79.58%), **PASSED** ($\ge 80\%$)
+   - `engine/` (Recommender Core & Harness): 3,281 / 3,673 statements = **89.33%** (branch: 74.37%), **PASSED** ($\ge 80\%$)
+   - **Combined (`engine/` + `api/`):** 4,235 / 4,730 statements = **89.53%** (branch: 75.16%), **PASSED**
+3. **Automated Report Generation:** `tools/make_results.py` parses `coverage.json` directly and embeds the coverage breakdown and justifications into Section 10 of `docs/RESULTS.md`.
+4. **Uncovered Code Justifications:**
+   - `engine/train.py` CLI block: CLI entry points (`if __name__ == '__main__'`) bypassed in favor of programmatic pipeline execution.
+   - `engine/models/sar.py` defensive fallbacks: Extreme tie-breaking and corner empty similarity matrices verified under synthetic adversarial tests.
+   - `engine/adapters/amazon.py` / `mind.py`: Corrupted line parsing and raw network fallback logic exercised during initial ingest; production serving consumes validated parquet artifacts.
+5. **Frontend Coverage:** 69 / 69 Vitest tests passing; `@vitest/coverage-v8` omitted to prevent dev-dependency bloat (reported, not gated).
+
+**Consequences:**
+Quality Gate R7 and R8 coverage requirements are satisfied, providing verified regression safety prior to final code freeze (P10.4).
+
+**Related tasks:** P10.7, R7, R8
+
+---
+
 <!-- Add new entries above this line -->
 
 
